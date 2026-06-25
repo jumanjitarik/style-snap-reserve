@@ -465,7 +465,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked").limit(50);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at").limit(50);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -567,7 +567,7 @@ function UsersTab() {
   );
 }
 
-type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null };
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null; last_ip?: string | null; last_city?: string | null; last_country?: string | null; last_seen_at?: string | null };
 
 function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
   const [open, setOpen] = useState(false);
@@ -619,6 +619,12 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
       <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
       <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">
+        IP: <span className="font-mono">{profile.last_ip ?? "-"}</span>
+        {profile.last_city && ` · ${profile.last_city}`}
+        {profile.last_country && ` / ${profile.last_country}`}
+        {profile.last_seen_at && ` · ${new Date(profile.last_seen_at).toLocaleString("tr-TR")}`}
+      </p>
       <div className="mt-2 flex gap-1.5 flex-wrap">
         <Button size="sm" variant="outline" className="flex-1" onClick={onAssignOwner}>Sahip yap</Button>
         <Button size="sm" className="flex-1" onClick={() => setOpen((o) => !o)}>{open ? "Kapat" : "Düzenle"}</Button>
