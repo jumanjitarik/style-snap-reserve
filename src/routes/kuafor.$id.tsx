@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { MiniMap } from "@/components/MiniMap";
 import { categoryLabel, type ShopCategory } from "@/lib/categories";
-import { MapPin, Phone, Star, Heart, ArrowLeft } from "lucide-react";
+import { openInDeviceMap } from "@/lib/maps";
+import { MapPin, Phone, Star, Heart, ArrowLeft, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
@@ -83,13 +84,13 @@ function ShopDetail() {
       <div className="relative">
         <div className="relative aspect-[16/10] bg-muted">
           {shop.cover_image_url && <img src={shop.cover_image_url} alt={shop.name} className="h-full w-full object-cover" />}
-          <Link to="/kuaforler" className="absolute top-3 left-3 rounded-full bg-background/80 backdrop-blur p-2">
+          <Link to="/kuaforler" className="absolute top-3 left-3 rounded-full bg-background/80 backdrop-blur p-2 active:scale-90 transition">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           {userId && (
             <button
               onClick={() => toggleFav.mutate()}
-              className="absolute top-3 right-3 rounded-full bg-background/80 backdrop-blur p-2"
+              className="absolute top-3 right-3 rounded-full bg-background/80 backdrop-blur p-2 active:scale-90 transition"
             >
               <Heart className={`h-5 w-5 ${isFav ? "fill-primary text-primary" : ""}`} />
             </button>
@@ -110,18 +111,19 @@ function ShopDetail() {
 
           <div className="mt-4 space-y-2 text-sm">
             {shop.address && (
-              <p className="flex items-start gap-2"><MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />{shop.address}</p>
+              <button
+                onClick={() => openInDeviceMap({ lat: shop.lat, lng: shop.lng, address: shop.address, name: shop.name })}
+                className="flex items-start gap-2 w-full text-left active:opacity-60 transition"
+              >
+                <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                <span className="underline-offset-2 hover:underline">{shop.address}</span>
+                <Navigation className="h-3.5 w-3.5 ml-auto mt-0.5 text-primary" />
+              </button>
             )}
             {shop.phone && (
-              <a href={`tel:${shop.phone}`} className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" />{shop.phone}</a>
+              <a href={`tel:${shop.phone}`} className="flex items-center gap-2 active:opacity-60"><Phone className="h-4 w-4 text-primary" />{shop.phone}</a>
             )}
           </div>
-
-          {shop.lat != null && shop.lng != null && (
-            <div className="mt-4">
-              <MiniMap lat={shop.lat} lng={shop.lng} name={shop.name} />
-            </div>
-          )}
 
           {images && images.length > 0 && (
             <section className="mt-6">
@@ -145,8 +147,15 @@ function ShopDetail() {
                       {s.description && <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>}
                       <p className="mt-1 text-xs text-muted-foreground">{s.duration_min} dk</p>
                     </div>
-                    <p className="font-display text-xl text-primary">{Number(s.price).toFixed(0)}₺</p>
+                    <p className="font-display text-xl text-primary shrink-0">{Number(s.price).toFixed(0)}₺</p>
                   </div>
+                  <Link
+                    to="/randevu-al"
+                    search={{ shop: id, service: s.id } as never}
+                    className="mt-2 flex h-9 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-sm font-semibold shadow-md active:scale-95 transition"
+                  >
+                    Randevu Al
+                  </Link>
                 </div>
               ))}
               {(services ?? []).length === 0 && <p className="text-sm text-muted-foreground">Hizmet eklenmemiş.</p>}
@@ -174,11 +183,25 @@ function ShopDetail() {
             <Link
               to="/randevu-al"
               search={{ shop: id } as never}
-              className="flex h-12 items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground"
+              className="flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary/80 font-semibold text-primary-foreground shadow-lg active:scale-95 transition"
             >
               Randevu Al
             </Link>
           </div>
+
+          {shop.lat != null && shop.lng != null && (
+            <section className="mt-2 mb-6">
+              <h2 className="mb-2 font-display text-lg tracking-wider">Konum</h2>
+              <button
+                onClick={() => openInDeviceMap({ lat: shop.lat, lng: shop.lng, address: shop.address, name: shop.name })}
+                className="block w-full active:opacity-80 transition"
+                aria-label="Haritada aç"
+              >
+                <MiniMap lat={shop.lat} lng={shop.lng} name={shop.name} />
+              </button>
+              <p className="mt-1 text-[11px] text-center text-muted-foreground">Haritaya dokunarak telefondaki harita uygulamasında aç</p>
+            </section>
+          )}
         </div>
       </div>
     </AppShell>
