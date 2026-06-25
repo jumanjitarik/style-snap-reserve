@@ -65,12 +65,16 @@ export type Database = {
       appointments: {
         Row: {
           created_at: string
+          discount_amount: number | null
+          discount_code: string | null
           guest_name: string | null
           guest_phone: string | null
           id: string
           notes: string | null
           payment_amount: number | null
           payment_ref: string | null
+          reminded_1h: boolean
+          reminded_2h: boolean
           service_id: string
           service_ids: string[] | null
           shop_id: string
@@ -81,12 +85,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discount_amount?: number | null
+          discount_code?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
           notes?: string | null
           payment_amount?: number | null
           payment_ref?: string | null
+          reminded_1h?: boolean
+          reminded_2h?: boolean
           service_id: string
           service_ids?: string[] | null
           shop_id: string
@@ -97,12 +105,16 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discount_amount?: number | null
+          discount_code?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
           notes?: string | null
           payment_amount?: number | null
           payment_ref?: string | null
+          reminded_1h?: boolean
+          reminded_2h?: boolean
           service_id?: string
           service_ids?: string[] | null
           shop_id?: string
@@ -217,6 +229,42 @@ export type Database = {
           name?: string
           owner_id?: string | null
           phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      discount_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
           updated_at?: string
         }
         Relationships: []
@@ -529,6 +577,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_appointment_reminders: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "owner" | "staff" | "customer"
