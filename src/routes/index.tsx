@@ -4,6 +4,7 @@ import { Search, Scissors, MapPin, Navigation2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, categoryLabel } from "@/lib/categories";
 import { AppShell } from "@/components/AppShell";
+import { LocationGate } from "@/components/LocationGate";
 import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
 import { useGeolocation } from "@/lib/geo";
@@ -65,7 +66,7 @@ function Index() {
   }, [coords, shops]);
 
   return (
-    <AppShell>
+    <LocationGate><AppShell>
       <header className="px-4 pt-8 pb-4">
         <p className="text-xs uppercase tracking-widest text-primary">{welcome?.subtitle ?? "Hoş geldin"}</p>
         <h1 className="mt-1 text-4xl font-display">{welcome?.title ?? "Bugün nasıl şıklaşıyoruz?"}</h1>
@@ -197,6 +198,6 @@ function Index() {
           )}
         </section>
       )}
-    </AppShell>
+    </AppShell></LocationGate>
   );
 }
