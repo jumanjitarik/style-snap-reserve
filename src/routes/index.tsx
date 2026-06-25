@@ -121,7 +121,7 @@ function Index() {
             >
               <div className="relative aspect-[16/9] bg-muted">
                 {s.cover_image_url && (
-                  <img src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />
+                  <SafeImg src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />
                 )}
                 <span className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[10px] font-medium">
                   {categoryLabel(s.category)}
