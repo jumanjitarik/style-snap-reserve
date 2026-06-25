@@ -159,6 +159,17 @@ function AccountPage() {
               {profile?.phone && <p className="text-xs text-muted-foreground">{profile.phone}</p>}
             </div>
           </div>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => fileRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-1" /> Fotoğraf Yükle
+            </Button>
+            <Button size="sm" className="flex-1" onClick={saveAvatar}>
+              <Save className="h-4 w-4 mr-1" /> Kaydet
+            </Button>
+            <Button size="sm" variant="destructive" onClick={removeAvatar}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
           {roles && roles.length > 0 && (
             <div className="mt-3 flex gap-1 flex-wrap">
               {roles.map((r) => (
@@ -168,6 +179,7 @@ function AccountPage() {
               ))}
             </div>
           )}
+
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
