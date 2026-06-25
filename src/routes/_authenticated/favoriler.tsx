@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { Heart, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/favoriler")({
@@ -24,7 +25,8 @@ function Favs() {
 
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Favorilerim</h1>
       </header>
       <div className="px-4 space-y-3">

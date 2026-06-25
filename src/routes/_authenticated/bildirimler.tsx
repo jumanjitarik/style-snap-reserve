@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { Bell } from "lucide-react";
@@ -38,7 +39,8 @@ function NotifPage() {
 
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3 flex items-center justify-between">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3 flex items-center justify-between">
         <h1 className="font-display text-3xl">Bildirimler</h1>
         <button onClick={() => markAll.mutate()} className="text-xs text-primary active:opacity-60">Tümünü okundu işaretle</button>
       </header>

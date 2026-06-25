@@ -2,10 +2,11 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { MiniMap } from "@/components/MiniMap";
 import { categoryLabel, type ShopCategory } from "@/lib/categories";
 import { openInDeviceMap } from "@/lib/maps";
-import { MapPin, Phone, Star, Heart, ArrowLeft, Navigation } from "lucide-react";
+import { MapPin, Phone, Star, Heart, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
@@ -81,12 +82,10 @@ function ShopDetail() {
 
   return (
     <AppShell>
+      <BackButton />
       <div className="relative">
         <div className="relative aspect-[16/10] bg-muted">
           {shop.cover_image_url && <img src={shop.cover_image_url} alt={shop.name} className="h-full w-full object-cover" />}
-          <Link to="/kuaforler" className="absolute top-3 left-3 rounded-full bg-background/80 backdrop-blur p-2 active:scale-90 transition">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
           {userId && (
             <button
               onClick={() => toggleFav.mutate()}
