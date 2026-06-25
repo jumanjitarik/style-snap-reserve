@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,21 +30,24 @@ export const Route = createFileRoute("/_authenticated/admin")({
 function AdminPanel() {
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Yönetici Paneli</h1>
-        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler ve çalışanlar</p>
+        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler, çalışanlar ve üyeler</p>
       </header>
       <Tabs defaultValue="stats" className="px-4">
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="stats">İstatistik</TabsTrigger>
-          <TabsTrigger value="shops">Salonlar</TabsTrigger>
-          <TabsTrigger value="services">Hizmetler</TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="stats">📊</TabsTrigger>
+          <TabsTrigger value="shops">Salon</TabsTrigger>
+          <TabsTrigger value="services">Hizmet</TabsTrigger>
           <TabsTrigger value="staff">Çalışan</TabsTrigger>
+          <TabsTrigger value="users">Üye</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
         <TabsContent value="staff"><StaffTab /></TabsContent>
+        <TabsContent value="users"><UsersTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -405,6 +409,128 @@ function StaffTab() {
               </div>
             ))}
           </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function UsersTab() {
+  const qc = useQueryClient();
+  const [shopId, setShopId] = useState<string>("");
+  const [search, setSearch] = useState("");
+
+  const { data: shops } = useQuery({
+    queryKey: ["admin-shops-min3"],
+    queryFn: async () => (await supabase.from("barbershops").select("id, name, owner_id")).data ?? [],
+  });
+  const shop = shops?.find((s) => s.id === shopId);
+
+  const { data: profiles } = useQuery({
+    queryKey: ["admin-profiles", search],
+    queryFn: async () => {
+      let q = supabase.from("profiles").select("id, full_name, email, phone").limit(50);
+      if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      return (await q).data ?? [];
+    },
+  });
+
+  const { data: staffList } = useQuery({
+    queryKey: ["admin-staff-users", shopId],
+    enabled: !!shopId,
+    queryFn: async () => (await supabase.from("staff").select("id, name, title, user_id").eq("shop_id", shopId)).data ?? [],
+  });
+
+  const ownerProfile = profiles?.find((p) => p.id === shop?.owner_id);
+
+  const setOwner = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error: e1 } = await supabase.from("barbershops").update({ owner_id: userId }).eq("id", shopId);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from("user_roles").upsert({ user_id: userId, role: "owner" }, { onConflict: "user_id,role" });
+      if (e2) throw e2;
+    },
+    onSuccess: () => { toast.success("Salon sahibi atandı"); qc.invalidateQueries({ queryKey: ["admin-shops-min3"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const linkStaff = useMutation({
+    mutationFn: async ({ staffId, userId }: { staffId: string; userId: string | null }) => {
+      const { error: e1 } = await supabase.from("staff").update({ user_id: userId }).eq("id", staffId);
+      if (e1) throw e1;
+      if (userId) {
+        const { error: e2 } = await supabase.from("user_roles").upsert({ user_id: userId, role: "staff" }, { onConflict: "user_id,role" });
+        if (e2) throw e2;
+      }
+    },
+    onSuccess: () => { toast.success("Çalışan eşleştirildi"); qc.invalidateQueries({ queryKey: ["admin-staff-users", shopId] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="py-4 space-y-3">
+      <Label>Salon Seç</Label>
+      <Select value={shopId} onValueChange={setShopId}>
+        <SelectTrigger><SelectValue placeholder="Salon seç..." /></SelectTrigger>
+        <SelectContent>{(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+      </Select>
+
+      {shopId && (
+        <>
+          <div className="rounded-xl border border-primary/30 bg-card p-3">
+            <p className="text-xs uppercase tracking-wider text-primary mb-1">Salon Sahibi</p>
+            {ownerProfile
+              ? <p className="text-sm">{ownerProfile.full_name} <span className="text-muted-foreground">· {ownerProfile.email}</span></p>
+              : <p className="text-sm text-muted-foreground">Atanmamış</p>}
+          </div>
+
+          <Input placeholder="Üye ara (isim / e-posta / telefon)" value={search} onChange={(e) => setSearch(e.target.value)} />
+
+          <p className="text-xs text-muted-foreground">Aşağıdan üye seç → Sahip / Çalışan olarak ata</p>
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {(profiles ?? []).map((p) => (
+              <div key={p.id} className="rounded-xl border border-border bg-card p-3">
+                <p className="font-medium text-sm">{p.full_name ?? "—"}</p>
+                <p className="text-xs text-muted-foreground truncate">{p.email} {p.phone && `· ${p.phone}`}</p>
+                <div className="mt-2 flex gap-1.5">
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setOwner.mutate(p.id)}>Sahip yap</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {(staffList ?? []).length > 0 && (
+            <>
+              <p className="text-xs uppercase tracking-wider text-primary mt-4">Çalışan Eşleştirme</p>
+              <div className="space-y-2">
+                {(staffList ?? []).map((st) => {
+                  const linked = profiles?.find((p) => p.id === st.user_id);
+                  return (
+                    <div key={st.id} className="rounded-xl border border-border bg-card p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{st.name}</p>
+                          {st.title && <p className="text-xs text-muted-foreground truncate">{st.title}</p>}
+                        </div>
+                        {st.user_id && <Button size="sm" variant="ghost" onClick={() => linkStaff.mutate({ staffId: st.id, userId: null })}>Bağı kaldır</Button>}
+                      </div>
+                      <p className="text-xs mt-1">
+                        Üye: {linked ? <span className="text-primary">{linked.full_name ?? linked.email}</span> : <span className="text-muted-foreground">Yok</span>}
+                      </p>
+                      <Select onValueChange={(v) => linkStaff.mutate({ staffId: st.id, userId: v })}>
+                        <SelectTrigger className="h-9 mt-2"><SelectValue placeholder="Üyeyi seç (aramayı kullan)" /></SelectTrigger>
+                        <SelectContent>
+                          {(profiles ?? []).slice(0, 20).map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.email}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </>
       )}
     </div>

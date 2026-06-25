@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -39,7 +40,8 @@ function MyAppts() {
 
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Randevularım</h1>
         <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
       </header>

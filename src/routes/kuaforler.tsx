@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { CATEGORIES, categoryLabel, type ShopCategory } from "@/lib/categories";
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,8 @@ function ShopList() {
 
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3">
         <h1 className="text-3xl font-display">Kuaförler</h1>
       </header>
       <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
