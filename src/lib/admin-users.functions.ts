@@ -7,7 +7,7 @@ const updateInput = z.object({
   full_name: z.string().trim().min(1).max(120).optional(),
   email: z.string().email().optional(),
   phone: z.string().trim().min(1).max(40).optional().nullable(),
-  password: z.string().min(6).max(72).optional(),
+  password: z.string().min(4).max(72).optional(),
 });
 
 export const adminUpdateUser = createServerFn({ method: "POST" })

@@ -27,7 +27,7 @@ function ResetPasswordPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 6) { toast.error("Şifre en az 6 karakter olmalı"); return; }
+    if (password.length < 4) { toast.error("Şifre en az 4 karakter olmalı"); return; }
     if (password !== password2) { toast.error("Şifreler aynı değil"); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
