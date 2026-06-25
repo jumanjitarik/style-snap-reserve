@@ -45,6 +45,8 @@ function BookPage() {
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
   const [time, setTime] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
@@ -75,6 +77,26 @@ function BookPage() {
     setServiceIds((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   }
 
+  const finalTotal = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+
+  async function applyDiscount() {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return;
+    const { data, error } = await supabase
+      .from("discount_codes")
+      .select("*")
+      .eq("code", code)
+      .eq("active", true)
+      .maybeSingle();
+    if (error || !data) { toast.error("Geçersiz indirim kodu"); setAppliedDiscount(null); return; }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Kodun süresi dolmuş"); setAppliedDiscount(null); return; }
+    const amount = data.discount_type === "percent"
+      ? totalPrice * Number(data.discount_value) / 100
+      : Number(data.discount_value);
+    setAppliedDiscount({ code: data.code, amount: Math.min(amount, totalPrice) });
+    toast.success(`İndirim uygulandı: -${Math.min(amount, totalPrice).toFixed(0)}₺`);
+  }
+
   const create = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Giriş yap");
@@ -90,7 +112,9 @@ function BookPage() {
         staff_id: staffId,
         starts_at: starts.toISOString(),
         status: "confirmed",
-        payment_amount: totalPrice,
+        payment_amount: finalTotal,
+        discount_code: appliedDiscount?.code ?? null,
+        discount_amount: appliedDiscount?.amount ?? 0,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
