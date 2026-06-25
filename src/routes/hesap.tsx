@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save, Trash2 } from "lucide-react";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save, Trash2, BellRing } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
@@ -219,6 +219,22 @@ function AccountPage() {
         <Link to="/bildirimler" className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
           <Bell className="h-5 w-5 text-primary" /><span>Bildirimler</span>
         </Link>
+        <Button variant="outline" className="w-full h-12" onClick={async () => {
+          if (!("Notification" in window)) { toast.error("Tarayıcın bildirimleri desteklemiyor"); return; }
+          let perm = Notification.permission;
+          if (perm === "default") perm = await Notification.requestPermission();
+          if (perm !== "granted") { toast.error("Bildirim izni reddedildi"); return; }
+          try {
+            const reg = await navigator.serviceWorker?.ready;
+            const opts: NotificationOptions = { body: "Bildirim sistemi çalışıyor ✅", icon: "/favicon.ico", tag: "test", data: { url: "/" } };
+            (opts as NotificationOptions & { vibrate?: number[] }).vibrate = [200, 100, 200];
+            if (reg) await reg.showNotification("Test Bildirimi", opts);
+            else new Notification("Test Bildirimi", opts);
+            toast.success("Test bildirimi gönderildi");
+          } catch { toast.error("Bildirim gönderilemedi"); }
+        }}>
+          <BellRing className="h-4 w-4 mr-2" /> Bildirim Testi Yap
+        </Button>
         <Link to="/favoriler" className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
           <Heart className="h-5 w-5 text-primary" /><span>Favoriler</span>
         </Link>

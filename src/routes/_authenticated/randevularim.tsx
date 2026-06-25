@@ -35,7 +35,14 @@ function MyAppts() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success("İptal edildi"); qc.invalidateQueries({ queryKey: ["my-appts"] }); },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      const msg = (e.message || "").toLowerCase();
+      if (msg.includes("24") || msg.includes("cancel")) {
+        toast.error("24 saat kala iptal sağlanmamaktadır");
+      } else {
+        toast.error("24 saat kala iptal sağlanmamaktadır");
+      }
+    },
   });
 
   return (
