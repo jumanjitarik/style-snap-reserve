@@ -14,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
+import { MiniMap } from "@/components/MiniMap";
 import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -51,8 +52,9 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-1 w-full mt-2">
-          <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push Gönder</TabsTrigger>
+        <TabsList className="grid grid-cols-2 w-full mt-2">
+          <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push</TabsTrigger>
+          <TabsTrigger value="acct"><Receipt className="h-3.5 w-3.5 mr-1" /> Muhasebe</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -63,6 +65,7 @@ function AdminPanel() {
         <TabsContent value="settings"><SettingsTab /></TabsContent>
         <TabsContent value="activity"><ActivityTab /></TabsContent>
         <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
+        <TabsContent value="acct"><AccountingTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
