@@ -72,6 +72,7 @@ export type Database = {
           payment_amount: number | null
           payment_ref: string | null
           service_id: string
+          service_ids: string[] | null
           shop_id: string
           staff_id: string | null
           starts_at: string
@@ -87,6 +88,7 @@ export type Database = {
           payment_amount?: number | null
           payment_ref?: string | null
           service_id: string
+          service_ids?: string[] | null
           shop_id: string
           staff_id?: string | null
           starts_at: string
@@ -102,6 +104,7 @@ export type Database = {
           payment_amount?: number | null
           payment_ref?: string | null
           service_id?: string
+          service_ids?: string[] | null
           shop_id?: string
           staff_id?: string | null
           starts_at?: string
@@ -168,6 +171,7 @@ export type Database = {
         Row: {
           address: string
           category: Database["public"]["Enums"]["shop_category"]
+          city: string | null
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -175,6 +179,7 @@ export type Database = {
           is_featured: boolean
           lat: number | null
           lng: number | null
+          maps_url: string | null
           name: string
           owner_id: string | null
           phone: string | null
@@ -183,6 +188,7 @@ export type Database = {
         Insert: {
           address: string
           category: Database["public"]["Enums"]["shop_category"]
+          city?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -190,6 +196,7 @@ export type Database = {
           is_featured?: boolean
           lat?: number | null
           lng?: number | null
+          maps_url?: string | null
           name: string
           owner_id?: string | null
           phone?: string | null
@@ -198,6 +205,7 @@ export type Database = {
         Update: {
           address?: string
           category?: Database["public"]["Enums"]["shop_category"]
+          city?: string | null
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -205,6 +213,7 @@ export type Database = {
           is_featured?: boolean
           lat?: number | null
           lng?: number | null
+          maps_url?: string | null
           name?: string
           owner_id?: string | null
           phone?: string | null
@@ -244,6 +253,8 @@ export type Database = {
           body: string | null
           created_at: string
           id: string
+          image_url: string | null
+          link_url: string | null
           read: boolean
           title: string
           user_id: string
@@ -253,6 +264,8 @@ export type Database = {
           body?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
+          link_url?: string | null
           read?: boolean
           title: string
           user_id: string
@@ -262,6 +275,8 @@ export type Database = {
           body?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
+          link_url?: string | null
           read?: boolean
           title?: string
           user_id?: string
@@ -279,11 +294,13 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          city: string | null
           created_at: string
           email: string | null
           full_name: string
           gender: Database["public"]["Enums"]["gender"] | null
           id: string
+          is_blocked: boolean
           last_city: string | null
           last_country: string | null
           last_ip: string | null
@@ -293,11 +310,13 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id: string
+          is_blocked?: boolean
           last_city?: string | null
           last_country?: string | null
           last_ip?: string | null
@@ -307,11 +326,13 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
+          is_blocked?: boolean
           last_city?: string | null
           last_country?: string | null
           last_ip?: string | null
@@ -491,6 +512,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_broadcast: {
+        Args: {
+          _audience: string
+          _body: string
+          _image_url: string
+          _link_url: string
+          _title: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
