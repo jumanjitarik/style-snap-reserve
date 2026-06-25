@@ -36,6 +36,19 @@ function Index() {
     },
   });
 
+  const { data: welcome } = useQuery({
+    queryKey: ["welcome-text"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["welcome_title", "welcome_subtitle"]);
+      const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+      return {
+        title: map.welcome_title || "Bugün nasıl şıklaşıyoruz?",
+        subtitle: map.welcome_subtitle || "Hoş geldin",
+      };
+    },
+    staleTime: 60_000,
+  });
+
   const isSearching = q.trim().length > 0;
   const filtered = (shops ?? []).filter((s) =>
     !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.address?.toLowerCase().includes(q.toLowerCase()),
@@ -54,8 +67,8 @@ function Index() {
   return (
     <AppShell>
       <header className="px-4 pt-8 pb-4">
-        <p className="text-xs uppercase tracking-widest text-primary">Hoş geldin</p>
-        <h1 className="mt-1 text-4xl font-display">Bugün nasıl şıklaşıyoruz?</h1>
+        <p className="text-xs uppercase tracking-widest text-primary">{welcome?.subtitle ?? "Hoş geldin"}</p>
+        <h1 className="mt-1 text-4xl font-display">{welcome?.title ?? "Bugün nasıl şıklaşıyoruz?"}</h1>
       </header>
 
       <div className="px-4">
