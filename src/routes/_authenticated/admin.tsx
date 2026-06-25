@@ -898,3 +898,107 @@ function BroadcastTab() {
     </div>
   );
 }
+
+function AccountingTab() {
+  const { data: shops } = useQuery({
+    queryKey: ["acct-shops"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("barbershops").select("id,name").order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const [shopId, setShopId] = useState<string>("");
+  useEffect(() => { if (!shopId && shops && shops.length > 0) setShopId(shops[0].id); }, [shops, shopId]);
+
+  const { data: rows } = useQuery({
+    queryKey: ["acct-rows", shopId],
+    enabled: !!shopId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, scheduled_at, status, total_price, service_ids, customer_id, barbershop_id, barbershops(name), profiles!appointments_customer_id_fkey(full_name, phone)")
+        .eq("barbershop_id", shopId)
+        .order("scheduled_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: serviceMap } = useQuery({
+    queryKey: ["acct-services", shopId],
+    enabled: !!shopId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("services").select("id, name, price").eq("barbershop_id", shopId);
+      if (error) throw error;
+      const m = new Map<string, { name: string; price: number }>();
+      (data ?? []).forEach((s) => m.set(s.id, { name: s.name, price: Number(s.price ?? 0) }));
+      return m;
+    },
+  });
+
+  const totalRevenue = (rows ?? []).filter((r: any) => r.status === "paid" || r.status === "confirmed" || r.status === "completed")
+    .reduce((s: number, r: any) => s + Number(r.total_price ?? 0), 0);
+  const totalCount = (rows ?? []).length;
+
+  const exportXlsx = () => {
+    const data = (rows ?? []).map((r: any) => ({
+      Tarih: new Date(r.scheduled_at).toLocaleString("tr-TR"),
+      Müşteri: r.profiles?.full_name ?? "—",
+      Telefon: r.profiles?.phone ?? "—",
+      Salon: r.barbershops?.name ?? "—",
+      Hizmetler: (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", "),
+      Durum: r.status,
+      Tutar: Number(r.total_price ?? 0),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Muhasebe");
+    XLSX.writeFile(wb, `muhasebe-${shops?.find((s) => s.id === shopId)?.name ?? "salon"}.xlsx`);
+  };
+
+  return (
+    <div className="py-4 space-y-3">
+      <Label>Salon Seç</Label>
+      <Select value={shopId} onValueChange={setShopId}>
+        <SelectTrigger><SelectValue placeholder="Salon seç" /></SelectTrigger>
+        <SelectContent>{(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+      </Select>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-[10px] text-muted-foreground">Toplam Ciro</p>
+          <p className="font-display text-2xl text-primary">{totalRevenue.toFixed(0)}₺</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-[10px] text-muted-foreground">Toplam Randevu</p>
+          <p className="font-display text-2xl">{totalCount}</p>
+        </div>
+      </div>
+
+      <Button onClick={exportXlsx} variant="outline" className="w-full" disabled={!rows || rows.length === 0}>
+        <Download className="h-4 w-4 mr-1" /> Excel olarak indir
+      </Button>
+
+      <div className="space-y-2">
+        {(rows ?? []).map((r: any) => {
+          const d = new Date(r.scheduled_at);
+          const names = (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", ");
+          return (
+            <div key={r.id} className="rounded-xl border border-border bg-card p-3 text-xs space-y-0.5">
+              <div className="flex justify-between gap-2">
+                <p className="font-semibold text-sm truncate">{r.profiles?.full_name ?? "—"}</p>
+                <p className="font-display text-primary text-base">{Number(r.total_price ?? 0).toFixed(0)}₺</p>
+              </div>
+              <p className="text-muted-foreground">📞 {r.profiles?.phone ?? "—"}</p>
+              <p>🗓 {d.toLocaleDateString("tr-TR")} · {d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>
+              <p>✂️ {names || "—"}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{r.status}</p>
+            </div>
+          );
+        })}
+        {(rows ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Bu salonda randevu yok.</p>}
+      </div>
+    </div>
+  );
+}
