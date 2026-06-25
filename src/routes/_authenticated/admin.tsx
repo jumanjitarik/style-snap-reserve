@@ -447,7 +447,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone").limit(50);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked").limit(50);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -549,7 +549,7 @@ function UsersTab() {
   );
 }
 
-type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null };
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null };
 
 function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
   const [open, setOpen] = useState(false);
@@ -580,14 +580,36 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const toggleBlock = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("profiles").update({ is_blocked: !profile.is_blocked }).eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success(profile.is_blocked ? "Engel kaldırıldı" : "Üye engellendi"); qc.invalidateQueries({ queryKey: ["admin-profiles"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const removeUser = useMutation({
+    mutationFn: async () => {
+      const { adminDeleteUser } = await import("@/lib/admin-users.functions");
+      await adminDeleteUser({ data: { user_id: profile.id } });
+    },
+    onSuccess: () => { toast.success("Üye silindi"); qc.invalidateQueries({ queryKey: ["admin-profiles"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <p className="font-medium text-sm">{profile.full_name ?? "—"}</p>
+    <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
+      <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
       <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
-      <div className="mt-2 flex gap-1.5">
+      <div className="mt-2 flex gap-1.5 flex-wrap">
         <Button size="sm" variant="outline" className="flex-1" onClick={onAssignOwner}>Sahip yap</Button>
         <Button size="sm" className="flex-1" onClick={() => setOpen((o) => !o)}>{open ? "Kapat" : "Düzenle"}</Button>
+        <Button size="sm" variant={profile.is_blocked ? "default" : "secondary"} onClick={() => toggleBlock.mutate()}>
+          {profile.is_blocked ? "Engeli Kaldır" : "Engelle"}
+        </Button>
+        <Button size="icon" variant="destructive" onClick={() => confirm(`${profile.full_name ?? profile.email} silinsin mi? Geri alınamaz.`) && removeUser.mutate()}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
       {open && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
