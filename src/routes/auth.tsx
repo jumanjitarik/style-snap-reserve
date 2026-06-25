@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { toast } from "sonner";
 import { Scissors } from "lucide-react";
 import { z } from "zod";
@@ -24,7 +24,6 @@ const signupSchema = z.object({
   password: z.string().min(6).max(72),
   phone: z.string().trim().regex(/^\d{10}$/, "10 haneli numara (5XXXXXXXXX)"),
   gender: z.enum(["male", "female", "other"]),
-  role: z.enum(["customer", "staff", "owner"]),
 });
 
 const EMAIL_DOMAINS = ["@gmail.com", "@hotmail.com", "@outlook.com", "@yahoo.com"];
@@ -35,7 +34,7 @@ function AuthPage() {
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    full_name: "", email: "", password: "", phone: "", gender: "male" as const, role: "customer" as "customer" | "staff" | "owner",
+    full_name: "", email: "", password: "", phone: "", gender: "male" as const,
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -54,7 +53,6 @@ function AuthPage() {
               full_name: form.full_name,
               phone: "+90" + form.phone,
               gender: form.gender,
-              role: form.role,
             },
           },
         });
@@ -63,7 +61,6 @@ function AuthPage() {
         navigate({ to: "/" });
       } else {
         if (loginMethod === "phone") {
-          // Phone OTP would require SMS provider; we map phone → registered email via profile lookup
           if (!/^\d{10}$/.test(form.phone)) { toast.error("Telefon: 5XXXXXXXXX"); return; }
           const { data } = await supabase.from("profiles").select("email").eq("phone", "+90" + form.phone).maybeSingle();
           if (!data?.email) { toast.error("Bu telefonla kayıtlı kullanıcı yok"); return; }
@@ -96,7 +93,8 @@ function AuthPage() {
 
   return (
     <AppShell>
-      <div className="flex flex-col px-6 pt-8 pb-32 max-w-md mx-auto">
+      <BackButton to="/" />
+      <div className="flex flex-col px-6 pt-16 pb-32 max-w-md mx-auto">
         <Link to="/" className="mb-6 flex items-center gap-2 text-primary">
           <Scissors className="h-6 w-6" />
           <span className="font-display text-2xl tracking-wider">BARBERAPP</span>
@@ -130,17 +128,6 @@ function AuthPage() {
                   <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="female" /> Kadın</label>
                   <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="other" /> Diğer</label>
                 </RadioGroup>
-              </div>
-              <div>
-                <Label>Hesap Tipi</Label>
-                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as "customer" })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="customer">Müşteri — randevu al</SelectItem>
-                    <SelectItem value="staff">Çalışan — salon çalışanıyım</SelectItem>
-                    <SelectItem value="owner">Salon Sahibi — salonumu yönet</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </>
           )}
@@ -177,7 +164,7 @@ function AuthPage() {
           )}
 
           <div>
-            <Label>Şifre</Label>
+            <Label>Şifre <span className="text-[10px] text-muted-foreground">(en az 6 karakter)</span></Label>
             <Input type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
 

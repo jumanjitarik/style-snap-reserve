@@ -4,9 +4,8 @@ import { z } from "zod";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { CATEGORIES, categoryLabel, type ShopCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
@@ -27,11 +26,10 @@ function BookPage() {
   const navigate = useNavigate();
   const { shop: initialShop, service: initialService } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
-  const [guestMode, setGuestMode] = useState(false);
-  const [guest, setGuest] = useState({ name: "", phone: "" });
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getUser().then(({ data }) => { setUserId(data.user?.id ?? null); setAuthChecked(true); });
   }, []);
 
   const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialService ? 4 : 3) : 1);
@@ -44,7 +42,7 @@ function BookPage() {
 
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
-    enabled: step >= 2,
+    enabled: step >= 2 && !!userId,
     queryFn: async () => {
       let q = supabase.from("barbershops").select("id, name, category, address");
       if (category) q = q.eq("category", category);
@@ -54,12 +52,12 @@ function BookPage() {
   });
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
-    enabled: !!shopId,
+    enabled: !!shopId && !!userId,
     queryFn: async () => (await supabase.from("services").select("*").eq("shop_id", shopId!)).data ?? [],
   });
   const { data: staff } = useQuery({
     queryKey: ["book-staff", shopId],
-    enabled: !!shopId,
+    enabled: !!shopId && !!userId,
     queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId!)).data ?? [],
   });
 
@@ -67,18 +65,13 @@ function BookPage() {
 
   const create = useMutation({
     mutationFn: async () => {
+      if (!userId) throw new Error("Giriş yap");
       if (!shopId || !serviceId || !date || !time) throw new Error("Eksik bilgi");
-      if (!userId && !guestMode) throw new Error("Giriş yap veya misafir olarak devam et");
-      if (guestMode && (!guest.name.trim() || !/^\d{10}$/.test(guest.phone))) {
-        throw new Error("Misafir bilgileri eksik (ad ve 10 haneli telefon)");
-      }
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
-        guest_name: !userId ? guest.name.trim() : null,
-        guest_phone: !userId ? "+90" + guest.phone : null,
         shop_id: shopId,
         service_id: serviceId,
         staff_id: staffId,
@@ -91,28 +84,24 @@ function BookPage() {
     },
     onSuccess: () => {
       toast.success("Ödeme alındı, randevu onaylandı! Bildirimler gönderildi.");
-      navigate({ to: userId ? "/randevularim" : "/" });
+      navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  // Mode picker (guest vs login) before booking if not logged in
-  if (!userId && !guestMode) {
+  if (authChecked && !userId) {
     return (
       <AppShell>
-        <header className="px-4 pt-8 pb-3">
+        <BackButton to="/" />
+        <header className="px-4 pt-16 pb-3">
           <h1 className="font-display text-3xl">Randevu Al</h1>
-          <p className="text-sm text-muted-foreground mt-1">Nasıl devam etmek istersin?</p>
+          <p className="text-sm text-muted-foreground mt-1">Randevu almak için önce giriş yap</p>
         </header>
-        <div className="px-4 space-y-3 mt-4">
-          <Link to="/auth" className="block rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-5 active:scale-[0.98] transition">
+        <div className="px-4 mt-4">
+          <Link to="/auth" className="block rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-5 active:scale-[0.98] transition text-center">
             <p className="font-display text-xl text-primary">Giriş Yap / Kayıt Ol</p>
             <p className="text-xs text-muted-foreground mt-1">Randevuların geçmişine erişebilir, favori ekleyebilir, hızlıca yeniden randevu alabilirsin.</p>
           </Link>
-          <button onClick={() => setGuestMode(true)} className="w-full text-left rounded-xl border border-border bg-card p-5 active:scale-[0.98] transition">
-            <p className="font-display text-xl">Üyeliksiz Devam Et</p>
-            <p className="text-xs text-muted-foreground mt-1">Ad, telefon ve kart bilgilerinle tek seferlik randevu al.</p>
-          </button>
         </div>
       </AppShell>
     );
@@ -120,9 +109,9 @@ function BookPage() {
 
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Randevu Al</h1>
-        {guestMode && <p className="text-[11px] text-primary mt-1">Misafir mod</p>}
         <div className="mt-3 flex gap-1">
           {[1,2,3,4,5].map((n) => (
             <div key={n} className={cn("h-1 flex-1 rounded-full", n <= step ? "bg-primary" : "bg-muted")} />
@@ -227,21 +216,6 @@ function BookPage() {
           <>
             <button onClick={() => setStep(4)} className="text-xs text-primary">← Tarih</button>
             <h2 className="font-display text-xl">Ödeme & Onay</h2>
-            {guestMode && (
-              <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Misafir Bilgileri</p>
-                <div><Label>Ad Soyad</Label><Input value={guest.name} onChange={(e) => setGuest({ ...guest, name: e.target.value })} /></div>
-                <div>
-                  <Label>Telefon</Label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm font-semibold text-primary">+90</span>
-                    <Input type="tel" inputMode="numeric" maxLength={10} className="rounded-l-none"
-                      value={guest.phone} onChange={(e) => setGuest({ ...guest, phone: e.target.value.replace(/\D/g, "") })}
-                      placeholder="5XXXXXXXXX" />
-                  </div>
-                </div>
-              </div>
-            )}
             <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
               <p><span className="text-muted-foreground">Hizmet:</span> {selectedService?.name}</p>
               <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
