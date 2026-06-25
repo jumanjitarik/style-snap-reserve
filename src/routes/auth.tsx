@@ -23,7 +23,7 @@ export const Route = createFileRoute("/auth")({
 const signupSchema = z.object({
   full_name: z.string().trim().min(2, "İsim en az 2 karakter").max(80),
   email: z.string().trim().email("Geçerli bir e-posta gir"),
-  password: z.string().min(6, "Şifre en az 6 karakter").max(72),
+  password: z.string().min(4, "Şifre en az 4 karakter").max(72),
   phone: z.string().trim().regex(/^\d{10}$/, "10 haneli numara (5XXXXXXXXX)"),
   gender: z.enum(["male", "female", "other"]),
 });
