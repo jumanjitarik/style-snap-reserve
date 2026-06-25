@@ -1,9 +1,10 @@
-// Foreground "push": uses the Web Notification API + a short audio ping when
-// a realtime notification row is inserted for the current user.
+// Foreground "push": Notification API + audio ping + service worker showNotification
+// so notifications also appear in the OS notification tray when tab is backgrounded.
 import { supabase } from "@/integrations/supabase/client";
 
 let started = false;
 let audioCtx: AudioContext | null = null;
+let swReg: ServiceWorkerRegistration | null = null;
 
 function playPing() {
   if (typeof window === "undefined") return;
@@ -12,15 +13,47 @@ function playPing() {
     if (audioCtx.state === "suspended") audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.connect(gain); gain.connect(audioCtx.destination);
     osc.frequency.setValueAtTime(880, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.18);
     gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.42);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.42);
+  } catch { /* noop */ }
+}
+
+async function ensureSW() {
+  if (swReg || typeof navigator === "undefined" || !("serviceWorker" in navigator)) return swReg;
+  try {
+    swReg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+  } catch { /* noop */ }
+  return swReg;
+}
+
+async function showNotif(title: string, body: string, image?: string | null, link?: string | null) {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+  const opts: NotificationOptions = {
+    body,
+    icon: image || "/favicon.ico",
+    badge: "/favicon.ico",
+    tag: "barber-app",
+    data: { url: link || "/" },
+  };
+  // @ts-expect-error mobile-only fields
+  opts.vibrate = [200, 100, 200];
+  // @ts-expect-error mobile-only fields
+  if (image) opts.image = image;
+  try {
+    const reg = await ensureSW();
+    if (reg) {
+      await reg.showNotification(title, opts);
+    } else {
+      const n = new Notification(title, opts);
+      if (link) n.onclick = () => { window.focus(); window.open(link!, "_self"); };
+    }
   } catch { /* noop */ }
 }
 
@@ -28,6 +61,7 @@ export async function startPushNotifications(userId: string) {
   if (started) return;
   started = true;
   if (typeof window === "undefined") return;
+  await ensureSW();
   if ("Notification" in window && Notification.permission === "default") {
     try { await Notification.requestPermission(); } catch { /* noop */ }
   }
@@ -40,21 +74,7 @@ export async function startPushNotifications(userId: string) {
       (payload) => {
         const row = payload.new as { title?: string; body?: string; image_url?: string | null; link_url?: string | null };
         playPing();
-        if ("Notification" in window && Notification.permission === "granted") {
-          try {
-            const n = new Notification(row.title ?? "Bildirim", {
-              body: row.body ?? "",
-              icon: row.image_url || "/favicon.ico",
-              image: row.image_url || undefined,
-            } as NotificationOptions);
-            if (row.link_url) {
-              n.onclick = () => {
-                window.focus();
-                window.open(row.link_url!, "_blank", "noopener,noreferrer");
-              };
-            }
-          } catch { /* noop */ }
-        }
+        showNotif(row.title ?? "Bildirim", row.body ?? "", row.image_url, row.link_url);
       },
     )
     .subscribe();

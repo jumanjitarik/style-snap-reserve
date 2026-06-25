@@ -24,5 +24,12 @@ export function MiniMap({ lat, lng, name }: { lat: number; lng: number; name: st
     })();
     return () => { cancelled = true; map?.remove(); };
   }, [lat, lng, name]);
-  return <div ref={ref} className="h-48 w-full rounded-xl overflow-hidden" />;
+  // isolation + z-0 keeps Leaflet panes (which use high z-index inside) below the fixed bottom nav.
+  return (
+    <div
+      ref={ref}
+      className="h-48 w-full rounded-xl overflow-hidden relative z-0"
+      style={{ isolation: "isolate" }}
+    />
+  );
 }
