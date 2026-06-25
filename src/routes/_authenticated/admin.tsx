@@ -1022,6 +1022,8 @@ function DiscountsTab() {
   const [type, setType] = useState<"percent" | "amount">("percent");
   const [value, setValue] = useState("");
   const [active, setActive] = useState(true);
+  const [maxUses, setMaxUses] = useState("");
+  const [perUserLimit, setPerUserLimit] = useState("");
 
   const create = useMutation({
     mutationFn: async () => {
@@ -1031,10 +1033,16 @@ function DiscountsTab() {
         discount_type: type,
         discount_value: Number(value),
         active,
+        max_uses: maxUses ? Number(maxUses) : null,
+        per_user_limit: perUserLimit ? Number(perUserLimit) : null,
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Kupon eklendi"); setCode(""); setValue(""); qc.invalidateQueries({ queryKey: ["disc-codes"] }); },
+    onSuccess: () => {
+      toast.success("Kupon eklendi");
+      setCode(""); setValue(""); setMaxUses(""); setPerUserLimit("");
+      qc.invalidateQueries({ queryKey: ["disc-codes"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const toggle = useMutation({
@@ -1076,6 +1084,16 @@ function DiscountsTab() {
             <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === "percent" ? "10" : "50"} />
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Toplam Kullanım Limiti</Label>
+            <Input type="number" min="1" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Sınırsız" />
+          </div>
+          <div>
+            <Label className="text-xs">Kişi Başı Limit</Label>
+            <Input type="number" min="1" value={perUserLimit} onChange={(e) => setPerUserLimit(e.target.value)} placeholder="Sınırsız" />
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Switch checked={active} onCheckedChange={setActive} />
           <Label className="!mt-0">Aktif</Label>
@@ -1091,6 +1109,9 @@ function DiscountsTab() {
               <p className="font-display text-lg">{c.code}</p>
               <p className="text-xs text-muted-foreground">
                 {c.discount_type === "percent" ? `% ${c.discount_value} indirim` : `${c.discount_value}₺ indirim`}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Toplam: {c.max_uses ?? "∞"} · Kişi başı: {c.per_user_limit ?? "∞"}
               </p>
             </div>
             <div className="flex items-center gap-2">
