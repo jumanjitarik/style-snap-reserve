@@ -830,8 +830,8 @@ function BroadcastTab() {
       const { data, error } = await supabase.rpc("admin_broadcast", {
         _title: form.title,
         _body: form.body,
-        _image_url: form.image_url || null,
-        _link_url: form.link_url || null,
+        _image_url: form.image_url || "",
+        _link_url: form.link_url || "",
         _audience: form.audience,
       });
       if (error) throw error;
