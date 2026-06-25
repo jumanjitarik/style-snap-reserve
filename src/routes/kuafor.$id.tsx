@@ -8,8 +8,9 @@ import { categoryLabel, type ShopCategory } from "@/lib/categories";
 import { openInDeviceMap } from "@/lib/maps";
 import { MapPin, Phone, Star, Heart, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/kuafor/$id")({
@@ -135,31 +136,7 @@ function ShopDetail() {
             </section>
           )}
 
-          <section className="mt-6">
-            <h2 className="mb-2 font-display text-lg tracking-wider">Hizmetler</h2>
-            <div className="space-y-2">
-              {(services ?? []).map((s) => (
-                <div key={s.id} className="rounded-xl border border-border bg-card p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium">{s.name}</p>
-                      {s.description && <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>}
-                      <p className="mt-1 text-xs text-muted-foreground">{s.duration_min} dk</p>
-                    </div>
-                    <p className="font-display text-xl text-primary shrink-0">{Number(s.price).toFixed(0)}₺</p>
-                  </div>
-                  <Link
-                    to="/randevu-al"
-                    search={{ shop: id, service: s.id } as never}
-                    className="mt-2 flex h-9 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-sm font-semibold shadow-md active:scale-95 transition"
-                  >
-                    Randevu Al
-                  </Link>
-                </div>
-              ))}
-              {(services ?? []).length === 0 && <p className="text-sm text-muted-foreground">Hizmet eklenmemiş.</p>}
-            </div>
-          </section>
+          <ServicesSection shopId={id} services={services ?? []} />
 
           <section className="mt-6">
             <h2 className="mb-2 font-display text-lg tracking-wider">Ekibimiz</h2>
@@ -178,18 +155,8 @@ function ShopDetail() {
 
           <ReviewSection shopId={id} userId={userId} reviews={reviews ?? []} />
 
-          <div className="mt-6 mb-4">
-            <Link
-              to="/randevu-al"
-              search={{ shop: id } as never}
-              className="flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary/80 font-semibold text-primary-foreground shadow-lg active:scale-95 transition"
-            >
-              Randevu Al
-            </Link>
-          </div>
-
           {shop.lat != null && shop.lng != null && (
-            <section className="mt-2 mb-6">
+            <section className="mt-6 mb-6">
               <h2 className="mb-2 font-display text-lg tracking-wider">Konum</h2>
               <button
                 onClick={() => openInDeviceMap({ lat: shop.lat, lng: shop.lng, address: shop.address, name: shop.name })}
@@ -204,6 +171,55 @@ function ShopDetail() {
         </div>
       </div>
     </AppShell>
+  );
+}
+
+type ServiceRow = { id: string; name: string; description: string | null; duration_min: number | null; price: number | string | null };
+
+function ServicesSection({ shopId, services }: { shopId: string; services: ServiceRow[] }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const toggle = (id: string) => setSelected((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+  const sel = useMemo(() => services.filter((s) => selected.includes(s.id)), [services, selected]);
+  const total = useMemo(() => sel.reduce((s, x) => s + Number(x.price ?? 0), 0), [sel]);
+  const totalMin = useMemo(() => sel.reduce((s, x) => s + Number(x.duration_min ?? 0), 0), [sel]);
+  return (
+    <section className="mt-6">
+      <h2 className="mb-2 font-display text-lg tracking-wider">Hizmetler</h2>
+      <p className="text-xs text-muted-foreground mb-2">Birden fazla hizmet seçebilirsin.</p>
+      <div className="space-y-2">
+        {services.map((s) => {
+          const checked = selected.includes(s.id);
+          return (
+            <button
+              key={s.id} type="button" onClick={() => toggle(s.id)}
+              className={`w-full text-left rounded-xl border p-3 active:scale-[0.99] transition flex gap-3 ${checked ? "border-primary bg-primary/5" : "border-border bg-card"}`}
+            >
+              <Checkbox checked={checked} className="mt-1 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-medium">{s.name}</p>
+                  <p className="font-display text-xl text-primary shrink-0">{Number(s.price ?? 0).toFixed(0)}₺</p>
+                </div>
+                {s.description && <p className="mt-0.5 text-xs text-muted-foreground">{s.description}</p>}
+                <p className="mt-1 text-xs text-muted-foreground">{s.duration_min} dk</p>
+              </div>
+            </button>
+          );
+        })}
+        {services.length === 0 && <p className="text-sm text-muted-foreground">Hizmet eklenmemiş.</p>}
+      </div>
+      {services.length > 0 && (
+        <Link
+          to="/randevu-al"
+          search={{ shop: shopId, services: selected.join(",") } as never}
+          className="mt-4 flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-primary to-primary/80 font-semibold text-primary-foreground shadow-lg active:scale-95 transition"
+        >
+          {selected.length > 0
+            ? <>Randevu Al · {sel.length} hizmet · {total.toFixed(0)}₺ ({totalMin} dk)</>
+            : <>Randevu Al</>}
+        </Link>
+      )}
+    </section>
   );
 }
 
