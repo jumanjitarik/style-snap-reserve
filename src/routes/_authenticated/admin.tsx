@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -30,19 +31,82 @@ function AdminPanel() {
     <AppShell>
       <header className="px-4 pt-8 pb-3">
         <h1 className="font-display text-3xl">Yönetici Paneli</h1>
-        <p className="text-xs text-muted-foreground">Salonlar, hizmetler ve çalışanlar</p>
+        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler ve çalışanlar</p>
       </header>
-      <Tabs defaultValue="shops" className="px-4">
-        <TabsList className="grid grid-cols-3 w-full">
+      <Tabs defaultValue="stats" className="px-4">
+        <TabsList className="grid grid-cols-4 w-full">
+          <TabsTrigger value="stats">İstatistik</TabsTrigger>
           <TabsTrigger value="shops">Salonlar</TabsTrigger>
           <TabsTrigger value="services">Hizmetler</TabsTrigger>
           <TabsTrigger value="staff">Çalışan</TabsTrigger>
         </TabsList>
+        <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
         <TabsContent value="staff"><StaffTab /></TabsContent>
       </Tabs>
     </AppShell>
+  );
+}
+
+const PERIODS = [
+  { key: "1d", label: "Günlük", days: 1 },
+  { key: "7d", label: "Haftalık", days: 7 },
+  { key: "30d", label: "Aylık", days: 30 },
+  { key: "90d", label: "3 Aylık", days: 90 },
+  { key: "180d", label: "6 Aylık", days: 180 },
+  { key: "365d", label: "Yıllık", days: 365 },
+] as const;
+
+function StatsTab() {
+  const [period, setPeriod] = useState<typeof PERIODS[number]>(PERIODS[2]);
+  const since = new Date(Date.now() - period.days * 86400_000).toISOString();
+
+  const { data: stats } = useQuery({
+    queryKey: ["admin-stats", period.key],
+    queryFn: async () => {
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("id, status, payment_amount, created_at")
+        .gte("created_at", since);
+      const list = appts ?? [];
+      const total = list.length;
+      const cancelled = list.filter((a) => a.status === "cancelled").length;
+      const confirmed = list.filter((a) => a.status === "confirmed" || a.status === "completed").length;
+      const revenue = list
+        .filter((a) => a.status === "confirmed" || a.status === "completed")
+        .reduce((s, a) => s + Number(a.payment_amount ?? 0), 0);
+      return { total, cancelled, confirmed, revenue };
+    },
+  });
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="flex gap-1.5 flex-wrap">
+        {PERIODS.map((p) => (
+          <button key={p.key} onClick={() => setPeriod(p)}
+            className={`rounded-full border px-3 py-1.5 text-xs active:scale-95 transition ${period.key === p.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card"}`}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <StatCard icon={TrendingUp} label="Ciro" value={`${(stats?.revenue ?? 0).toFixed(0)}₺`} accent />
+        <StatCard icon={CalendarDays} label="Randevu" value={stats?.total ?? 0} />
+        <StatCard icon={Star} label="Onaylı" value={stats?.confirmed ?? 0} />
+        <StatCard icon={XCircle} label="İptal" value={stats?.cancelled ?? 0} />
+      </div>
+      <p className="text-[11px] text-muted-foreground text-center pt-2">{period.label} • son {period.days} gün</p>
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Star; label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div className={`rounded-xl border p-4 ${accent ? "border-primary/40 bg-gradient-to-br from-primary/15 to-transparent" : "border-border bg-card"}`}>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground"><Icon className="h-4 w-4 text-primary" />{label}</div>
+      <p className="font-display text-3xl mt-1">{value}</p>
+    </div>
   );
 }
 
@@ -58,7 +122,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; phone: string; lat: string; lng: string; cover_image_url: string } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
@@ -78,6 +142,7 @@ function ShopsTab() {
         lat: editing.lat ? parseFloat(editing.lat) : null,
         lng: editing.lng ? parseFloat(editing.lng) : null,
         cover_image_url: editing.cover_image_url || null,
+        is_featured: editing.is_featured,
       };
       if (editing.id) {
         const { error } = await supabase.from("barbershops").update(payload).eq("id", editing.id);
@@ -88,6 +153,15 @@ function ShopsTab() {
       }
     },
     onSuccess: () => { toast.success("Kaydedildi"); setEditing(null); qc.invalidateQueries({ queryKey: ["admin-shops"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleFeatured = useMutation({
+    mutationFn: async ({ id, val }: { id: string; val: boolean }) => {
+      const { error } = await supabase.from("barbershops").update({ is_featured: val }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-shops"] }); toast.success("Güncellendi"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -114,6 +188,10 @@ function ShopsTab() {
           <div className="flex-1"><Label>Enlem (lat)</Label><Input value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value })} placeholder="41.0082" /></div>
           <div className="flex-1"><Label>Boylam (lng)</Label><Input value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value })} placeholder="28.9784" /></div>
         </div>
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <Label className="!m-0">⭐ Öne Çıkan</Label>
+          <Switch checked={editing.is_featured} onCheckedChange={(v) => setEditing({ ...editing, is_featured: v })} />
+        </div>
         <div>
           <Label>Kapak Fotoğrafı</Label>
           <div className="flex gap-2 items-center">
@@ -138,21 +216,28 @@ function ShopsTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", phone: "", lat: "", lng: "", cover_image_url: "" })} className="w-full">
+      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
       {(shops ?? []).map((s) => (
         <div key={s.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-semibold truncate">{s.name}</p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="font-semibold truncate">{s.name}</p>
+                {s.is_featured && <Star className="h-3.5 w-3.5 fill-primary text-primary shrink-0" />}
+              </div>
               <p className="text-xs text-muted-foreground truncate">{s.address}</p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
+              <button onClick={() => toggleFeatured.mutate({ id: s.id, val: !s.is_featured })}
+                className={`text-[10px] rounded-full px-2 py-1 border active:scale-95 transition ${s.is_featured ? "bg-primary/20 text-primary border-primary/40" : "border-border text-muted-foreground"}`}>
+                {s.is_featured ? "★ Öne Çıkan" : "Öne Çıkar"}
+              </button>
               <Button size="sm" variant="ghost" onClick={() => setEditing({
                 id: s.id, name: s.name, category: s.category, description: s.description ?? "",
                 address: s.address, phone: s.phone ?? "", lat: s.lat?.toString() ?? "", lng: s.lng?.toString() ?? "",
-                cover_image_url: s.cover_image_url ?? "",
+                cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
             </div>
@@ -167,6 +252,7 @@ function ServicesTab() {
   const qc = useQueryClient();
   const [shopId, setShopId] = useState<string>("");
   const [form, setForm] = useState({ name: "", description: "", duration_min: "30", price: "" });
+  const [editPrices, setEditPrices] = useState<Record<string, string>>({});
 
   const { data: shops } = useQuery({ queryKey: ["admin-shops-min"], queryFn: async () => (await supabase.from("barbershops").select("id, name")).data ?? [] });
   const { data: services } = useQuery({
@@ -183,6 +269,14 @@ function ServicesTab() {
       if (error) throw error;
     },
     onSuccess: () => { setForm({ name: "", description: "", duration_min: "30", price: "" }); qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Eklendi"); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const updatePrice = useMutation({
+    mutationFn: async ({ id, price }: { id: string; price: number }) => {
+      const { error } = await supabase.from("services").update({ price }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Fiyat güncellendi"); },
     onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
@@ -209,12 +303,38 @@ function ServicesTab() {
             <Button onClick={() => add.mutate()} disabled={!form.name || !form.price} className="w-full">Ekle</Button>
           </div>
           <div className="space-y-2">
-            {(services ?? []).map((s) => (
-              <div key={s.id} className="flex justify-between rounded-xl border border-border bg-card p-3">
-                <div><p className="font-medium">{s.name}</p><p className="text-xs text-muted-foreground">{s.duration_min}dk · {s.price}₺</p></div>
-                <Button size="icon" variant="ghost" onClick={() => del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            ))}
+            {(services ?? []).map((s) => {
+              const draft = editPrices[s.id];
+              return (
+                <div key={s.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{s.name}</p>
+                      <p className="text-xs text-muted-foreground">{s.duration_min} dk</p>
+                    </div>
+                    <Button size="icon" variant="ghost" onClick={() => del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Label className="text-xs !m-0 text-muted-foreground">Fiyat (₺)</Label>
+                    <Input
+                      type="number" className="h-9 w-24"
+                      value={draft ?? s.price?.toString() ?? ""}
+                      onChange={(e) => setEditPrices({ ...editPrices, [s.id]: e.target.value })}
+                    />
+                    <Button
+                      size="sm"
+                      disabled={!draft || parseFloat(draft) === Number(s.price)}
+                      onClick={() => {
+                        const p = parseFloat(draft ?? "");
+                        if (!isNaN(p)) updatePrice.mutate({ id: s.id, price: p });
+                      }}
+                    >
+                      Güncelle
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}

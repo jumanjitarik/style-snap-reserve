@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
+import { Route as HesapRouteImport } from './routes/hesap'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
+import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
 const RandevuAlRoute = RandevuAlRouteImport.update({
@@ -27,6 +29,11 @@ const RandevuAlRoute = RandevuAlRouteImport.update({
 const KuaforlerRoute = KuaforlerRouteImport.update({
   id: '/kuaforler',
   path: '/kuaforler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HesapRoute = HesapRouteImport.update({
+  id: '/hesap',
+  path: '/hesap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -59,6 +66,12 @@ const AuthenticatedFavorilerRoute = AuthenticatedFavorilerRouteImport.update({
   path: '/favoriler',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBildirimlerRoute =
+  AuthenticatedBildirimlerRouteImport.update({
+    id: '/bildirimler',
+    path: '/bildirimler',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -68,9 +81,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
@@ -78,9 +93,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
@@ -90,9 +107,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
@@ -102,9 +121,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
     | '/admin'
+    | '/bildirimler'
     | '/favoriler'
     | '/randevularim'
     | '/kuafor/$id'
@@ -112,9 +133,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
     | '/admin'
+    | '/bildirimler'
     | '/favoriler'
     | '/randevularim'
     | '/kuafor/$id'
@@ -123,9 +146,11 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
     | '/_authenticated/admin'
+    | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
     | '/_authenticated/randevularim'
     | '/kuafor/$id'
@@ -135,6 +160,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  HesapRoute: typeof HesapRoute
   KuaforlerRoute: typeof KuaforlerRoute
   RandevuAlRoute: typeof RandevuAlRoute
   KuaforIdRoute: typeof KuaforIdRoute
@@ -154,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/kuaforler'
       fullPath: '/kuaforler'
       preLoaderRoute: typeof KuaforlerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hesap': {
+      id: '/hesap'
+      path: '/hesap'
+      fullPath: '/hesap'
+      preLoaderRoute: typeof HesapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -198,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFavorilerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/bildirimler': {
+      id: '/_authenticated/bildirimler'
+      path: '/bildirimler'
+      fullPath: '/bildirimler'
+      preLoaderRoute: typeof AuthenticatedBildirimlerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -210,12 +250,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBildirimlerRoute: typeof AuthenticatedBildirimlerRoute
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBildirimlerRoute: AuthenticatedBildirimlerRoute,
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
 }
@@ -227,6 +269,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  HesapRoute: HesapRoute,
   KuaforlerRoute: KuaforlerRoute,
   RandevuAlRoute: RandevuAlRoute,
   KuaforIdRoute: KuaforIdRoute,
