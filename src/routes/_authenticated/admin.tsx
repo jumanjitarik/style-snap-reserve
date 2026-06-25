@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import * as XLSX from "xlsx";
 
@@ -51,6 +51,9 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
+        <TabsList className="grid grid-cols-1 w-full mt-2">
+          <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push Gönder</TabsTrigger>
+        </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
@@ -59,6 +62,7 @@ function AdminPanel() {
         <TabsContent value="ann"><AnnouncementsTab /></TabsContent>
         <TabsContent value="settings"><SettingsTab /></TabsContent>
         <TabsContent value="activity"><ActivityTab /></TabsContent>
+        <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
