@@ -6,6 +6,8 @@ import { BackButton } from "@/components/BackButton";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { Bell } from "lucide-react";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/bildirimler")({
   ssr: false,
@@ -27,6 +29,29 @@ function NotifPage() {
       return data ?? [];
     },
   });
+
+  useEffect(() => {
+    let userId: string | null = null;
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    supabase.auth.getUser().then(({ data: u }) => {
+      userId = u.user?.id ?? null;
+      if (!userId) return;
+      ch = supabase
+        .channel("notif-page")
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+          (payload) => {
+            const n = payload.new as { title: string; body?: string };
+            toast.success(n.title, { description: n.body });
+            qc.invalidateQueries({ queryKey: ["notifications"] });
+          },
+        )
+        .subscribe();
+    });
+    return () => { if (ch) supabase.removeChannel(ch); };
+  }, [qc]);
+
 
   const markAll = useMutation({
     mutationFn: async () => {
