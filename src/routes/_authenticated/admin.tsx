@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
@@ -13,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity } from "lucide-react";
+import { adminUpdateUser } from "@/lib/admin-users.functions";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -33,21 +36,29 @@ function AdminPanel() {
       <BackButton to="/" />
       <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Yönetici Paneli</h1>
-        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler, çalışanlar ve üyeler</p>
+        <p className="text-xs text-muted-foreground">Salonlar, hizmetler, üyeler, duyurular ve istatistikler</p>
       </header>
       <Tabs defaultValue="stats" className="px-4">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-4 w-full mb-2">
           <TabsTrigger value="stats">📊</TabsTrigger>
           <TabsTrigger value="shops">Salon</TabsTrigger>
           <TabsTrigger value="services">Hizmet</TabsTrigger>
           <TabsTrigger value="staff">Çalışan</TabsTrigger>
+        </TabsList>
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="users">Üye</TabsTrigger>
+          <TabsTrigger value="ann"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
+          <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
+          <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
         <TabsContent value="staff"><StaffTab /></TabsContent>
         <TabsContent value="users"><UsersTab /></TabsContent>
+        <TabsContent value="ann"><AnnouncementsTab /></TabsContent>
+        <TabsContent value="settings"><SettingsTab /></TabsContent>
+        <TabsContent value="activity"><ActivityTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
