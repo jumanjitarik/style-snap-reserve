@@ -261,8 +261,27 @@ function BookPage() {
                 <p key={s.id} className="flex justify-between"><span>{s.name}</span><span className="font-semibold">{Number(s.price).toFixed(0)}₺</span></p>
               ))}
               <hr className="border-border" />
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Varsa İndirim Kodu</p>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="KOD"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                    className="flex-1 rounded-md bg-input border border-border p-2 text-sm uppercase"
+                  />
+                  <Button type="button" variant="outline" onClick={applyDiscount}>Uygula</Button>
+                </div>
+                {appliedDiscount && (
+                  <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
+                )}
+              </div>
+              <hr className="border-border" />
               <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
-              <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{totalPrice.toFixed(0)}₺</span></p>
+              {appliedDiscount && (
+                <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
+              )}
+              <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
@@ -273,7 +292,7 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${totalPrice.toFixed(0)}₺`}
+              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
           </>
