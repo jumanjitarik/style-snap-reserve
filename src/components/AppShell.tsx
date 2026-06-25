@@ -2,13 +2,17 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { BottomNav } from "./BottomNav";
+import { AnnouncementPopup } from "./AnnouncementPopup";
+import { PullToRefresh } from "./PullToRefresh";
 import { supabase } from "@/integrations/supabase/client";
 import { startPushNotifications } from "@/lib/push";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [showStaffBtn, setShowStaffBtn] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     let active = true;
     async function load() {
       const { data: u } = await supabase.auth.getUser();
@@ -25,8 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen pb-28">
+      {mounted && <PullToRefresh />}
       <div className="mx-auto max-w-md">{children}</div>
-      {showStaffBtn && (
+      {mounted && showStaffBtn && (
         <Link
           to="/musteriler"
           aria-label="Müşteriler"
@@ -37,6 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
       )}
       <BottomNav />
+      {mounted && <AnnouncementPopup />}
     </div>
   );
 }
