@@ -14,16 +14,363 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          payment_amount: number | null
+          payment_ref: string | null
+          service_id: string
+          shop_id: string
+          staff_id: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_amount?: number | null
+          payment_ref?: string | null
+          service_id: string
+          shop_id: string
+          staff_id?: string | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_amount?: number | null
+          payment_ref?: string | null
+          service_id?: string
+          shop_id?: string
+          staff_id?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      barbershop_images: {
+        Row: {
+          created_at: string
+          id: string
+          shop_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          shop_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          shop_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barbershop_images_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      barbershops: {
+        Row: {
+          address: string
+          category: Database["public"]["Enums"]["shop_category"]
+          cover_image_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          owner_id: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          category: Database["public"]["Enums"]["shop_category"]
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          owner_id?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          category?: Database["public"]["Enums"]["shop_category"]
+          cover_image_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          owner_id?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          gender: Database["public"]["Enums"]["gender"] | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          gender?: Database["public"]["Enums"]["gender"] | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender"] | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_min: number
+          id: string
+          name: string
+          price: number
+          shop_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_min?: number
+          id?: string
+          name: string
+          price: number
+          shop_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_min?: number
+          id?: string
+          name?: string
+          price?: number
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          photo_url: string | null
+          shop_id: string
+          title: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          photo_url?: string | null
+          shop_id: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          photo_url?: string | null
+          shop_id?: string
+          title?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "owner" | "staff" | "customer"
+      appointment_status:
+        | "pending_payment"
+        | "confirmed"
+        | "cancelled"
+        | "completed"
+      gender: "male" | "female" | "other"
+      shop_category:
+        | "male_barber"
+        | "female_barber"
+        | "laser"
+        | "nail"
+        | "skin"
+        | "aesthetic"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +497,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "owner", "staff", "customer"],
+      appointment_status: [
+        "pending_payment",
+        "confirmed",
+        "cancelled",
+        "completed",
+      ],
+      gender: ["male", "female", "other"],
+      shop_category: [
+        "male_barber",
+        "female_barber",
+        "laser",
+        "nail",
+        "skin",
+        "aesthetic",
+      ],
+    },
   },
 } as const
