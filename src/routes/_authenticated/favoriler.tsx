@@ -35,7 +35,7 @@ function Favs() {
           <Link key={f.shop.id} to="/kuafor/$id" params={{ id: f.shop.id }}
             className="flex gap-3 rounded-xl bg-card border border-border p-3">
             <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-              {f.shop.cover_image_url && <img src={f.shop.cover_image_url} alt={f.shop.name} className="h-full w-full object-cover" />}
+              {f.shop.cover_image_url && <SafeImg src={f.shop.cover_image_url} alt={f.shop.name} className="h-full w-full object-cover" />}
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">{f.shop.name}</p>

@@ -87,7 +87,7 @@ function ShopDetail() {
       <BackButton />
       <div className="relative">
         <div className="relative aspect-[16/10] bg-muted">
-          {shop.cover_image_url && <img src={shop.cover_image_url} alt={shop.name} className="h-full w-full object-cover" />}
+          {shop.cover_image_url && <SafeImg src={shop.cover_image_url} alt={shop.name} className="h-full w-full object-cover" />}
           {userId && (
             <button
               onClick={() => toggleFav.mutate()}
@@ -145,7 +145,7 @@ function ShopDetail() {
               {(staff ?? []).map((p) => (
                 <div key={p.id} className="w-24 shrink-0 text-center">
                   <div className="h-20 w-20 mx-auto rounded-full bg-muted overflow-hidden">
-                    {p.photo_url && <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover" />}
+                    {p.photo_url && <SafeImg src={p.photo_url} alt={p.name} className="h-full w-full object-cover" />}
                   </div>
                   <p className="mt-1 text-xs font-medium truncate">{p.name}</p>
                   {p.title && <p className="text-[10px] text-muted-foreground truncate">{p.title}</p>}

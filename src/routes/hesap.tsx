@@ -145,7 +145,7 @@ function AccountPage() {
           <div className="flex items-center gap-3">
             <button onClick={() => fileRef.current?.click()} className="relative h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden active:scale-95 transition">
               {form.avatar_url ? (
-                <img src={form.avatar_url} alt="" className="h-full w-full object-cover" />
+                <SafeImg src={form.avatar_url} alt="" className="h-full w-full object-cover" />
               ) : (
                 <User className="h-7 w-7 text-primary" />
               )}

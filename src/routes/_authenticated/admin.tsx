@@ -227,7 +227,7 @@ function ShopsTab() {
         <div>
           <Label>Kapak Fotoğrafı</Label>
           <div className="flex gap-2 items-center">
-            {editing.cover_image_url && <img src={editing.cover_image_url} className="h-16 w-16 rounded object-cover" alt="" />}
+            {editing.cover_image_url && <SafeImg src={editing.cover_image_url} className="h-16 w-16 rounded object-cover" alt="" />}
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
               <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.cover_image_url ? "Değiştir" : "Fotoğraf yükle"}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
@@ -417,7 +417,7 @@ function StaffTab() {
             <Input placeholder="İsim" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Input placeholder="Ünvan (örn. Usta Berber)" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             <div className="flex gap-2 items-center">
-              {form.photo_url && <img src={form.photo_url} className="h-12 w-12 rounded-full object-cover" alt="" />}
+              {form.photo_url && <SafeImg src={form.photo_url} className="h-12 w-12 rounded-full object-cover" alt="" />}
               <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
                 <Upload className="mx-auto h-4 w-4 mb-1" /> Fotoğraf yükle
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
@@ -433,7 +433,7 @@ function StaffTab() {
             {(staff ?? []).map((p) => (
               <div key={p.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0">
-                  {p.photo_url && <img src={p.photo_url} className="h-full w-full object-cover" alt="" />}
+                  {p.photo_url && <SafeImg src={p.photo_url} className="h-full w-full object-cover" alt="" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium truncate">{p.name}</p>
@@ -880,7 +880,7 @@ function BroadcastTab() {
         <div>
           <Label className="text-xs">Görsel (opsiyonel)</Label>
           <div className="flex gap-2 items-center mt-1">
-            {form.image_url && <img src={form.image_url} alt="" className="h-14 w-14 rounded object-cover" />}
+            {form.image_url && <SafeImg src={form.image_url} alt="" className="h-14 w-14 rounded object-cover" />}
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
               <Upload className="mx-auto h-4 w-4 mb-1" /> Görsel yükle
               <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImg(f); }} />
