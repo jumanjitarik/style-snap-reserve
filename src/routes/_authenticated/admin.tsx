@@ -211,8 +211,8 @@ function ShopsTab() {
         <div><Label>İl</Label><Input value={editing.city} onChange={(e) => setEditing({ ...editing, city: e.target.value })} placeholder="Alanya / Antalya / İstanbul..." /></div>
         <div><Label>Telefon</Label><Input value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-2">
-          <div><Label>Enlem (lat)</Label><Input value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value })} placeholder="36.5444" inputMode="decimal" /></div>
-          <div><Label>Boylam (lng)</Label><Input value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value })} placeholder="31.9968" inputMode="decimal" /></div>
+          <div><Label>Enlem (lat)</Label><Input type="text" inputMode="text" value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value.replace(",", ".").replace(/[^0-9.\-]/g, "") })} placeholder="36.5444" /></div>
+          <div><Label>Boylam (lng)</Label><Input type="text" inputMode="text" value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value.replace(",", ".").replace(/[^0-9.\-]/g, "") })} placeholder="31.9968" /></div>
         </div>
         {(() => {
           const la = parseFloat(editing.lat), ln = parseFloat(editing.lng);
@@ -908,28 +908,27 @@ function AccountingTab() {
       return data ?? [];
     },
   });
-  const [shopId, setShopId] = useState<string>("");
-  useEffect(() => { if (!shopId && shops && shops.length > 0) setShopId(shops[0].id); }, [shops, shopId]);
+  const [shopId, setShopId] = useState<string>("ALL");
 
   const { data: rows } = useQuery({
     queryKey: ["acct-rows", shopId],
     enabled: !!shopId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("appointments")
         .select("id, starts_at, status, payment_amount, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
-        .eq("shop_id", shopId)
         .order("starts_at", { ascending: false });
+      if (shopId !== "ALL") q = q.eq("shop_id", shopId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 
   const { data: serviceMap } = useQuery({
-    queryKey: ["acct-services", shopId],
-    enabled: !!shopId,
+    queryKey: ["acct-services-all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("id, name, price").eq("shop_id", shopId);
+      const { data, error } = await supabase.from("services").select("id, name, price");
       if (error) throw error;
       const m = new Map<string, { name: string; price: number }>();
       (data ?? []).forEach((s) => m.set(s.id, { name: s.name, price: Number(s.price ?? 0) }));
@@ -954,7 +953,7 @@ function AccountingTab() {
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Muhasebe");
-    XLSX.writeFile(wb, `muhasebe-${shops?.find((s) => s.id === shopId)?.name ?? "salon"}.xlsx`);
+    XLSX.writeFile(wb, `muhasebe-${shopId === "ALL" ? "tum-salonlar" : (shops?.find((s) => s.id === shopId)?.name ?? "salon")}.xlsx`);
   };
 
   return (
@@ -962,7 +961,10 @@ function AccountingTab() {
       <Label>Salon Seç</Label>
       <Select value={shopId} onValueChange={setShopId}>
         <SelectTrigger><SelectValue placeholder="Salon seç" /></SelectTrigger>
-        <SelectContent>{(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+        <SelectContent>
+          <SelectItem value="ALL">🏪 Bütün Salonlar</SelectItem>
+          {(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+        </SelectContent>
       </Select>
 
       <div className="grid grid-cols-2 gap-2">
