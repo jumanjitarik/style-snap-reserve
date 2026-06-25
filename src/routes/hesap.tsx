@@ -95,6 +95,34 @@ function AccountPage() {
     navigate({ to: "/" });
   }
 
+  async function deleteAccount() {
+    if (!userId) return;
+    if (!confirm("Hesabını ve tüm verilerini kalıcı olarak silmek istediğine emin misin?")) return;
+    try {
+      const { adminDeleteSelf } = await import("@/lib/admin-users.functions");
+      await adminDeleteSelf();
+      await supabase.auth.signOut();
+      toast.success("Hesabın silindi");
+      navigate({ to: "/" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function removeAvatar() {
+    setForm((f) => ({ ...f, avatar_url: "" }));
+    toast.info("Fotoğraf kaldırıldı, kaydet'e bas");
+  }
+
+  async function saveAvatar() {
+    if (!userId) return;
+    const { error } = await supabase.from("profiles").update({ avatar_url: form.avatar_url || null }).eq("id", userId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Fotoğraf kaydedildi");
+    qc.invalidateQueries({ queryKey: ["profile", userId] });
+  }
+
+
   if (!authChecked || !userId) {
     return (
       <AppShell>
