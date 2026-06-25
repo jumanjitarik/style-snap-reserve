@@ -497,16 +497,10 @@ function UsersTab() {
 
           <Input placeholder="Üye ara (isim / e-posta / telefon)" value={search} onChange={(e) => setSearch(e.target.value)} />
 
-          <p className="text-xs text-muted-foreground">Aşağıdan üye seç → Sahip / Çalışan olarak ata</p>
-          <div className="space-y-2 max-h-72 overflow-y-auto">
+          <p className="text-xs text-muted-foreground">Aşağıdan üye seç → Sahip / Çalışan ata veya bilgilerini düzenle</p>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
             {(profiles ?? []).map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-card p-3">
-                <p className="font-medium text-sm">{p.full_name ?? "—"}</p>
-                <p className="text-xs text-muted-foreground truncate">{p.email} {p.phone && `· ${p.phone}`}</p>
-                <div className="mt-2 flex gap-1.5">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setOwner.mutate(p.id)}>Sahip yap</Button>
-                </div>
-              </div>
+              <UserRow key={p.id} profile={p} onAssignOwner={() => setOwner.mutate(p.id)} />
             ))}
           </div>
 
