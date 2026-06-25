@@ -13,6 +13,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+    // Register service worker for richer notifications
+    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
     let active = true;
     async function load() {
       const { data: u } = await supabase.auth.getUser();

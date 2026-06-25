@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { addDays, format, startOfDay } from "date-fns";
 import { tr } from "date-fns/locale";
 
-const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional() });
+const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional() });
 
 export const Route = createFileRoute("/randevu-al")({
   validateSearch: (s) => searchSchema.parse(s),
@@ -25,7 +25,7 @@ const SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","
 
 function BookPage() {
   const navigate = useNavigate();
-  const { shop: initialShop, service: initialService } = Route.useSearch();
+  const { shop: initialShop, service: initialService, services: initialServices } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -37,10 +37,11 @@ function BookPage() {
     });
   }, [navigate]);
 
-  const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialService ? 4 : 3) : 1);
+  const initialIds = initialServices ? initialServices.split(",").filter(Boolean) : (initialService ? [initialService] : []);
+  const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialIds.length > 0 ? 4 : 3) : 1);
   const [category, setCategory] = useState<ShopCategory | null>(null);
   const [shopId, setShopId] = useState<string | null>(initialShop ?? null);
-  const [serviceIds, setServiceIds] = useState<string[]>(initialService ? [initialService] : []);
+  const [serviceIds, setServiceIds] = useState<string[]>(initialIds);
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
   const [time, setTime] = useState<string | null>(null);
