@@ -41,10 +41,14 @@ function MyAppts() {
     <AppShell>
       <header className="px-4 pt-8 pb-3">
         <h1 className="font-display text-3xl">Randevularım</h1>
+        <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
       </header>
       <div className="px-4 space-y-3">
         {(data ?? []).map((a) => {
-          const upcoming = new Date(a.starts_at) > new Date() && a.status === "confirmed";
+          const startsAt = new Date(a.starts_at);
+          const hoursLeft = (startsAt.getTime() - Date.now()) / 3_600_000;
+          const canCancel = hoursLeft > 24 && a.status === "confirmed";
+          const upcoming = startsAt > new Date() && a.status === "confirmed";
           return (
             <div key={a.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
@@ -61,13 +65,17 @@ function MyAppts() {
                 </span>
               </div>
               <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(new Date(a.starts_at), "d MMMM yyyy · HH:mm", { locale: tr })}</p>
+                <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(startsAt, "d MMMM yyyy · HH:mm", { locale: tr })}</p>
                 {a.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{a.shop.address}</p>}
               </div>
               {upcoming && (
-                <Button variant="outline" size="sm" className="mt-3 w-full" onClick={() => cancel.mutate(a.id)}>
-                  İptal Et
-                </Button>
+                canCancel ? (
+                  <Button variant="outline" size="sm" className="mt-3 w-full active:scale-95 transition" onClick={() => cancel.mutate(a.id)}>
+                    İptal Et
+                  </Button>
+                ) : (
+                  <p className="mt-3 text-[11px] text-center text-muted-foreground">İptal süresi doldu (24 saatten az kaldı).</p>
+                )
               )}
             </div>
           );

@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Scissors, Plus, Heart, Bell, User, Shield } from "lucide-react";
+import { Home, Scissors, Plus, Heart, Bell, User, Shield, CalendarCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
