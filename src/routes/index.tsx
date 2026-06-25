@@ -20,20 +20,23 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [q, setQ] = useState("");
   const { data: shops } = useQuery({
-    queryKey: ["shops", "featured"],
+    queryKey: ["shops", "list"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("barbershops")
-        .select("id, name, category, address, cover_image_url")
-        .limit(20);
+        .select("id, name, category, address, cover_image_url, is_featured")
+        .order("is_featured", { ascending: false })
+        .limit(40);
       if (error) throw error;
       return data;
     },
   });
 
+  const isSearching = q.trim().length > 0;
   const filtered = (shops ?? []).filter((s) =>
     !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.address?.toLowerCase().includes(q.toLowerCase()),
   );
+  const featured = (shops ?? []).filter((s) => s.is_featured);
 
   return (
     <AppShell>
@@ -54,41 +57,39 @@ function Index() {
         </div>
       </div>
 
-      <section className="px-4 pt-6">
-        <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {CATEGORIES.map((c) => (
-            <Link
-              key={c.value}
-              to="/kuaforler"
-              search={{ cat: c.value } as never}
-              className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-3 hover:border-primary/50 transition"
-            >
-              <c.icon className="h-6 w-6 text-primary" />
-              <span className="text-[11px] text-center leading-tight">{c.label}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {!isSearching && (
+        <section className="px-4 pt-6">
+          <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {CATEGORIES.map((c) => (
+              <Link
+                key={c.value}
+                to="/kuaforler"
+                search={{ cat: c.value } as never}
+                className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-3 hover:border-primary/50 transition active:scale-95"
+              >
+                <c.icon className="h-6 w-6 text-primary" />
+                <span className="text-[11px] text-center leading-tight">{c.label}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="px-4 pt-8">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-display tracking-wider">Öne Çıkanlar</h2>
-          <Link to="/kuaforler" className="text-xs text-primary">Tümü →</Link>
+          <h2 className="text-lg font-display tracking-wider">
+            {isSearching ? "Arama Sonuçları" : "Öne Çıkanlar"}
+          </h2>
+          {!isSearching && <Link to="/kuaforler" className="text-xs text-primary">Tümü →</Link>}
         </div>
         <div className="space-y-3">
-          {filtered.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              <Scissors className="mx-auto mb-2 h-8 w-8 opacity-50" />
-              Henüz salon eklenmemiş.
-            </div>
-          )}
-          {filtered.map((s) => (
+          {(isSearching ? filtered : (featured.length > 0 ? featured : filtered)).slice(0, 12).map((s) => (
             <Link
               key={s.id}
               to="/kuafor/$id"
               params={{ id: s.id }}
-              className="block overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition"
+              className="block overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition active:scale-[0.98]"
             >
               <div className="relative aspect-[16/9] bg-muted">
                 {s.cover_image_url && (
@@ -97,14 +98,15 @@ function Index() {
                 <span className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[10px] font-medium">
                   {categoryLabel(s.category)}
                 </span>
+                {s.is_featured && (
+                  <span className="absolute top-2 right-2 rounded-full bg-primary/90 text-primary-foreground px-2 py-0.5 text-[10px] font-bold tracking-wide">
+                    ★ ÖNE ÇIKAN
+                  </span>
+                )}
               </div>
               <div className="p-3">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold leading-tight">{s.name}</h3>
-                  <div className="flex items-center gap-1 text-xs text-primary">
-                    <Star className="h-3 w-3 fill-primary" />
-                    <span>—</span>
-                  </div>
                 </div>
                 {s.address && (
                   <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
@@ -115,6 +117,12 @@ function Index() {
               </div>
             </Link>
           ))}
+          {(isSearching ? filtered : shops ?? []).length === 0 && (
+            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              <Scissors className="mx-auto mb-2 h-8 w-8 opacity-50" />
+              {isSearching ? "Sonuç bulunamadı." : "Henüz salon eklenmemiş."}
+            </div>
+          )}
         </div>
       </section>
     </AppShell>

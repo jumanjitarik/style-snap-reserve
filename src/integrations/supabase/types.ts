@@ -17,6 +17,8 @@ export type Database = {
       appointments: {
         Row: {
           created_at: string
+          guest_name: string | null
+          guest_phone: string | null
           id: string
           notes: string | null
           payment_amount: number | null
@@ -26,10 +28,12 @@ export type Database = {
           staff_id: string | null
           starts_at: string
           status: Database["public"]["Enums"]["appointment_status"]
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: string
           notes?: string | null
           payment_amount?: number | null
@@ -39,10 +43,12 @@ export type Database = {
           staff_id?: string | null
           starts_at: string
           status?: Database["public"]["Enums"]["appointment_status"]
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
+          guest_name?: string | null
+          guest_phone?: string | null
           id?: string
           notes?: string | null
           payment_amount?: number | null
@@ -52,7 +58,7 @@ export type Database = {
           staff_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["appointment_status"]
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -118,6 +124,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          is_featured: boolean
           lat: number | null
           lng: number | null
           name: string
@@ -132,6 +139,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean
           lat?: number | null
           lng?: number | null
           name: string
@@ -146,6 +154,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          is_featured?: boolean
           lat?: number | null
           lng?: number | null
           name?: string
@@ -177,6 +186,44 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          appointment_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
         ]

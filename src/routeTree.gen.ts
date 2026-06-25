@@ -9,19 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
+import { Route as HesapRouteImport } from './routes/hesap'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
-import { Route as AuthenticatedRandevuAlRouteImport } from './routes/_authenticated/randevu-al'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
+import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const RandevuAlRoute = RandevuAlRouteImport.update({
+  id: '/randevu-al',
+  path: '/randevu-al',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KuaforlerRoute = KuaforlerRouteImport.update({
   id: '/kuaforler',
   path: '/kuaforler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HesapRoute = HesapRouteImport.update({
+  id: '/hesap',
+  path: '/hesap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -49,16 +61,17 @@ const AuthenticatedRandevularimRoute =
     path: '/randevularim',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedRandevuAlRoute = AuthenticatedRandevuAlRouteImport.update({
-  id: '/randevu-al',
-  path: '/randevu-al',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedFavorilerRoute = AuthenticatedFavorilerRouteImport.update({
   id: '/favoriler',
   path: '/favoriler',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBildirimlerRoute =
+  AuthenticatedBildirimlerRouteImport.update({
+    id: '/bildirimler',
+    path: '/bildirimler',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -68,20 +81,24 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
+  '/randevu-al': typeof RandevuAlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
-  '/randevu-al': typeof AuthenticatedRandevuAlRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
+  '/randevu-al': typeof RandevuAlRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
-  '/randevu-al': typeof AuthenticatedRandevuAlRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -90,10 +107,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
+  '/randevu-al': typeof RandevuAlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
-  '/_authenticated/randevu-al': typeof AuthenticatedRandevuAlRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -102,20 +121,24 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/hesap'
     | '/kuaforler'
-    | '/admin'
-    | '/favoriler'
     | '/randevu-al'
+    | '/admin'
+    | '/bildirimler'
+    | '/favoriler'
     | '/randevularim'
     | '/kuafor/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/hesap'
     | '/kuaforler'
-    | '/admin'
-    | '/favoriler'
     | '/randevu-al'
+    | '/admin'
+    | '/bildirimler'
+    | '/favoriler'
     | '/randevularim'
     | '/kuafor/$id'
   id:
@@ -123,10 +146,12 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/hesap'
     | '/kuaforler'
+    | '/randevu-al'
     | '/_authenticated/admin'
+    | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
-    | '/_authenticated/randevu-al'
     | '/_authenticated/randevularim'
     | '/kuafor/$id'
   fileRoutesById: FileRoutesById
@@ -135,17 +160,33 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  HesapRoute: typeof HesapRoute
   KuaforlerRoute: typeof KuaforlerRoute
+  RandevuAlRoute: typeof RandevuAlRoute
   KuaforIdRoute: typeof KuaforIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/randevu-al': {
+      id: '/randevu-al'
+      path: '/randevu-al'
+      fullPath: '/randevu-al'
+      preLoaderRoute: typeof RandevuAlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kuaforler': {
       id: '/kuaforler'
       path: '/kuaforler'
       fullPath: '/kuaforler'
       preLoaderRoute: typeof KuaforlerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hesap': {
+      id: '/hesap'
+      path: '/hesap'
+      fullPath: '/hesap'
+      preLoaderRoute: typeof HesapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -183,18 +224,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRandevularimRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/randevu-al': {
-      id: '/_authenticated/randevu-al'
-      path: '/randevu-al'
-      fullPath: '/randevu-al'
-      preLoaderRoute: typeof AuthenticatedRandevuAlRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/favoriler': {
       id: '/_authenticated/favoriler'
       path: '/favoriler'
       fullPath: '/favoriler'
       preLoaderRoute: typeof AuthenticatedFavorilerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bildirimler': {
+      id: '/_authenticated/bildirimler'
+      path: '/bildirimler'
+      fullPath: '/bildirimler'
+      preLoaderRoute: typeof AuthenticatedBildirimlerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
@@ -209,15 +250,15 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedBildirimlerRoute: typeof AuthenticatedBildirimlerRoute
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
-  AuthenticatedRandevuAlRoute: typeof AuthenticatedRandevuAlRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedBildirimlerRoute: AuthenticatedBildirimlerRoute,
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
-  AuthenticatedRandevuAlRoute: AuthenticatedRandevuAlRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
 }
 
@@ -228,19 +269,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  HesapRoute: HesapRoute,
   KuaforlerRoute: KuaforlerRoute,
+  RandevuAlRoute: RandevuAlRoute,
   KuaforIdRoute: KuaforIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
