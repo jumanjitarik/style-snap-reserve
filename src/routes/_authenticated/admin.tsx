@@ -137,7 +137,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; maps_url: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
@@ -153,9 +153,9 @@ function ShopsTab() {
         category: editing.category,
         description: editing.description || null,
         address: editing.address,
+        city: editing.city || null,
         phone: editing.phone || null,
-        lat: editing.lat ? parseFloat(editing.lat) : null,
-        lng: editing.lng ? parseFloat(editing.lng) : null,
+        maps_url: editing.maps_url || null,
         cover_image_url: editing.cover_image_url || null,
         is_featured: editing.is_featured,
       };
@@ -198,10 +198,12 @@ function ShopsTab() {
         </div>
         <div><Label>Açıklama</Label><Textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
         <div><Label>Adres</Label><Input value={editing.address} onChange={(e) => setEditing({ ...editing, address: e.target.value })} /></div>
+        <div><Label>İl</Label><Input value={editing.city} onChange={(e) => setEditing({ ...editing, city: e.target.value })} placeholder="Alanya / Antalya / İstanbul..." /></div>
         <div><Label>Telefon</Label><Input value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
-        <div className="flex gap-2">
-          <div className="flex-1"><Label>Enlem (lat)</Label><Input value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value })} placeholder="41.0082" /></div>
-          <div className="flex-1"><Label>Boylam (lng)</Label><Input value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value })} placeholder="28.9784" /></div>
+        <div>
+          <Label>Google Maps Konum Linki</Label>
+          <Input value={editing.maps_url} onChange={(e) => setEditing({ ...editing, maps_url: e.target.value })} placeholder="https://maps.app.goo.gl/..." />
+          <p className="text-[10px] text-muted-foreground mt-1">Google Maps'te konumu aç → Paylaş → Linki kopyala → buraya yapıştır.</p>
         </div>
         <div className="flex items-center justify-between rounded-md border border-border p-3">
           <Label className="!m-0">⭐ Öne Çıkan</Label>
@@ -212,13 +214,18 @@ function ShopsTab() {
           <div className="flex gap-2 items-center">
             {editing.cover_image_url && <img src={editing.cover_image_url} className="h-16 w-16 rounded object-cover" alt="" />}
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
-              <Upload className="mx-auto h-4 w-4 mb-1" /> Fotoğraf yükle
+              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.cover_image_url ? "Değiştir" : "Fotoğraf yükle"}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                 const f = e.target.files?.[0]; if (!f) return;
                 try { const url = await uploadPhoto(f, "shop-cover"); setEditing({ ...editing, cover_image_url: url }); toast.success("Yüklendi"); }
                 catch (err) { toast.error((err as Error).message); }
               }} />
             </label>
+            {editing.cover_image_url && (
+              <Button size="icon" variant="destructive" onClick={() => setEditing({ ...editing, cover_image_url: "" })}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         <div className="flex gap-2 pt-2">
@@ -231,7 +238,7 @@ function ShopsTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
+      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", maps_url: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
       {(shops ?? []).map((s) => (
@@ -251,7 +258,7 @@ function ShopsTab() {
               </button>
               <Button size="sm" variant="ghost" onClick={() => setEditing({
                 id: s.id, name: s.name, category: s.category, description: s.description ?? "",
-                address: s.address, phone: s.phone ?? "", lat: s.lat?.toString() ?? "", lng: s.lng?.toString() ?? "",
+                address: s.address, city: s.city ?? "", phone: s.phone ?? "", maps_url: s.maps_url ?? "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
