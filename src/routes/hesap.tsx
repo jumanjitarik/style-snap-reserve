@@ -221,18 +221,48 @@ function AccountPage() {
           <Bell className="h-5 w-5 text-primary" /><span>Bildirimler</span>
         </Link>
         <Button variant="outline" className="w-full h-12" onClick={async () => {
-          if (!("Notification" in window)) { toast.error("Bu tarayıcıda bildirim API'si yok"); return; }
-          let perm = Notification.permission;
-          if (perm === "default") perm = await Notification.requestPermission();
-          if (perm !== "granted") { toast.error("Bildirim izni reddedildi"); return; }
           try {
+            if (!("Notification" in window) && !("serviceWorker" in navigator)) {
+              toast.error("Bu tarayıcı sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
+              return;
+            }
+            let perm: NotificationPermission = "default";
+            if ("Notification" in window) {
+              perm = Notification.permission;
+              if (perm === "default") perm = await Notification.requestPermission();
+              if (perm !== "granted") { toast.error("Bildirim izni reddedildi. Telefon ayarlarından izin verebilirsin."); return; }
+            }
             const reg = await navigator.serviceWorker?.ready;
-            const opts: NotificationOptions = { body: "Bildirim sistemi çalışıyor ✅", icon: "/favicon.ico", tag: "test", data: { url: "/" } };
-            (opts as NotificationOptions & { vibrate?: number[] }).vibrate = [200, 100, 200];
-            if (reg) await reg.showNotification("Test Bildirimi", opts);
-            else new Notification("Test Bildirimi", opts);
+            const opts: NotificationOptions = {
+              body: "Bildirim sistemi çalışıyor ✅",
+              icon: "/favicon.ico",
+              badge: "/favicon.ico",
+              tag: "test-notif",
+              data: { url: "/bildirimler" },
+            };
+            (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).vibrate = [200, 100, 200];
+            (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).renotify = true;
+            if (reg) {
+              await reg.showNotification("Test Bildirimi", opts);
+            } else if ("Notification" in window) {
+              new Notification("Test Bildirimi", opts);
+            } else {
+              toast.error("Bildirim gönderilemedi");
+              return;
+            }
+            // Also create a row so it appears in the in-app list.
+            const { data: u } = await supabase.auth.getUser();
+            if (u.user) {
+              await supabase.from("notifications").insert({
+                user_id: u.user.id,
+                title: "Test Bildirimi",
+                body: "Bildirim sistemi çalışıyor ✅",
+              });
+            }
             toast.success("Test bildirimi gönderildi");
-          } catch { toast.error("Bildirim gönderilemedi"); }
+          } catch (e) {
+            toast.error("Bildirim gönderilemedi: " + (e as Error).message);
+          }
         }}>
           <BellRing className="h-4 w-4 mr-2" /> Bildirim Testi Yap
         </Button>

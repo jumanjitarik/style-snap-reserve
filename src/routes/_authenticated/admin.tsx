@@ -465,7 +465,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked").limit(50);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at").limit(50);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -567,7 +567,7 @@ function UsersTab() {
   );
 }
 
-type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null };
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null; last_ip?: string | null; last_city?: string | null; last_country?: string | null; last_seen_at?: string | null };
 
 function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
   const [open, setOpen] = useState(false);
@@ -619,6 +619,12 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
       <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
       <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">
+        IP: <span className="font-mono">{profile.last_ip ?? "-"}</span>
+        {profile.last_city && ` · ${profile.last_city}`}
+        {profile.last_country && ` / ${profile.last_country}`}
+        {profile.last_seen_at && ` · ${new Date(profile.last_seen_at).toLocaleString("tr-TR")}`}
+      </p>
       <div className="mt-2 flex gap-1.5 flex-wrap">
         <Button size="sm" variant="outline" className="flex-1" onClick={onAssignOwner}>Sahip yap</Button>
         <Button size="sm" className="flex-1" onClick={() => setOpen((o) => !o)}>{open ? "Kapat" : "Düzenle"}</Button>
@@ -634,7 +640,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
           <div><Label className="text-xs">Ad Soyad</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
           <div><Label className="text-xs">E-posta</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
           <div><Label className="text-xs">Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-          <div><Label className="text-xs">Yeni Şifre (boş bırak = değişmez)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="en az 6 karakter" /></div>
+          <div><Label className="text-xs">Yeni Şifre (boş bırak = değişmez)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="en az 4 karakter" /></div>
           <Button size="sm" className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>Kaydet</Button>
         </div>
       )}
@@ -1022,6 +1028,8 @@ function DiscountsTab() {
   const [type, setType] = useState<"percent" | "amount">("percent");
   const [value, setValue] = useState("");
   const [active, setActive] = useState(true);
+  const [maxUses, setMaxUses] = useState("");
+  const [perUserLimit, setPerUserLimit] = useState("");
 
   const create = useMutation({
     mutationFn: async () => {
@@ -1031,10 +1039,16 @@ function DiscountsTab() {
         discount_type: type,
         discount_value: Number(value),
         active,
+        max_uses: maxUses ? Number(maxUses) : null,
+        per_user_limit: perUserLimit ? Number(perUserLimit) : null,
       });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Kupon eklendi"); setCode(""); setValue(""); qc.invalidateQueries({ queryKey: ["disc-codes"] }); },
+    onSuccess: () => {
+      toast.success("Kupon eklendi");
+      setCode(""); setValue(""); setMaxUses(""); setPerUserLimit("");
+      qc.invalidateQueries({ queryKey: ["disc-codes"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const toggle = useMutation({
@@ -1076,6 +1090,16 @@ function DiscountsTab() {
             <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === "percent" ? "10" : "50"} />
           </div>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Toplam Kullanım Limiti</Label>
+            <Input type="number" min="1" value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Sınırsız" />
+          </div>
+          <div>
+            <Label className="text-xs">Kişi Başı Limit</Label>
+            <Input type="number" min="1" value={perUserLimit} onChange={(e) => setPerUserLimit(e.target.value)} placeholder="Sınırsız" />
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Switch checked={active} onCheckedChange={setActive} />
           <Label className="!mt-0">Aktif</Label>
@@ -1091,6 +1115,9 @@ function DiscountsTab() {
               <p className="font-display text-lg">{c.code}</p>
               <p className="text-xs text-muted-foreground">
                 {c.discount_type === "percent" ? `% ${c.discount_value} indirim` : `${c.discount_value}₺ indirim`}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Toplam: {c.max_uses ?? "∞"} · Kişi başı: {c.per_user_limit ?? "∞"}
               </p>
             </div>
             <div className="flex items-center gap-2">
