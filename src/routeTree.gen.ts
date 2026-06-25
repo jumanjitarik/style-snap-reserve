@@ -9,38 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as KuaforlerRouteImport } from './routes/kuaforler'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
 
+const KuaforlerRoute = KuaforlerRouteImport.update({
+  id: '/kuaforler',
+  path: '/kuaforler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KuaforIdRoute = KuaforIdRouteImport.update({
+  id: '/kuafor/$id',
+  path: '/kuafor/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/kuaforler': typeof KuaforlerRoute
+  '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/kuaforler': typeof KuaforlerRoute
+  '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/kuaforler': typeof KuaforlerRoute
+  '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/kuaforler' | '/kuafor/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/kuaforler' | '/kuafor/$id'
+  id: '__root__' | '/' | '/kuaforler' | '/kuafor/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  KuaforlerRoute: typeof KuaforlerRoute
+  KuaforIdRoute: typeof KuaforIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/kuaforler': {
+      id: '/kuaforler'
+      path: '/kuaforler'
+      fullPath: '/kuaforler'
+      preLoaderRoute: typeof KuaforlerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kuafor/$id': {
+      id: '/kuafor/$id'
+      path: '/kuafor/$id'
+      fullPath: '/kuafor/$id'
+      preLoaderRoute: typeof KuaforIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  KuaforlerRoute: KuaforlerRoute,
+  KuaforIdRoute: KuaforIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
