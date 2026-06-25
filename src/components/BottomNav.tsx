@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Scissors, Plus, Heart, Bell, User, CalendarCheck } from "lucide-react";
+import { Home, Store, Plus, Heart, Bell, User, CalendarCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,7 @@ type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean; pr
 
 const baseItems: NavItem[] = [
   { to: "/", label: "Ana", icon: Home },
-  { to: "/kuaforler", label: "Kuaför", icon: Scissors },
+  { to: "/kuaforler", label: "Salonlar", icon: Store },
   { to: "/favoriler", label: "Favori", icon: Heart },
   { to: "/randevu-al", label: "Randevu Al", icon: Plus, fab: true },
   { to: "/randevularim", label: "Randevu", icon: CalendarCheck },
@@ -19,6 +19,7 @@ const baseItems: NavItem[] = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -35,11 +36,34 @@ export function BottomNav() {
     return () => { active = false; sub.data.subscription.unsubscribe(); };
   }, []);
 
+  // Hide on scroll down, show on scroll up.
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const dy = y - lastY;
+        if (y < 40) setHidden(false);
+        else if (dy > 6) setHidden(true);
+        else if (dy < -6) setHidden(false);
+        lastY = y;
+        ticking = false;
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const items: NavItem[] = baseItems;
 
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary/20 bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
+    <nav className={cn(
+      "fixed bottom-0 left-0 right-0 z-50 border-t border-primary/20 bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.5)] transition-transform duration-300 ease-out",
+      hidden ? "translate-y-full" : "translate-y-0",
+    )}>
       <ul className="mx-auto flex max-w-md items-end justify-between px-1.5 pt-2">
         {items.map(({ to, label, icon: Icon, fab, profile }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
