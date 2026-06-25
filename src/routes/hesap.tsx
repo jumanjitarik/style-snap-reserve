@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save } from "lucide-react";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
@@ -95,6 +95,34 @@ function AccountPage() {
     navigate({ to: "/" });
   }
 
+  async function deleteAccount() {
+    if (!userId) return;
+    if (!confirm("Hesabını ve tüm verilerini kalıcı olarak silmek istediğine emin misin?")) return;
+    try {
+      const { adminDeleteSelf } = await import("@/lib/admin-users.functions");
+      await adminDeleteSelf();
+      await supabase.auth.signOut();
+      toast.success("Hesabın silindi");
+      navigate({ to: "/" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
+  async function removeAvatar() {
+    setForm((f) => ({ ...f, avatar_url: "" }));
+    toast.info("Fotoğraf kaldırıldı, kaydet'e bas");
+  }
+
+  async function saveAvatar() {
+    if (!userId) return;
+    const { error } = await supabase.from("profiles").update({ avatar_url: form.avatar_url || null }).eq("id", userId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Fotoğraf kaydedildi");
+    qc.invalidateQueries({ queryKey: ["profile", userId] });
+  }
+
+
   if (!authChecked || !userId) {
     return (
       <AppShell>
@@ -131,6 +159,17 @@ function AccountPage() {
               {profile?.phone && <p className="text-xs text-muted-foreground">{profile.phone}</p>}
             </div>
           </div>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => fileRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-1" /> Fotoğraf Yükle
+            </Button>
+            <Button size="sm" className="flex-1" onClick={saveAvatar}>
+              <Save className="h-4 w-4 mr-1" /> Kaydet
+            </Button>
+            <Button size="sm" variant="destructive" onClick={removeAvatar}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
           {roles && roles.length > 0 && (
             <div className="mt-3 flex gap-1 flex-wrap">
               {roles.map((r) => (
@@ -140,6 +179,7 @@ function AccountPage() {
               ))}
             </div>
           )}
+
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -190,6 +230,10 @@ function AccountPage() {
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
         </Button>
+        <Button variant="destructive" onClick={deleteAccount} className="w-full h-12">
+          <Trash2 className="h-4 w-4 mr-2" /> Hesabımı Sil
+        </Button>
+
       </div>
     </AppShell>
   );
