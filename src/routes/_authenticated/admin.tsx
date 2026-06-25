@@ -929,7 +929,7 @@ function AccountingTab() {
     queryKey: ["acct-services", shopId],
     enabled: !!shopId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("id, name, price").eq("barbershop_id", shopId);
+      const { data, error } = await supabase.from("services").select("id, name, price").eq("shop_id", shopId);
       if (error) throw error;
       const m = new Map<string, { name: string; price: number }>();
       (data ?? []).forEach((s) => m.set(s.id, { name: s.name, price: Number(s.price ?? 0) }));
@@ -937,8 +937,8 @@ function AccountingTab() {
     },
   });
 
-  const totalRevenue = (rows ?? []).filter((r: any) => r.status === "paid" || r.status === "confirmed" || r.status === "completed")
-    .reduce((s: number, r: any) => s + Number(r.total_price ?? 0), 0);
+  const totalRevenue = (rows ?? []).filter((r: any) => r.status === "confirmed" || r.status === "completed" || r.status === "paid")
+    .reduce((s: number, r: any) => s + Number(r.payment_amount ?? 0), 0);
   const totalCount = (rows ?? []).length;
 
   const exportXlsx = () => {
