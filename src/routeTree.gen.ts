@@ -9,16 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
-import { Route as AuthenticatedRandevuAlRouteImport } from './routes/_authenticated/randevu-al'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const RandevuAlRoute = RandevuAlRouteImport.update({
+  id: '/randevu-al',
+  path: '/randevu-al',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const KuaforlerRoute = KuaforlerRouteImport.update({
   id: '/kuaforler',
   path: '/kuaforler',
@@ -49,11 +54,6 @@ const AuthenticatedRandevularimRoute =
     path: '/randevularim',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedRandevuAlRoute = AuthenticatedRandevuAlRouteImport.update({
-  id: '/randevu-al',
-  path: '/randevu-al',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedFavorilerRoute = AuthenticatedFavorilerRouteImport.update({
   id: '/favoriler',
   path: '/favoriler',
@@ -69,9 +69,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/kuaforler': typeof KuaforlerRoute
+  '/randevu-al': typeof RandevuAlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
-  '/randevu-al': typeof AuthenticatedRandevuAlRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -79,9 +79,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/kuaforler': typeof KuaforlerRoute
+  '/randevu-al': typeof RandevuAlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
-  '/randevu-al': typeof AuthenticatedRandevuAlRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -91,9 +91,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/kuaforler': typeof KuaforlerRoute
+  '/randevu-al': typeof RandevuAlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
-  '/_authenticated/randevu-al': typeof AuthenticatedRandevuAlRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -103,9 +103,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/kuaforler'
+    | '/randevu-al'
     | '/admin'
     | '/favoriler'
-    | '/randevu-al'
     | '/randevularim'
     | '/kuafor/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -113,9 +113,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/kuaforler'
+    | '/randevu-al'
     | '/admin'
     | '/favoriler'
-    | '/randevu-al'
     | '/randevularim'
     | '/kuafor/$id'
   id:
@@ -124,9 +124,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/kuaforler'
+    | '/randevu-al'
     | '/_authenticated/admin'
     | '/_authenticated/favoriler'
-    | '/_authenticated/randevu-al'
     | '/_authenticated/randevularim'
     | '/kuafor/$id'
   fileRoutesById: FileRoutesById
@@ -136,11 +136,19 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   KuaforlerRoute: typeof KuaforlerRoute
+  RandevuAlRoute: typeof RandevuAlRoute
   KuaforIdRoute: typeof KuaforIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/randevu-al': {
+      id: '/randevu-al'
+      path: '/randevu-al'
+      fullPath: '/randevu-al'
+      preLoaderRoute: typeof RandevuAlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kuaforler': {
       id: '/kuaforler'
       path: '/kuaforler'
@@ -183,13 +191,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRandevularimRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/randevu-al': {
-      id: '/_authenticated/randevu-al'
-      path: '/randevu-al'
-      fullPath: '/randevu-al'
-      preLoaderRoute: typeof AuthenticatedRandevuAlRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/favoriler': {
       id: '/_authenticated/favoriler'
       path: '/favoriler'
@@ -210,14 +211,12 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
-  AuthenticatedRandevuAlRoute: typeof AuthenticatedRandevuAlRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
-  AuthenticatedRandevuAlRoute: AuthenticatedRandevuAlRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
 }
 
@@ -229,6 +228,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   KuaforlerRoute: KuaforlerRoute,
+  RandevuAlRoute: RandevuAlRoute,
   KuaforIdRoute: KuaforIdRoute,
 }
 export const routeTree = rootRouteImport
