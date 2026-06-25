@@ -176,7 +176,7 @@ function Index() {
                   className="flex gap-3 rounded-xl bg-card border border-border p-3 hover:border-primary/50 transition active:scale-[0.98]"
                 >
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted">
-                    {s.cover_image_url && <img src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />}
+                    {s.cover_image_url && <SafeImg src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
