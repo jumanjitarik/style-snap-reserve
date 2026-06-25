@@ -144,7 +144,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; maps_url: string; cover_image_url: string; is_featured: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
@@ -155,6 +155,8 @@ function ShopsTab() {
     mutationFn: async () => {
       if (!editing) return;
       const { data: u } = await supabase.auth.getUser();
+      const lat = editing.lat ? parseFloat(editing.lat) : null;
+      const lng = editing.lng ? parseFloat(editing.lng) : null;
       const payload = {
         name: editing.name,
         category: editing.category,
@@ -162,7 +164,8 @@ function ShopsTab() {
         address: editing.address,
         city: editing.city || null,
         phone: editing.phone || null,
-        maps_url: editing.maps_url || null,
+        lat: lat != null && !isNaN(lat) ? lat : null,
+        lng: lng != null && !isNaN(lng) ? lng : null,
         cover_image_url: editing.cover_image_url || null,
         is_featured: editing.is_featured,
       };
