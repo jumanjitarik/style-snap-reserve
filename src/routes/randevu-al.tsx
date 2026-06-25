@@ -45,6 +45,8 @@ function BookPage() {
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
   const [time, setTime] = useState<string | null>(null);
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
@@ -75,6 +77,26 @@ function BookPage() {
     setServiceIds((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   }
 
+  const finalTotal = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+
+  async function applyDiscount() {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) return;
+    const { data, error } = await supabase
+      .from("discount_codes")
+      .select("*")
+      .eq("code", code)
+      .eq("active", true)
+      .maybeSingle();
+    if (error || !data) { toast.error("Geçersiz indirim kodu"); setAppliedDiscount(null); return; }
+    if (data.expires_at && new Date(data.expires_at) < new Date()) { toast.error("Kodun süresi dolmuş"); setAppliedDiscount(null); return; }
+    const amount = data.discount_type === "percent"
+      ? totalPrice * Number(data.discount_value) / 100
+      : Number(data.discount_value);
+    setAppliedDiscount({ code: data.code, amount: Math.min(amount, totalPrice) });
+    toast.success(`İndirim uygulandı: -${Math.min(amount, totalPrice).toFixed(0)}₺`);
+  }
+
   const create = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Giriş yap");
@@ -90,7 +112,9 @@ function BookPage() {
         staff_id: staffId,
         starts_at: starts.toISOString(),
         status: "confirmed",
-        payment_amount: totalPrice,
+        payment_amount: finalTotal,
+        discount_code: appliedDiscount?.code ?? null,
+        discount_amount: appliedDiscount?.amount ?? 0,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
@@ -237,8 +261,27 @@ function BookPage() {
                 <p key={s.id} className="flex justify-between"><span>{s.name}</span><span className="font-semibold">{Number(s.price).toFixed(0)}₺</span></p>
               ))}
               <hr className="border-border" />
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Varsa İndirim Kodu</p>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="KOD"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                    className="flex-1 rounded-md bg-input border border-border p-2 text-sm uppercase"
+                  />
+                  <Button type="button" variant="outline" onClick={applyDiscount}>Uygula</Button>
+                </div>
+                {appliedDiscount && (
+                  <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
+                )}
+              </div>
+              <hr className="border-border" />
               <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
-              <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{totalPrice.toFixed(0)}₺</span></p>
+              {appliedDiscount && (
+                <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
+              )}
+              <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
@@ -249,7 +292,7 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${totalPrice.toFixed(0)}₺`}
+              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
           </>

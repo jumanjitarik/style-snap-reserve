@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { MiniMap } from "@/components/MiniMap";
 import * as XLSX from "xlsx";
@@ -53,9 +53,10 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-2 w-full mt-2">
+        <TabsList className="grid grid-cols-3 w-full mt-2">
           <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push</TabsTrigger>
           <TabsTrigger value="acct"><Receipt className="h-3.5 w-3.5 mr-1" /> Muhasebe</TabsTrigger>
+          <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -67,6 +68,7 @@ function AdminPanel() {
         <TabsContent value="activity"><ActivityTab /></TabsContent>
         <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
         <TabsContent value="acct"><AccountingTab /></TabsContent>
+        <TabsContent value="discounts"><DiscountsTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -1001,6 +1003,103 @@ function AccountingTab() {
           );
         })}
         {(rows ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Bu salonda randevu yok.</p>}
+      </div>
+    </div>
+  );
+}
+
+function DiscountsTab() {
+  const qc = useQueryClient();
+  const { data: codes } = useQuery({
+    queryKey: ["disc-codes"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("discount_codes").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+  const [code, setCode] = useState("");
+  const [type, setType] = useState<"percent" | "amount">("percent");
+  const [value, setValue] = useState("");
+  const [active, setActive] = useState(true);
+
+  const create = useMutation({
+    mutationFn: async () => {
+      if (!code.trim() || !value) throw new Error("Eksik bilgi");
+      const { error } = await supabase.from("discount_codes").insert({
+        code: code.trim().toUpperCase(),
+        discount_type: type,
+        discount_value: Number(value),
+        active,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Kupon eklendi"); setCode(""); setValue(""); qc.invalidateQueries({ queryKey: ["disc-codes"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggle = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from("discount_codes").update({ active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["disc-codes"] }),
+  });
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("discount_codes").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["disc-codes"] }),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <h3 className="font-display text-lg">Yeni İndirim Kuponu</h3>
+        <div>
+          <Label>Kod</Label>
+          <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ÖRN: HOSGELDIN10" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label>Tip</Label>
+            <Select value={type} onValueChange={(v) => setType(v as "percent" | "amount")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percent">% Yüzde</SelectItem>
+                <SelectItem value="amount">₺ Tutar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Değer</Label>
+            <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder={type === "percent" ? "10" : "50"} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={active} onCheckedChange={setActive} />
+          <Label className="!mt-0">Aktif</Label>
+        </div>
+        <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full">
+          <Plus className="h-4 w-4 mr-1" /> Kupon Ekle
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {(codes ?? []).map((c) => (
+          <div key={c.id} className="rounded-xl border border-border bg-card p-3 flex items-center justify-between">
+            <div>
+              <p className="font-display text-lg">{c.code}</p>
+              <p className="text-xs text-muted-foreground">
+                {c.discount_type === "percent" ? `% ${c.discount_value} indirim` : `${c.discount_value}₺ indirim`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={c.active} onCheckedChange={(v) => toggle.mutate({ id: c.id, active: v })} />
+              <Button size="icon" variant="ghost" onClick={() => del.mutate(c.id)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          </div>
+        ))}
+        {(codes ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Henüz kupon yok.</p>}
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Scissors, MapPin, Navigation2 } from "lucide-react";
+import { Search, Scissors, MapPin, Navigation2, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES, categoryLabel } from "@/lib/categories";
 import { AppShell } from "@/components/AppShell";
 import { LocationGate } from "@/components/LocationGate";
 import { Input } from "@/components/ui/input";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { SafeImg } from "@/components/SafeImg";
@@ -24,17 +24,40 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [q, setQ] = useState("");
   const { coords } = useGeolocation();
+  const [myCity, setMyCity] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: p } = await supabase.from("profiles").select("city").eq("id", data.user.id).maybeSingle();
+      if (p?.city) setMyCity(p.city);
+    });
+  }, []);
 
   const { data: shops } = useQuery({
     queryKey: ["shops", "list"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("barbershops")
-        .select("id, name, category, address, cover_image_url, is_featured, lat, lng")
+        .select("id, name, category, address, city, cover_image_url, is_featured, lat, lng")
         .order("is_featured", { ascending: false })
-        .limit(60);
+        .limit(80);
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: reviews } = useQuery({
+    queryKey: ["shops", "reviews-agg"],
+    queryFn: async () => {
+      const { data } = await supabase.from("reviews").select("shop_id, rating");
+      const map = new Map<string, { sum: number; count: number }>();
+      (data ?? []).forEach((r) => {
+        const cur = map.get(r.shop_id) ?? { sum: 0, count: 0 };
+        cur.sum += Number(r.rating ?? 0); cur.count += 1;
+        map.set(r.shop_id, cur);
+      });
+      return map;
     },
   });
 
@@ -51,20 +74,41 @@ function Index() {
     staleTime: 60_000,
   });
 
+  type Shop = NonNullable<typeof shops>[number] & { dist?: number; rating?: number; reviewCount?: number };
+
+  const enriched = useMemo<Shop[]>(() => {
+    return (shops ?? []).map((s) => {
+      const agg = reviews?.get(s.id);
+      const dist = coords && s.lat != null && s.lng != null ? distanceKm(coords.lat, coords.lng, s.lat, s.lng) : undefined;
+      return {
+        ...s,
+        dist,
+        rating: agg && agg.count > 0 ? agg.sum / agg.count : undefined,
+        reviewCount: agg?.count ?? 0,
+      };
+    });
+  }, [shops, reviews, coords]);
+
   const isSearching = q.trim().length > 0;
-  const filtered = (shops ?? []).filter((s) =>
+  const filtered = enriched.filter((s) =>
     !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.address?.toLowerCase().includes(q.toLowerCase()),
   );
-  const featured = (shops ?? []).filter((s) => s.is_featured);
+
+  // Featured filtered by user's city (if known)
+  const featured = useMemo(() => {
+    const fa = enriched.filter((s) => s.is_featured);
+    if (!myCity) return fa;
+    const norm = myCity.toLowerCase();
+    return fa.filter((s) => (s.city ?? s.address ?? "").toLowerCase().includes(norm));
+  }, [enriched, myCity]);
 
   const nearest = useMemo(() => {
-    if (!coords || !shops) return [];
-    return shops
-      .filter((s) => s.lat != null && s.lng != null)
-      .map((s) => ({ ...s, dist: distanceKm(coords.lat, coords.lng, s.lat!, s.lng!) }))
-      .sort((a, b) => a.dist - b.dist)
+    if (!coords) return [];
+    return enriched
+      .filter((s) => s.dist != null)
+      .sort((a, b) => (a.dist! - b.dist!))
       .slice(0, 8);
-  }, [coords, shops]);
+  }, [enriched, coords]);
 
   return (
     <LocationGate><AppShell>
@@ -104,53 +148,71 @@ function Index() {
         </section>
       )}
 
-      <section className="px-4 pt-8">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-display tracking-wider">
-            {isSearching ? "Arama Sonuçları" : "Öne Çıkanlar"}
-          </h2>
-          {!isSearching && <Link to="/kuaforler" className="text-xs text-primary">Tümü →</Link>}
-        </div>
-        <div className="space-y-3">
-          {(isSearching ? filtered : (featured.length > 0 ? featured : filtered)).slice(0, 12).map((s) => (
-            <Link
-              key={s.id}
-              to="/kuafor/$id"
-              params={{ id: s.id }}
-              className="block overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition active:scale-[0.98]"
-            >
-              <div className="relative aspect-[16/9] bg-muted">
-                {s.cover_image_url && (
-                  <SafeImg src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />
-                )}
-                <span className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[10px] font-medium">
-                  {categoryLabel(s.category)}
-                </span>
-                {s.is_featured && (
-                  <span className="absolute top-2 right-2 rounded-full bg-primary/90 text-primary-foreground px-2 py-0.5 text-[10px] font-bold tracking-wide">
-                    ★ ÖNE ÇIKAN
+      {(isSearching || featured.length > 0) && (
+        <section className="px-4 pt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-display tracking-wider">
+              {isSearching ? "Arama Sonuçları" : "Öne Çıkanlar"}
+            </h2>
+            {!isSearching && <Link to="/kuaforler" className="text-xs text-primary">Tümü →</Link>}
+          </div>
+          <div className="space-y-3">
+            {(isSearching ? filtered : featured).slice(0, 12).map((s) => (
+              <Link
+                key={s.id}
+                to="/kuafor/$id"
+                params={{ id: s.id }}
+                className="block overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition active:scale-[0.98]"
+              >
+                <div className="relative aspect-[16/9] bg-muted">
+                  {s.cover_image_url && (
+                    <SafeImg src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />
+                  )}
+                  <span className="absolute top-2 left-2 rounded-full bg-background/80 backdrop-blur px-2 py-0.5 text-[10px] font-medium">
+                    {categoryLabel(s.category)}
                   </span>
-                )}
+                  {s.is_featured && (
+                    <span className="absolute top-2 right-2 rounded-full bg-primary/90 text-primary-foreground px-2 py-0.5 text-[10px] font-bold tracking-wide">
+                      ★ ÖNE ÇIKAN
+                    </span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <h3 className="font-semibold leading-tight">{s.name}</h3>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                    {s.dist != null && (
+                      <span className="inline-flex items-center gap-1 text-primary font-semibold">
+                        <Navigation2 className="h-3 w-3" /> {formatKm(s.dist)}
+                      </span>
+                    )}
+                    {s.rating != null ? (
+                      <span className="inline-flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-primary text-primary" /> {s.rating.toFixed(1)} ({s.reviewCount} yorum)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 opacity-70">
+                        <Star className="h-3 w-3" /> Henüz yorum yok
+                      </span>
+                    )}
+                  </div>
+                  {s.address && (
+                    <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate">{s.address}</span>
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+            {(isSearching ? filtered : shops ?? []).length === 0 && (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                <Scissors className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                {isSearching ? "Sonuç bulunamadı." : "Henüz salon eklenmemiş."}
               </div>
-              <div className="p-3">
-                <h3 className="font-semibold leading-tight">{s.name}</h3>
-                {s.address && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    <span className="truncate">{s.address}</span>
-                  </p>
-                )}
-              </div>
-            </Link>
-          ))}
-          {(isSearching ? filtered : shops ?? []).length === 0 && (
-            <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              <Scissors className="mx-auto mb-2 h-8 w-8 opacity-50" />
-              {isSearching ? "Sonuç bulunamadı." : "Henüz salon eklenmemiş."}
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+          </div>
+        </section>
+      )}
 
       {!isSearching && (
         <section className="px-4 pt-8 pb-4">
@@ -160,7 +222,7 @@ function Index() {
           </div>
           {!coords ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-              Konum izni vermezsen yakındaki salonlar gözükmez.
+              Konum bekleniyor…
             </div>
           ) : nearest.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -182,10 +244,17 @@ function Index() {
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold leading-tight truncate">{s.name}</p>
                       <span className="shrink-0 rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">
-                        {formatKm(s.dist)}
+                        {formatKm(s.dist!)}
                       </span>
                     </div>
                     <p className="text-[10px] uppercase tracking-wider text-primary mt-0.5">{categoryLabel(s.category)}</p>
+                    <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                      {s.rating != null ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-primary text-primary" /> {s.rating.toFixed(1)} ({s.reviewCount})
+                        </span>
+                      ) : <span className="opacity-60">Henüz yorum yok</span>}
+                    </div>
                     {s.address && (
                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                         <MapPin className="h-3 w-3 shrink-0" />
