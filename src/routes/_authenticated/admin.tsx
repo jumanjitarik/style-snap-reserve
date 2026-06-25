@@ -210,11 +210,15 @@ function ShopsTab() {
         <div><Label>Adres</Label><Input value={editing.address} onChange={(e) => setEditing({ ...editing, address: e.target.value })} /></div>
         <div><Label>İl</Label><Input value={editing.city} onChange={(e) => setEditing({ ...editing, city: e.target.value })} placeholder="Alanya / Antalya / İstanbul..." /></div>
         <div><Label>Telefon</Label><Input value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
-        <div>
-          <Label>Google Maps Konum Linki</Label>
-          <Input value={editing.maps_url} onChange={(e) => setEditing({ ...editing, maps_url: e.target.value })} placeholder="https://maps.app.goo.gl/..." />
-          <p className="text-[10px] text-muted-foreground mt-1">Google Maps'te konumu aç → Paylaş → Linki kopyala → buraya yapıştır.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label>Enlem (lat)</Label><Input value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value })} placeholder="36.5444" inputMode="decimal" /></div>
+          <div><Label>Boylam (lng)</Label><Input value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value })} placeholder="31.9968" inputMode="decimal" /></div>
         </div>
+        {(() => {
+          const la = parseFloat(editing.lat), ln = parseFloat(editing.lng);
+          if (isNaN(la) || isNaN(ln)) return <p className="text-[10px] text-muted-foreground">Enlem/boylam girince harita önizlemesi burada görünür.</p>;
+          return <MiniMap lat={la} lng={ln} name={editing.name || "Konum"} />;
+        })()}
         <div className="flex items-center justify-between rounded-md border border-border p-3">
           <Label className="!m-0">⭐ Öne Çıkan</Label>
           <Switch checked={editing.is_featured} onCheckedChange={(v) => setEditing({ ...editing, is_featured: v })} />
@@ -248,7 +252,7 @@ function ShopsTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", maps_url: "", cover_image_url: "", is_featured: false })} className="w-full">
+      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
       {(shops ?? []).map((s) => (
@@ -268,7 +272,8 @@ function ShopsTab() {
               </button>
               <Button size="sm" variant="ghost" onClick={() => setEditing({
                 id: s.id, name: s.name, category: s.category, description: s.description ?? "",
-                address: s.address, city: s.city ?? "", phone: s.phone ?? "", maps_url: s.maps_url ?? "",
+                address: s.address, city: s.city ?? "", phone: s.phone ?? "",
+                lat: s.lat != null ? String(s.lat) : "", lng: s.lng != null ? String(s.lng) : "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
