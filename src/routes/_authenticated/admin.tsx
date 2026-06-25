@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -14,8 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
+import { MiniMap } from "@/components/MiniMap";
 import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -51,8 +52,9 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-1 w-full mt-2">
-          <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push Gönder</TabsTrigger>
+        <TabsList className="grid grid-cols-2 w-full mt-2">
+          <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push</TabsTrigger>
+          <TabsTrigger value="acct"><Receipt className="h-3.5 w-3.5 mr-1" /> Muhasebe</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -63,6 +65,7 @@ function AdminPanel() {
         <TabsContent value="settings"><SettingsTab /></TabsContent>
         <TabsContent value="activity"><ActivityTab /></TabsContent>
         <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
+        <TabsContent value="acct"><AccountingTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -141,7 +144,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; maps_url: string; cover_image_url: string; is_featured: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
@@ -152,6 +155,8 @@ function ShopsTab() {
     mutationFn: async () => {
       if (!editing) return;
       const { data: u } = await supabase.auth.getUser();
+      const lat = editing.lat ? parseFloat(editing.lat) : null;
+      const lng = editing.lng ? parseFloat(editing.lng) : null;
       const payload = {
         name: editing.name,
         category: editing.category,
@@ -159,7 +164,8 @@ function ShopsTab() {
         address: editing.address,
         city: editing.city || null,
         phone: editing.phone || null,
-        maps_url: editing.maps_url || null,
+        lat: lat != null && !isNaN(lat) ? lat : null,
+        lng: lng != null && !isNaN(lng) ? lng : null,
         cover_image_url: editing.cover_image_url || null,
         is_featured: editing.is_featured,
       };
@@ -204,11 +210,15 @@ function ShopsTab() {
         <div><Label>Adres</Label><Input value={editing.address} onChange={(e) => setEditing({ ...editing, address: e.target.value })} /></div>
         <div><Label>İl</Label><Input value={editing.city} onChange={(e) => setEditing({ ...editing, city: e.target.value })} placeholder="Alanya / Antalya / İstanbul..." /></div>
         <div><Label>Telefon</Label><Input value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
-        <div>
-          <Label>Google Maps Konum Linki</Label>
-          <Input value={editing.maps_url} onChange={(e) => setEditing({ ...editing, maps_url: e.target.value })} placeholder="https://maps.app.goo.gl/..." />
-          <p className="text-[10px] text-muted-foreground mt-1">Google Maps'te konumu aç → Paylaş → Linki kopyala → buraya yapıştır.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label>Enlem (lat)</Label><Input value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value })} placeholder="36.5444" inputMode="decimal" /></div>
+          <div><Label>Boylam (lng)</Label><Input value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value })} placeholder="31.9968" inputMode="decimal" /></div>
         </div>
+        {(() => {
+          const la = parseFloat(editing.lat), ln = parseFloat(editing.lng);
+          if (isNaN(la) || isNaN(ln)) return <p className="text-[10px] text-muted-foreground">Enlem/boylam girince harita önizlemesi burada görünür.</p>;
+          return <MiniMap lat={la} lng={ln} name={editing.name || "Konum"} />;
+        })()}
         <div className="flex items-center justify-between rounded-md border border-border p-3">
           <Label className="!m-0">⭐ Öne Çıkan</Label>
           <Switch checked={editing.is_featured} onCheckedChange={(v) => setEditing({ ...editing, is_featured: v })} />
@@ -242,7 +252,7 @@ function ShopsTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", maps_url: "", cover_image_url: "", is_featured: false })} className="w-full">
+      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
       {(shops ?? []).map((s) => (
@@ -262,7 +272,8 @@ function ShopsTab() {
               </button>
               <Button size="sm" variant="ghost" onClick={() => setEditing({
                 id: s.id, name: s.name, category: s.category, description: s.description ?? "",
-                address: s.address, city: s.city ?? "", phone: s.phone ?? "", maps_url: s.maps_url ?? "",
+                address: s.address, city: s.city ?? "", phone: s.phone ?? "",
+                lat: s.lat != null ? String(s.lat) : "", lng: s.lng != null ? String(s.lng) : "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -883,6 +894,110 @@ function BroadcastTab() {
         <Button className="w-full h-11" disabled={!form.title || !form.body || send.isPending} onClick={() => send.mutate()}>
           <Send className="h-4 w-4 mr-1" /> {send.isPending ? "Gönderiliyor..." : "Bildirimi Gönder"}
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function AccountingTab() {
+  const { data: shops } = useQuery({
+    queryKey: ["acct-shops"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("barbershops").select("id,name").order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const [shopId, setShopId] = useState<string>("");
+  useEffect(() => { if (!shopId && shops && shops.length > 0) setShopId(shops[0].id); }, [shops, shopId]);
+
+  const { data: rows } = useQuery({
+    queryKey: ["acct-rows", shopId],
+    enabled: !!shopId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, starts_at, status, payment_amount, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
+        .eq("shop_id", shopId)
+        .order("starts_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: serviceMap } = useQuery({
+    queryKey: ["acct-services", shopId],
+    enabled: !!shopId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("services").select("id, name, price").eq("shop_id", shopId);
+      if (error) throw error;
+      const m = new Map<string, { name: string; price: number }>();
+      (data ?? []).forEach((s) => m.set(s.id, { name: s.name, price: Number(s.price ?? 0) }));
+      return m;
+    },
+  });
+
+  const totalRevenue = (rows ?? []).filter((r: any) => r.status === "confirmed" || r.status === "completed" || r.status === "paid")
+    .reduce((s: number, r: any) => s + Number(r.payment_amount ?? 0), 0);
+  const totalCount = (rows ?? []).length;
+
+  const exportXlsx = () => {
+    const data = (rows ?? []).map((r: any) => ({
+      Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
+      Müşteri: r.profiles?.full_name ?? "—",
+      Telefon: r.profiles?.phone ?? "—",
+      Salon: r.barbershops?.name ?? "—",
+      Hizmetler: (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", "),
+      Durum: r.status,
+      Tutar: Number(r.payment_amount ?? 0),
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Muhasebe");
+    XLSX.writeFile(wb, `muhasebe-${shops?.find((s) => s.id === shopId)?.name ?? "salon"}.xlsx`);
+  };
+
+  return (
+    <div className="py-4 space-y-3">
+      <Label>Salon Seç</Label>
+      <Select value={shopId} onValueChange={setShopId}>
+        <SelectTrigger><SelectValue placeholder="Salon seç" /></SelectTrigger>
+        <SelectContent>{(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+      </Select>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-[10px] text-muted-foreground">Toplam Ciro</p>
+          <p className="font-display text-2xl text-primary">{totalRevenue.toFixed(0)}₺</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-[10px] text-muted-foreground">Toplam Randevu</p>
+          <p className="font-display text-2xl">{totalCount}</p>
+        </div>
+      </div>
+
+      <Button onClick={exportXlsx} variant="outline" className="w-full" disabled={!rows || rows.length === 0}>
+        <Download className="h-4 w-4 mr-1" /> Excel olarak indir
+      </Button>
+
+      <div className="space-y-2">
+        {(rows ?? []).map((r: any) => {
+          const d = new Date(r.starts_at);
+          const names = (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", ");
+          return (
+            <div key={r.id} className="rounded-xl border border-border bg-card p-3 text-xs space-y-0.5">
+              <div className="flex justify-between gap-2">
+                <p className="font-semibold text-sm truncate">{r.profiles?.full_name ?? "—"}</p>
+                <p className="font-display text-primary text-base">{Number(r.payment_amount ?? 0).toFixed(0)}₺</p>
+              </div>
+              <p className="text-muted-foreground">📞 {r.profiles?.phone ?? "—"}</p>
+              <p>🗓 {d.toLocaleDateString("tr-TR")} · {d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>
+              <p>✂️ {names || "—"}</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{r.status}</p>
+            </div>
+          );
+        })}
+        {(rows ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Bu salonda randevu yok.</p>}
       </div>
     </div>
   );

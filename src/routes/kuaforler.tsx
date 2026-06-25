@@ -23,7 +23,7 @@ const SORTS: { key: SortKey; label: string }[] = [
 
 export const Route = createFileRoute("/kuaforler")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({ meta: [{ title: "Kuaförler — BarberApp" }] }),
+  head: () => ({ meta: [{ title: "Salonlar — BarberApp" }] }),
   component: ShopList,
 });
 
@@ -113,7 +113,7 @@ function ShopList() {
     <AppShell>
       <BackButton to="/" />
       <header className="px-4 pt-16 pb-2 flex items-end justify-between gap-2">
-        <h1 className="text-3xl font-display">Kuaförler</h1>
+        <h1 className="text-3xl font-display">Salonlar</h1>
         <div className="flex items-center gap-1.5 text-xs">
           <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
           <div className="flex gap-1">
