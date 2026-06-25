@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CATEGORIES, categoryLabel, type ShopCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -39,7 +40,7 @@ function BookPage() {
   const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialService ? 4 : 3) : 1);
   const [category, setCategory] = useState<ShopCategory | null>(null);
   const [shopId, setShopId] = useState<string | null>(initialShop ?? null);
-  const [serviceId, setServiceId] = useState<string | null>(initialService ?? null);
+  const [serviceIds, setServiceIds] = useState<string[]>(initialService ? [initialService] : []);
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
   const [time, setTime] = useState<string | null>(null);
@@ -65,29 +66,36 @@ function BookPage() {
     queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId!)).data ?? [],
   });
 
-  const selectedService = useMemo(() => services?.find((s) => s.id === serviceId), [services, serviceId]);
+  const selectedServices = useMemo(() => (services ?? []).filter((s) => serviceIds.includes(s.id)), [services, serviceIds]);
+  const totalPrice = useMemo(() => selectedServices.reduce((s, x) => s + Number(x.price ?? 0), 0), [selectedServices]);
+  const totalMin = useMemo(() => selectedServices.reduce((s, x) => s + Number(x.duration_min ?? 0), 0), [selectedServices]);
+
+  function toggleService(id: string) {
+    setServiceIds((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+  }
 
   const create = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Giriş yap");
-      if (!shopId || !serviceId || !date || !time) throw new Error("Eksik bilgi");
+      if (!shopId || serviceIds.length === 0 || !date || !time) throw new Error("Eksik bilgi");
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
         shop_id: shopId,
-        service_id: serviceId,
+        service_id: serviceIds[0],
+        service_ids: serviceIds,
         staff_id: staffId,
         starts_at: starts.toISOString(),
         status: "confirmed",
-        payment_amount: selectedService?.price ?? null,
+        payment_amount: totalPrice,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Ödeme alındı, randevu onaylandı! Bildirimler gönderildi.");
+      toast.success("Ödeme alındı, randevu onaylandı!");
       navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -152,22 +160,27 @@ function BookPage() {
 
         {step === 3 && (
           <>
-            <button onClick={() => initialShop ? navigate({ to: "/kuafor/$id", params: { id: initialShop } }) : setStep(2)} className="text-xs text-primary">← Geri</button>
-            <h2 className="font-display text-xl">Hizmet Seç</h2>
+            <button onClick={() => initialShop ? navigate({ to: "/kuafor/$id", params: { id: shopId! } }) : setStep(2)} className="text-xs text-primary">← Salon</button>
+            <h2 className="font-display text-xl">Hizmet(ler) Seç</h2>
+            <p className="text-xs text-muted-foreground">Birden fazla hizmet seçebilirsin.</p>
             <div className="space-y-2">
-              {(services ?? []).map((s) => (
-                <button key={s.id} onClick={() => { setServiceId(s.id); setStep(4); }}
-                  className={cn("w-full text-left rounded-xl border p-3 active:scale-[0.98] transition", serviceId === s.id ? "border-primary" : "border-border bg-card")}>
-                  <div className="flex justify-between gap-2">
-                    <div>
-                      <p className="font-medium">{s.name}</p>
+              {(services ?? []).map((s) => {
+                const checked = serviceIds.includes(s.id);
+                return (
+                  <button key={s.id} type="button" onClick={() => toggleService(s.id)}
+                    className={cn("w-full text-left rounded-xl border p-3 active:scale-[0.98] transition flex gap-3", checked ? "border-primary bg-primary/5" : "border-border bg-card")}>
+                    <Checkbox checked={checked} className="mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between gap-2">
+                        <p className="font-medium">{s.name}</p>
+                        <p className="font-display text-lg text-primary shrink-0">{Number(s.price).toFixed(0)}₺</p>
+                      </div>
                       {s.description && <p className="text-xs text-muted-foreground mt-0.5">{s.description}</p>}
                       <p className="text-xs text-muted-foreground mt-1">{s.duration_min} dk</p>
                     </div>
-                    <p className="font-display text-xl text-primary shrink-0">{Number(s.price).toFixed(0)}₺</p>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
             {(staff ?? []).length > 0 && (
               <>
@@ -184,6 +197,9 @@ function BookPage() {
                 </div>
               </>
             )}
+            <Button onClick={() => serviceIds.length > 0 && setStep(4)} disabled={serviceIds.length === 0} className="w-full h-12">
+              Devam · {totalPrice.toFixed(0)}₺ ({totalMin} dk)
+            </Button>
           </>
         )}
 
@@ -191,10 +207,10 @@ function BookPage() {
           <>
             <button onClick={() => setStep(3)} className="text-xs text-primary">← Hizmet</button>
             <h2 className="font-display text-xl">Tarih & Saat</h2>
-            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin.</p>
+            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Pazar günleri kapalı.</p>
             <div className="rounded-xl border border-border bg-card p-2">
               <Calendar mode="single" selected={date} onSelect={setDate} locale={tr}
-                disabled={(d) => d < addDays(startOfDay(new Date()), 1)}
+                disabled={(d) => d < addDays(startOfDay(new Date()), 1) || d.getDay() === 0}
                 className="pointer-events-auto"
               />
             </div>
@@ -215,9 +231,13 @@ function BookPage() {
             <button onClick={() => setStep(4)} className="text-xs text-primary">← Tarih</button>
             <h2 className="font-display text-xl">Ödeme & Onay</h2>
             <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
-              <p><span className="text-muted-foreground">Hizmet:</span> {selectedService?.name}</p>
+              <p className="text-muted-foreground text-xs uppercase tracking-wider">Hizmetler</p>
+              {selectedServices.map((s) => (
+                <p key={s.id} className="flex justify-between"><span>{s.name}</span><span className="font-semibold">{Number(s.price).toFixed(0)}₺</span></p>
+              ))}
+              <hr className="border-border" />
               <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
-              <p><span className="text-muted-foreground">Tutar:</span> <span className="font-display text-xl text-primary">{selectedService && Number(selectedService.price).toFixed(0)}₺</span></p>
+              <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{totalPrice.toFixed(0)}₺</span></p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
@@ -228,9 +248,9 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : "Öde ve Onayla"}
+              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${totalPrice.toFixed(0)}₺`}
             </Button>
-            <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir (Pro plan).</p>
+            <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
           </>
         )}
       </div>

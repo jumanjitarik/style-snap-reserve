@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import * as XLSX from "xlsx";
 
@@ -51,6 +51,9 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
+        <TabsList className="grid grid-cols-1 w-full mt-2">
+          <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push Gönder</TabsTrigger>
+        </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
@@ -59,6 +62,7 @@ function AdminPanel() {
         <TabsContent value="ann"><AnnouncementsTab /></TabsContent>
         <TabsContent value="settings"><SettingsTab /></TabsContent>
         <TabsContent value="activity"><ActivityTab /></TabsContent>
+        <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -137,7 +141,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; maps_url: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
@@ -153,9 +157,9 @@ function ShopsTab() {
         category: editing.category,
         description: editing.description || null,
         address: editing.address,
+        city: editing.city || null,
         phone: editing.phone || null,
-        lat: editing.lat ? parseFloat(editing.lat) : null,
-        lng: editing.lng ? parseFloat(editing.lng) : null,
+        maps_url: editing.maps_url || null,
         cover_image_url: editing.cover_image_url || null,
         is_featured: editing.is_featured,
       };
@@ -198,10 +202,12 @@ function ShopsTab() {
         </div>
         <div><Label>Açıklama</Label><Textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
         <div><Label>Adres</Label><Input value={editing.address} onChange={(e) => setEditing({ ...editing, address: e.target.value })} /></div>
+        <div><Label>İl</Label><Input value={editing.city} onChange={(e) => setEditing({ ...editing, city: e.target.value })} placeholder="Alanya / Antalya / İstanbul..." /></div>
         <div><Label>Telefon</Label><Input value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
-        <div className="flex gap-2">
-          <div className="flex-1"><Label>Enlem (lat)</Label><Input value={editing.lat} onChange={(e) => setEditing({ ...editing, lat: e.target.value })} placeholder="41.0082" /></div>
-          <div className="flex-1"><Label>Boylam (lng)</Label><Input value={editing.lng} onChange={(e) => setEditing({ ...editing, lng: e.target.value })} placeholder="28.9784" /></div>
+        <div>
+          <Label>Google Maps Konum Linki</Label>
+          <Input value={editing.maps_url} onChange={(e) => setEditing({ ...editing, maps_url: e.target.value })} placeholder="https://maps.app.goo.gl/..." />
+          <p className="text-[10px] text-muted-foreground mt-1">Google Maps'te konumu aç → Paylaş → Linki kopyala → buraya yapıştır.</p>
         </div>
         <div className="flex items-center justify-between rounded-md border border-border p-3">
           <Label className="!m-0">⭐ Öne Çıkan</Label>
@@ -212,13 +218,18 @@ function ShopsTab() {
           <div className="flex gap-2 items-center">
             {editing.cover_image_url && <img src={editing.cover_image_url} className="h-16 w-16 rounded object-cover" alt="" />}
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
-              <Upload className="mx-auto h-4 w-4 mb-1" /> Fotoğraf yükle
+              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.cover_image_url ? "Değiştir" : "Fotoğraf yükle"}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                 const f = e.target.files?.[0]; if (!f) return;
                 try { const url = await uploadPhoto(f, "shop-cover"); setEditing({ ...editing, cover_image_url: url }); toast.success("Yüklendi"); }
                 catch (err) { toast.error((err as Error).message); }
               }} />
             </label>
+            {editing.cover_image_url && (
+              <Button size="icon" variant="destructive" onClick={() => setEditing({ ...editing, cover_image_url: "" })}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
         <div className="flex gap-2 pt-2">
@@ -231,7 +242,7 @@ function ShopsTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
+      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", maps_url: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
       {(shops ?? []).map((s) => (
@@ -251,7 +262,7 @@ function ShopsTab() {
               </button>
               <Button size="sm" variant="ghost" onClick={() => setEditing({
                 id: s.id, name: s.name, category: s.category, description: s.description ?? "",
-                address: s.address, phone: s.phone ?? "", lat: s.lat?.toString() ?? "", lng: s.lng?.toString() ?? "",
+                address: s.address, city: s.city ?? "", phone: s.phone ?? "", maps_url: s.maps_url ?? "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -440,7 +451,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone").limit(50);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked").limit(50);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -542,7 +553,7 @@ function UsersTab() {
   );
 }
 
-type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null };
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null };
 
 function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
   const [open, setOpen] = useState(false);
@@ -573,14 +584,36 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const toggleBlock = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("profiles").update({ is_blocked: !profile.is_blocked }).eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success(profile.is_blocked ? "Engel kaldırıldı" : "Üye engellendi"); qc.invalidateQueries({ queryKey: ["admin-profiles"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const removeUser = useMutation({
+    mutationFn: async () => {
+      const { adminDeleteUser } = await import("@/lib/admin-users.functions");
+      await adminDeleteUser({ data: { user_id: profile.id } });
+    },
+    onSuccess: () => { toast.success("Üye silindi"); qc.invalidateQueries({ queryKey: ["admin-profiles"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
-    <div className="rounded-xl border border-border bg-card p-3">
-      <p className="font-medium text-sm">{profile.full_name ?? "—"}</p>
+    <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
+      <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
       <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
-      <div className="mt-2 flex gap-1.5">
+      <div className="mt-2 flex gap-1.5 flex-wrap">
         <Button size="sm" variant="outline" className="flex-1" onClick={onAssignOwner}>Sahip yap</Button>
         <Button size="sm" className="flex-1" onClick={() => setOpen((o) => !o)}>{open ? "Kapat" : "Düzenle"}</Button>
+        <Button size="sm" variant={profile.is_blocked ? "default" : "secondary"} onClick={() => toggleBlock.mutate()}>
+          {profile.is_blocked ? "Engeli Kaldır" : "Engelle"}
+        </Button>
+        <Button size="icon" variant="destructive" onClick={() => confirm(`${profile.full_name ?? profile.email} silinsin mi? Geri alınamaz.`) && removeUser.mutate()}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
       {open && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
@@ -771,6 +804,85 @@ function ActivityTab() {
             </p>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function BroadcastTab() {
+  const [form, setForm] = useState({ title: "", body: "", image_url: "", link_url: "", audience: "all" as "all"|"customers"|"owners"|"staff"|"others" });
+
+  async function uploadImg(file: File) {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const ext = file.name.split(".").pop();
+      const path = `${u.user!.id}/broadcast-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("barbershop-photos").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
+      setForm((f) => ({ ...f, image_url: data.publicUrl }));
+      toast.success("Görsel yüklendi");
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  const send = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("admin_broadcast", {
+        _title: form.title,
+        _body: form.body,
+        _image_url: form.image_url || "",
+        _link_url: form.link_url || "",
+        _audience: form.audience,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (n) => toast.success(`${n} kişiye gönderildi`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const AUDS: { v: typeof form.audience; label: string }[] = [
+    { v: "all", label: "Herkes" },
+    { v: "customers", label: "Müşteriler" },
+    { v: "owners", label: "Salon Sahipleri" },
+    { v: "staff", label: "Çalışanlar" },
+    { v: "others", label: "Sahip & Çalışan dışındakiler" },
+  ];
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3 space-y-3">
+        <div>
+          <Label className="text-xs">Hedef Kitle</Label>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {AUDS.map((a) => (
+              <button key={a.v} onClick={() => setForm({ ...form, audience: a.v })}
+                className={`rounded-full border px-3 py-1 text-xs active:scale-95 transition ${form.audience === a.v ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div><Label className="text-xs">Başlık</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+        <div><Label className="text-xs">Mesaj</Label><Textarea rows={4} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
+        <div>
+          <Label className="text-xs">Görsel (opsiyonel)</Label>
+          <div className="flex gap-2 items-center mt-1">
+            {form.image_url && <img src={form.image_url} alt="" className="h-14 w-14 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Görsel yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImg(f); }} />
+            </label>
+            {form.image_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, image_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">Tıklayınca Açılacak Link (opsiyonel)</Label>
+          <Input value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="https://... veya /kuafor/abc" />
+        </div>
+        <Button className="w-full h-11" disabled={!form.title || !form.body || send.isPending} onClick={() => send.mutate()}>
+          <Send className="h-4 w-4 mr-1" /> {send.isPending ? "Gönderiliyor..." : "Bildirimi Gönder"}
+        </Button>
       </div>
     </div>
   );
