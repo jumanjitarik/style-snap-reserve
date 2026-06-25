@@ -17,9 +17,17 @@ const baseItems: NavItem[] = [
   { to: "/hesap", label: "Hesap", icon: User, profile: true },
 ];
 
+const AVATAR_CACHE_KEY = "nav.avatarUrl";
+
+function readCachedAvatar(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return window.localStorage.getItem(AVATAR_CACHE_KEY); } catch { return null; }
+}
+
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [avatar, setAvatar] = useState<string | null>(null);
+  // Initialise from cache so the avatar persists across route changes without a flicker.
+  const [avatar, setAvatar] = useState<string | null>(() => readCachedAvatar());
   const [unread, setUnread] = useState(0);
   const [hidden, setHidden] = useState(false);
 
@@ -30,10 +38,20 @@ export function BottomNav() {
       const { data: u } = await supabase.auth.getUser();
       if (!active) return;
       userId = u.user?.id ?? null;
-      if (!userId) { setAvatar(null); setUnread(0); return;}
+      if (!userId) {
+        setAvatar(null);
+        setUnread(0);
+        try { window.localStorage.removeItem(AVATAR_CACHE_KEY); } catch { /* noop */ }
+        return;
+      }
       const { data: prof } = await supabase.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
       if (!active) return;
-      setAvatar((prev) => (prev === (prof?.avatar_url ?? null) ? prev : prof?.avatar_url ?? null));
+      const next = prof?.avatar_url ?? null;
+      setAvatar((prev) => (prev === next ? prev : next));
+      try {
+        if (next) window.localStorage.setItem(AVATAR_CACHE_KEY, next);
+        else window.localStorage.removeItem(AVATAR_CACHE_KEY);
+      } catch { /* noop */ }
       loadUnread();
     }
     async function loadUnread() {
@@ -51,7 +69,7 @@ export function BottomNav() {
     return () => { active = false; sub.data.subscription.unsubscribe(); supabase.removeChannel(ch); };
   }, []);
 
-  // Hide on scroll down, show on scroll up.
+  // Hide completely when the page is scrolled down; reveal again at the top or on upward scroll.
   useEffect(() => {
     let lastY = window.scrollY;
     let ticking = false;
@@ -61,9 +79,9 @@ export function BottomNav() {
       requestAnimationFrame(() => {
         const y = window.scrollY;
         const dy = y - lastY;
-        if (y < 40) setHidden(false);
-        else if (dy > 6) setHidden(true);
-        else if (dy < -6) setHidden(false);
+        if (y < 24) setHidden(false);
+        else if (dy > 4) setHidden(true);
+        else if (dy < -8) setHidden(false);
         lastY = y;
         ticking = false;
       });
