@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
+import { Route as AuthenticatedMusterilerRouteImport } from './routes/_authenticated/musteriler'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
 import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -61,6 +62,11 @@ const AuthenticatedRandevularimRoute =
     path: '/randevularim',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMusterilerRoute = AuthenticatedMusterilerRouteImport.update({
+  id: '/musteriler',
+  path: '/musteriler',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFavorilerRoute = AuthenticatedFavorilerRouteImport.update({
   id: '/favoriler',
   path: '/favoriler',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
+  '/musteriler': typeof AuthenticatedMusterilerRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
+  '/musteriler': typeof AuthenticatedMusterilerRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
+  '/_authenticated/musteriler': typeof AuthenticatedMusterilerRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
+    | '/musteriler'
     | '/randevularim'
     | '/kuafor/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
+    | '/musteriler'
     | '/randevularim'
     | '/kuafor/$id'
   id:
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
+    | '/_authenticated/musteriler'
     | '/_authenticated/randevularim'
     | '/kuafor/$id'
   fileRoutesById: FileRoutesById
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRandevularimRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/musteriler': {
+      id: '/_authenticated/musteriler'
+      path: '/musteriler'
+      fullPath: '/musteriler'
+      preLoaderRoute: typeof AuthenticatedMusterilerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/favoriler': {
       id: '/_authenticated/favoriler'
       path: '/favoriler'
@@ -252,6 +271,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBildirimlerRoute: typeof AuthenticatedBildirimlerRoute
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
+  AuthenticatedMusterilerRoute: typeof AuthenticatedMusterilerRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
 }
 
@@ -259,6 +279,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBildirimlerRoute: AuthenticatedBildirimlerRoute,
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
+  AuthenticatedMusterilerRoute: AuthenticatedMusterilerRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
 }
 
