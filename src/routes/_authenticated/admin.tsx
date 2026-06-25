@@ -808,3 +808,82 @@ function ActivityTab() {
     </div>
   );
 }
+
+function BroadcastTab() {
+  const [form, setForm] = useState({ title: "", body: "", image_url: "", link_url: "", audience: "all" as "all"|"customers"|"owners"|"staff"|"others" });
+
+  async function uploadImg(file: File) {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const ext = file.name.split(".").pop();
+      const path = `${u.user!.id}/broadcast-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("barbershop-photos").upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
+      setForm((f) => ({ ...f, image_url: data.publicUrl }));
+      toast.success("Görsel yüklendi");
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
+  const send = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc("admin_broadcast", {
+        _title: form.title,
+        _body: form.body,
+        _image_url: form.image_url || null,
+        _link_url: form.link_url || null,
+        _audience: form.audience,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    onSuccess: (n) => toast.success(`${n} kişiye gönderildi`),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const AUDS: { v: typeof form.audience; label: string }[] = [
+    { v: "all", label: "Herkes" },
+    { v: "customers", label: "Müşteriler" },
+    { v: "owners", label: "Salon Sahipleri" },
+    { v: "staff", label: "Çalışanlar" },
+    { v: "others", label: "Sahip & Çalışan dışındakiler" },
+  ];
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3 space-y-3">
+        <div>
+          <Label className="text-xs">Hedef Kitle</Label>
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {AUDS.map((a) => (
+              <button key={a.v} onClick={() => setForm({ ...form, audience: a.v })}
+                className={`rounded-full border px-3 py-1 text-xs active:scale-95 transition ${form.audience === a.v ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div><Label className="text-xs">Başlık</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
+        <div><Label className="text-xs">Mesaj</Label><Textarea rows={4} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} /></div>
+        <div>
+          <Label className="text-xs">Görsel (opsiyonel)</Label>
+          <div className="flex gap-2 items-center mt-1">
+            {form.image_url && <img src={form.image_url} alt="" className="h-14 w-14 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Görsel yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadImg(f); }} />
+            </label>
+            {form.image_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, image_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs">Tıklayınca Açılacak Link (opsiyonel)</Label>
+          <Input value={form.link_url} onChange={(e) => setForm({ ...form, link_url: e.target.value })} placeholder="https://... veya /kuafor/abc" />
+        </div>
+        <Button className="w-full h-11" disabled={!form.title || !form.body || send.isPending} onClick={() => send.mutate()}>
+          <Send className="h-4 w-4 mr-1" /> {send.isPending ? "Gönderiliyor..." : "Bildirimi Gönder"}
+        </Button>
+      </div>
+    </div>
+  );
+}
