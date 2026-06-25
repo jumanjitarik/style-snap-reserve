@@ -7,7 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save } from "lucide-react";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
