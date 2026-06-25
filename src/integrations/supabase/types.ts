@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          active: boolean
+          body: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          title: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           created_at: string
@@ -236,6 +284,10 @@ export type Database = {
           full_name: string
           gender: Database["public"]["Enums"]["gender"] | null
           id: string
+          last_city: string | null
+          last_country: string | null
+          last_ip: string | null
+          last_seen_at: string | null
           phone: string | null
           updated_at: string
         }
@@ -246,6 +298,10 @@ export type Database = {
           full_name: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id: string
+          last_city?: string | null
+          last_country?: string | null
+          last_ip?: string | null
+          last_seen_at?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -256,6 +312,10 @@ export type Database = {
           full_name?: string
           gender?: Database["public"]["Enums"]["gender"] | null
           id?: string
+          last_city?: string | null
+          last_country?: string | null
+          last_ip?: string | null
+          last_seen_at?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -372,6 +432,42 @@ export type Database = {
           },
         ]
       }
+      user_activity: {
+        Row: {
+          action: string
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          ip: string | null
+          region: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          region?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          ip?: string | null
+          region?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -418,6 +514,9 @@ export type Database = {
         | "nail"
         | "skin"
         | "aesthetic"
+        | "spa_massage"
+        | "yoga_pilates"
+        | "slimming"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -560,6 +659,9 @@ export const Constants = {
         "nail",
         "skin",
         "aesthetic",
+        "spa_massage",
+        "yoga_pilates",
+        "slimming",
       ],
     },
   },
