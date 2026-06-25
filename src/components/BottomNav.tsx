@@ -7,11 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean };
 
 const baseItems: NavItem[] = [
-  { to: "/", label: "Ana Sayfa", icon: Home },
-  { to: "/kuaforler", label: "Kuaförler", icon: Scissors },
-  { to: "/favoriler", label: "Favoriler", icon: Heart },
+  { to: "/", label: "Ana", icon: Home },
+  { to: "/kuaforler", label: "Kuaför", icon: Scissors },
+  { to: "/favoriler", label: "Favori", icon: Heart },
   { to: "/randevu-al", label: "Randevu Al", icon: Plus, fab: true },
-  { to: "/randevularim", label: "Randevular", icon: Bell },
+  { to: "/randevularim", label: "Randevu", icon: CalendarCheck },
+  { to: "/bildirimler", label: "Bildirim", icon: Bell },
   { to: "/hesap", label: "Hesap", icon: User },
 ];
 
