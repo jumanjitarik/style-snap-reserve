@@ -221,7 +221,7 @@ function AccountPage() {
           <Bell className="h-5 w-5 text-primary" /><span>Bildirimler</span>
         </Link>
         <Button variant="outline" className="w-full h-12" onClick={async () => {
-          if (!("Notification" in window)) { toast.error("Tarayıcın bildirimleri desteklemiyor"); return; }
+          if (!("Notification" in window)) { toast.error("Bu tarayıcıda bildirim API'si yok"); return; }
           let perm = Notification.permission;
           if (perm === "default") perm = await Notification.requestPermission();
           if (perm !== "granted") { toast.error("Bildirim izni reddedildi"); return; }
@@ -247,9 +247,11 @@ function AccountPage() {
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
         </Button>
-        <Button variant="destructive" onClick={deleteAccount} className="w-full h-12">
-          <Trash2 className="h-4 w-4 mr-2" /> Hesabımı Sil
-        </Button>
+        {!isAdmin && (
+          <Button variant="destructive" onClick={deleteAccount} className="w-full h-12">
+            <Trash2 className="h-4 w-4 mr-2" /> Hesabımı Sil
+          </Button>
+        )}
 
       </div>
     </AppShell>

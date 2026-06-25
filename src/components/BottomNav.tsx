@@ -25,24 +25,28 @@ export function BottomNav() {
 
   useEffect(() => {
     let active = true;
-    async function load() {
+    let userId: string | null = null;
+    async function loadProfile() {
       const { data: u } = await supabase.auth.getUser();
       if (!active) return;
-      if (!u.user) { setAvatar(null); setUnread(0); return; }
-      const [{ data: prof }, { count }] = await Promise.all([
-        supabase.from("profiles").select("avatar_url").eq("id", u.user.id).maybeSingle(),
-        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", u.user.id).eq("read", false),
-      ]);
+      userId = u.user?.id ?? null;
+      if (!userId) { setAvatar(null); setUnread(0); return;}
+      const { data: prof } = await supabase.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
       if (!active) return;
-      setAvatar(prof?.avatar_url ?? null);
+      setAvatar((prev) => (prev === (prof?.avatar_url ?? null) ? prev : prof?.avatar_url ?? null));
+      loadUnread();
+    }
+    async function loadUnread() {
+      if (!userId) return;
+      const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("read", false);
+      if (!active) return;
       setUnread(count ?? 0);
     }
-    load();
-    const sub = supabase.auth.onAuthStateChange(() => load());
-    // realtime unread updates
+    loadProfile();
+    const sub = supabase.auth.onAuthStateChange(() => loadProfile());
     const ch = supabase
       .channel("nav-notif")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => loadUnread())
       .subscribe();
     return () => { active = false; sub.data.subscription.unsubscribe(); supabase.removeChannel(ch); };
   }, []);
