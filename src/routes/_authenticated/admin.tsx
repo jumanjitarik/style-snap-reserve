@@ -943,13 +943,13 @@ function AccountingTab() {
 
   const exportXlsx = () => {
     const data = (rows ?? []).map((r: any) => ({
-      Tarih: new Date(r.scheduled_at).toLocaleString("tr-TR"),
+      Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
       Müşteri: r.profiles?.full_name ?? "—",
       Telefon: r.profiles?.phone ?? "—",
       Salon: r.barbershops?.name ?? "—",
       Hizmetler: (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", "),
       Durum: r.status,
-      Tutar: Number(r.total_price ?? 0),
+      Tutar: Number(r.payment_amount ?? 0),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -982,13 +982,13 @@ function AccountingTab() {
 
       <div className="space-y-2">
         {(rows ?? []).map((r: any) => {
-          const d = new Date(r.scheduled_at);
+          const d = new Date(r.starts_at);
           const names = (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", ");
           return (
             <div key={r.id} className="rounded-xl border border-border bg-card p-3 text-xs space-y-0.5">
               <div className="flex justify-between gap-2">
                 <p className="font-semibold text-sm truncate">{r.profiles?.full_name ?? "—"}</p>
-                <p className="font-display text-primary text-base">{Number(r.total_price ?? 0).toFixed(0)}₺</p>
+                <p className="font-display text-primary text-base">{Number(r.payment_amount ?? 0).toFixed(0)}₺</p>
               </div>
               <p className="text-muted-foreground">📞 {r.profiles?.phone ?? "—"}</p>
               <p>🗓 {d.toLocaleDateString("tr-TR")} · {d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>
