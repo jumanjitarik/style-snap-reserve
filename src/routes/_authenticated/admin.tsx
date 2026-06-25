@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -917,9 +917,9 @@ function AccountingTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("appointments")
-        .select("id, scheduled_at, status, total_price, service_ids, customer_id, barbershop_id, barbershops(name), profiles!appointments_customer_id_fkey(full_name, phone)")
-        .eq("barbershop_id", shopId)
-        .order("scheduled_at", { ascending: false });
+        .select("id, starts_at, status, payment_amount, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
+        .eq("shop_id", shopId)
+        .order("starts_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
     },
