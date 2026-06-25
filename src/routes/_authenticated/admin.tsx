@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,21 +30,24 @@ export const Route = createFileRoute("/_authenticated/admin")({
 function AdminPanel() {
   return (
     <AppShell>
-      <header className="px-4 pt-8 pb-3">
+      <BackButton to="/" />
+      <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Yönetici Paneli</h1>
-        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler ve çalışanlar</p>
+        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler, çalışanlar ve üyeler</p>
       </header>
       <Tabs defaultValue="stats" className="px-4">
-        <TabsList className="grid grid-cols-4 w-full">
-          <TabsTrigger value="stats">İstatistik</TabsTrigger>
-          <TabsTrigger value="shops">Salonlar</TabsTrigger>
-          <TabsTrigger value="services">Hizmetler</TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="stats">📊</TabsTrigger>
+          <TabsTrigger value="shops">Salon</TabsTrigger>
+          <TabsTrigger value="services">Hizmet</TabsTrigger>
           <TabsTrigger value="staff">Çalışan</TabsTrigger>
+          <TabsTrigger value="users">Üye</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
         <TabsContent value="staff"><StaffTab /></TabsContent>
+        <TabsContent value="users"><UsersTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
