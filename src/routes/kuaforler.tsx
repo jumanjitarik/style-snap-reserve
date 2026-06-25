@@ -1,3 +1,4 @@
+import { SafeImg } from "@/components/SafeImg";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
@@ -180,7 +181,7 @@ function ShopList() {
             className="flex gap-3 overflow-hidden rounded-xl bg-card border border-border hover:border-primary/50 transition p-3 active:scale-[0.98]"
           >
             <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-              {s.cover_image_url && <img src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />}
+              {s.cover_image_url && <SafeImg src={s.cover_image_url} alt={s.name} className="h-full w-full object-cover" />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">

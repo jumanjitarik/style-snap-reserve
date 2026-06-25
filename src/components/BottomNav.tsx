@@ -3,6 +3,7 @@ import { Home, Store, Plus, Heart, Bell, User, CalendarCheck } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SafeImg } from "@/components/SafeImg";
 
 type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean; profile?: boolean };
 
@@ -94,7 +95,7 @@ export function BottomNav() {
                   active ? "opacity-100" : "opacity-0",
                 )} />
                 {profile && avatar ? (
-                  <img
+                  <SafeImg
                     src={avatar}
                     alt=""
                     className={cn(
