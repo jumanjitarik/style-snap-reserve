@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
+import { SafeImg } from "@/components/SafeImg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
