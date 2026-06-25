@@ -29,8 +29,12 @@ function BookPage() {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => { setUserId(data.user?.id ?? null); setAuthChecked(true); });
-  }, []);
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+      setAuthChecked(true);
+      if (!data.user) navigate({ to: "/auth" });
+    });
+  }, [navigate]);
 
   const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialService ? 4 : 3) : 1);
   const [category, setCategory] = useState<ShopCategory | null>(null);
@@ -95,14 +99,8 @@ function BookPage() {
         <BackButton to="/" />
         <header className="px-4 pt-16 pb-3">
           <h1 className="font-display text-3xl">Randevu Al</h1>
-          <p className="text-sm text-muted-foreground mt-1">Randevu almak için önce giriş yap</p>
+          <p className="text-sm text-muted-foreground mt-1">Giriş sayfasına yönlendiriliyorsun…</p>
         </header>
-        <div className="px-4 mt-4">
-          <Link to="/auth" className="block rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent p-5 active:scale-[0.98] transition text-center">
-            <p className="font-display text-xl text-primary">Giriş Yap / Kayıt Ol</p>
-            <p className="text-xs text-muted-foreground mt-1">Randevuların geçmişine erişebilir, favori ekleyebilir, hızlıca yeniden randevu alabilirsin.</p>
-          </Link>
-        </div>
       </AppShell>
     );
   }

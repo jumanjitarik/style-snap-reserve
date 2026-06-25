@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 import { toast } from "sonner";
-import { Scissors } from "lucide-react";
+import { Scissors, Apple } from "lucide-react";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Giriş / Kayıt — BarberApp" }] }),
@@ -19,20 +21,22 @@ export const Route = createFileRoute("/auth")({
 });
 
 const signupSchema = z.object({
-  full_name: z.string().trim().min(2).max(80),
-  email: z.string().trim().email(),
-  password: z.string().min(6).max(72),
+  full_name: z.string().trim().min(2, "İsim en az 2 karakter").max(80),
+  email: z.string().trim().email("Geçerli bir e-posta gir"),
+  password: z.string().min(6, "Şifre en az 6 karakter").max(72),
   phone: z.string().trim().regex(/^\d{10}$/, "10 haneli numara (5XXXXXXXXX)"),
   gender: z.enum(["male", "female", "other"]),
 });
 
-const EMAIL_DOMAINS = ["@gmail.com", "@hotmail.com", "@outlook.com", "@yahoo.com"];
+const EMAIL_DOMAINS = ["@gmail.com", "@hotmail.com", "@yandex.com"];
 
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
   const [form, setForm] = useState({
     full_name: "", email: "", password: "", phone: "", gender: "male" as const,
   });
@@ -58,6 +62,7 @@ function AuthPage() {
         });
         if (error) throw error;
         toast.success("Kayıt başarılı!");
+        logActivity("signup");
         navigate({ to: "/" });
       } else {
         if (loginMethod === "phone") {
@@ -71,10 +76,11 @@ function AuthPage() {
           if (error) throw error;
         }
         toast.success("Giriş yapıldı");
+        logActivity("login");
         navigate({ to: "/" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Hata");
+      toast.error(translateAuthError(err instanceof Error ? err.message : "Bir hata oluştu"));
     } finally {
       setLoading(false);
     }
@@ -82,8 +88,22 @@ function AuthPage() {
 
   async function handleGoogle() {
     const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (res.error) toast.error(res.error.message);
-    else if (!res.redirected) navigate({ to: "/" });
+    if (res.error) toast.error(translateAuthError(res.error.message));
+    else if (!res.redirected) { logActivity("login"); navigate({ to: "/" }); }
+  }
+  async function handleApple() {
+    const res = await lovable.auth.signInWithOAuth("apple", { redirect_uri: window.location.origin });
+    if (res.error) toast.error(translateAuthError(res.error.message));
+    else if (!res.redirected) { logActivity("login"); navigate({ to: "/" }); }
+  }
+
+  async function handleForgot() {
+    if (!forgotEmail.trim()) { toast.error("E-posta gir"); return; }
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+      redirectTo: window.location.origin + "/reset-password",
+    });
+    if (error) toast.error(translateAuthError(error.message));
+    else { toast.success("Şifre sıfırlama bağlantısı e-posta adresine gönderildi"); setForgotOpen(false); }
   }
 
   const emailLocal = form.email.split("@")[0] ?? "";
@@ -152,10 +172,10 @@ function AuthPage() {
             <div>
               <Label>E-posta</Label>
               <Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="ornek" />
-              <div className="mt-1.5 flex gap-1.5 flex-wrap">
+              <div className="mt-1.5 grid grid-cols-3 gap-1.5">
                 {EMAIL_DOMAINS.map((d) => (
                   <button key={d} type="button" onClick={() => addDomain(d)}
-                    className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] text-muted-foreground hover:border-primary/50 hover:text-primary active:scale-95 transition">
+                    className="rounded-full border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground hover:border-primary/50 hover:text-primary active:scale-95 transition truncate">
                     {d}
                   </button>
                 ))}
@@ -164,7 +184,13 @@ function AuthPage() {
           )}
 
           <div>
-            <Label>Şifre <span className="text-[10px] text-muted-foreground">(en az 6 karakter)</span></Label>
+            <div className="flex items-center justify-between">
+              <Label>Şifre <span className="text-[10px] text-muted-foreground">(en az 6 karakter)</span></Label>
+              {mode === "login" && (
+                <button type="button" onClick={() => { setForgotEmail(form.email); setForgotOpen(true); }}
+                  className="text-[11px] text-primary">Şifremi unuttum</button>
+              )}
+            </div>
             <Input type="password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
 
@@ -181,6 +207,9 @@ function AuthPage() {
         <Button variant="outline" onClick={handleGoogle} className="w-full h-12">
           Google ile devam et
         </Button>
+        <Button variant="outline" onClick={handleApple} className="w-full h-12 mt-2">
+          <Apple className="h-4 w-4 mr-2" /> Apple ile devam et
+        </Button>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {mode === "login" ? "Hesabın yok mu?" : "Hesabın var mı?"}{" "}
@@ -189,6 +218,28 @@ function AuthPage() {
           </button>
         </p>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Şifremi Unuttum</DialogTitle>
+            <DialogDescription>E-posta adresine sıfırlama bağlantısı gönderelim.</DialogDescription>
+          </DialogHeader>
+          <Input type="email" placeholder="E-posta" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} />
+          <Button onClick={handleForgot}>Bağlantı Gönder</Button>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
+}
+
+function translateAuthError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login")) return "E-posta veya şifre hatalı";
+  if (m.includes("email not confirmed")) return "E-postanı onayla";
+  if (m.includes("user already registered") || m.includes("already exists")) return "Bu e-posta zaten kayıtlı";
+  if (m.includes("password should be")) return "Şifre çok kısa (en az 6 karakter)";
+  if (m.includes("rate limit")) return "Çok fazla deneme, biraz bekle";
+  if (m.includes("network")) return "Ağ hatası, internetini kontrol et";
+  return msg;
 }

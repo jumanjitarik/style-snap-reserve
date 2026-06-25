@@ -122,6 +122,9 @@ function RootComponent() {
           router.invalidate();
           if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
         }
+        if (event === "SIGNED_IN") {
+          import("@/lib/activity").then((m) => m.logActivity("login"));
+        }
       });
       (window as unknown as { __sb_sub?: { unsubscribe: () => void } }).__sb_sub = sub.subscription;
     });

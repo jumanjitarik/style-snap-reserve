@@ -1,6 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
@@ -13,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity } from "lucide-react";
+import { adminUpdateUser } from "@/lib/admin-users.functions";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -33,21 +36,29 @@ function AdminPanel() {
       <BackButton to="/" />
       <header className="px-4 pt-16 pb-3">
         <h1 className="font-display text-3xl">Yönetici Paneli</h1>
-        <p className="text-xs text-muted-foreground">İstatistikler, salonlar, hizmetler, çalışanlar ve üyeler</p>
+        <p className="text-xs text-muted-foreground">Salonlar, hizmetler, üyeler, duyurular ve istatistikler</p>
       </header>
       <Tabs defaultValue="stats" className="px-4">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-4 w-full mb-2">
           <TabsTrigger value="stats">📊</TabsTrigger>
           <TabsTrigger value="shops">Salon</TabsTrigger>
           <TabsTrigger value="services">Hizmet</TabsTrigger>
           <TabsTrigger value="staff">Çalışan</TabsTrigger>
+        </TabsList>
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="users">Üye</TabsTrigger>
+          <TabsTrigger value="ann"><Megaphone className="h-3.5 w-3.5" /></TabsTrigger>
+          <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
+          <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
         <TabsContent value="staff"><StaffTab /></TabsContent>
         <TabsContent value="users"><UsersTab /></TabsContent>
+        <TabsContent value="ann"><AnnouncementsTab /></TabsContent>
+        <TabsContent value="settings"><SettingsTab /></TabsContent>
+        <TabsContent value="activity"><ActivityTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -486,16 +497,10 @@ function UsersTab() {
 
           <Input placeholder="Üye ara (isim / e-posta / telefon)" value={search} onChange={(e) => setSearch(e.target.value)} />
 
-          <p className="text-xs text-muted-foreground">Aşağıdan üye seç → Sahip / Çalışan olarak ata</p>
-          <div className="space-y-2 max-h-72 overflow-y-auto">
+          <p className="text-xs text-muted-foreground">Aşağıdan üye seç → Sahip / Çalışan ata veya bilgilerini düzenle</p>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
             {(profiles ?? []).map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-card p-3">
-                <p className="font-medium text-sm">{p.full_name ?? "—"}</p>
-                <p className="text-xs text-muted-foreground truncate">{p.email} {p.phone && `· ${p.phone}`}</p>
-                <div className="mt-2 flex gap-1.5">
-                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setOwner.mutate(p.id)}>Sahip yap</Button>
-                </div>
-              </div>
+              <UserRow key={p.id} profile={p} onAssignOwner={() => setOwner.mutate(p.id)} />
             ))}
           </div>
 
@@ -533,6 +538,240 @@ function UsersTab() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null };
+
+function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    full_name: profile.full_name ?? "",
+    email: profile.email ?? "",
+    phone: profile.phone ?? "",
+    password: "",
+  });
+  const updateFn = useServerFn(adminUpdateUser);
+  const qc = useQueryClient();
+  const save = useMutation({
+    mutationFn: async () => {
+      await updateFn({
+        data: {
+          user_id: profile.id,
+          full_name: form.full_name.trim() || undefined,
+          email: form.email.trim() || undefined,
+          phone: form.phone.trim() || null,
+          password: form.password ? form.password : undefined,
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Üye güncellendi");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["admin-profiles"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="font-medium text-sm">{profile.full_name ?? "—"}</p>
+      <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+      <div className="mt-2 flex gap-1.5">
+        <Button size="sm" variant="outline" className="flex-1" onClick={onAssignOwner}>Sahip yap</Button>
+        <Button size="sm" className="flex-1" onClick={() => setOpen((o) => !o)}>{open ? "Kapat" : "Düzenle"}</Button>
+      </div>
+      {open && (
+        <div className="mt-3 space-y-2 border-t border-border pt-3">
+          <div><Label className="text-xs">Ad Soyad</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+          <div><Label className="text-xs">E-posta</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+          <div><Label className="text-xs">Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div><Label className="text-xs">Yeni Şifre (boş bırak = değişmez)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="en az 6 karakter" /></div>
+          <Button size="sm" className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>Kaydet</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnnouncementsTab() {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ title: "", body: "" });
+  const { data: list } = useQuery({
+    queryKey: ["admin-anns"],
+    queryFn: async () => (await supabase.from("announcements").select("*").order("created_at", { ascending: false })).data ?? [],
+  });
+  const create = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("announcements").insert({
+        title: form.title, body: form.body, active: true, created_by: u.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { setForm({ title: "", body: "" }); toast.success("Duyuru yayınlandı"); qc.invalidateQueries({ queryKey: ["admin-anns"] }); qc.invalidateQueries({ queryKey: ["latest-announcement"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggle = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from("announcements").update({ active }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-anns"] }); qc.invalidateQueries({ queryKey: ["latest-announcement"] }); },
+  });
+  const del = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from("announcements").delete().eq("id", id); if (error) throw error; },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-anns"] }),
+  });
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <Input placeholder="Duyuru başlığı" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+        <Textarea placeholder="Duyuru metni" rows={4} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} />
+        <Button onClick={() => create.mutate()} disabled={!form.title || !form.body} className="w-full">
+          <Megaphone className="h-4 w-4 mr-1" /> Üyelere yayınla
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {(list ?? []).map((a) => (
+          <div key={a.id} className="rounded-xl border border-border bg-card p-3">
+            <div className="flex justify-between gap-2">
+              <p className="font-medium truncate">{a.title}</p>
+              <Switch checked={a.active} onCheckedChange={(v) => toggle.mutate({ id: a.id, active: v })} />
+            </div>
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{a.body}</p>
+            <div className="flex justify-end mt-2">
+              <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(a.id)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SettingsTab() {
+  const qc = useQueryClient();
+  const { data: settings } = useQuery({
+    queryKey: ["admin-settings"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("key, value");
+      return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
+    },
+  });
+  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "" });
+  const initialized = useState(false);
+  if (settings && !initialized[0]) {
+    if (form.welcome_title === "" && form.welcome_subtitle === "") {
+      setForm({ welcome_title: settings.welcome_title ?? "", welcome_subtitle: settings.welcome_subtitle ?? "" });
+      initialized[1](true);
+    }
+  }
+  const save = useMutation({
+    mutationFn: async () => {
+      const rows = [
+        { key: "welcome_title", value: form.welcome_title },
+        { key: "welcome_subtitle", value: form.welcome_subtitle },
+      ];
+      const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Kaydedildi"); qc.invalidateQueries({ queryKey: ["welcome-text"] }); qc.invalidateQueries({ queryKey: ["admin-settings"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  return (
+    <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin</p>
+        <div><Label>Üst yazı (küçük)</Label><Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} placeholder="Hoş geldin" /></div>
+        <div><Label>Ana başlık</Label><Input value={form.welcome_title} onChange={(e) => setForm({ ...form, welcome_title: e.target.value })} placeholder="Bugün nasıl şıklaşıyoruz?" /></div>
+        <Button className="w-full" onClick={() => save.mutate()} disabled={save.isPending}>Kaydet</Button>
+      </div>
+    </div>
+  );
+}
+
+function ActivityTab() {
+  const { data: profiles } = useQuery({
+    queryKey: ["admin-profiles-all"],
+    queryFn: async () => (await supabase.from("profiles").select("id, full_name, email, phone, gender, created_at, last_seen_at, last_ip, last_city, last_country").order("created_at", { ascending: false }).limit(500)).data ?? [],
+  });
+  const { data: activity } = useQuery({
+    queryKey: ["admin-activity"],
+    queryFn: async () => (await supabase.from("user_activity").select("*").order("created_at", { ascending: false }).limit(500)).data ?? [],
+  });
+
+  function exportMembers() {
+    const rows = (profiles ?? []).map((p) => ({
+      "Ad Soyad": p.full_name ?? "",
+      "E-posta": p.email ?? "",
+      "Telefon": p.phone ?? "",
+      "Cinsiyet": p.gender ?? "",
+      "Kayıt Tarihi": p.created_at ? new Date(p.created_at).toLocaleString("tr-TR") : "",
+      "Son Giriş": p.last_seen_at ? new Date(p.last_seen_at).toLocaleString("tr-TR") : "",
+      "IP": p.last_ip ?? "",
+      "İl": p.last_city ?? "",
+      "Ülke": p.last_country ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Üyeler");
+    XLSX.writeFile(wb, `uyeler-${Date.now()}.xlsx`);
+  }
+  function exportActivity() {
+    const rows = (activity ?? []).map((a) => ({
+      "Tarih": new Date(a.created_at).toLocaleString("tr-TR"),
+      "Üye ID": a.user_id ?? "",
+      "Aksiyon": a.action,
+      "IP": a.ip ?? "",
+      "İl": a.city ?? "",
+      "Bölge": a.region ?? "",
+      "Ülke": a.country ?? "",
+      "Tarayıcı": a.user_agent ?? "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Aktivite");
+    XLSX.writeFile(wb, `aktivite-${Date.now()}.xlsx`);
+  }
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="flex gap-2">
+        <Button onClick={exportMembers} className="flex-1"><Download className="h-4 w-4 mr-1" /> Üyeler Excel</Button>
+        <Button onClick={exportActivity} variant="outline" className="flex-1"><Download className="h-4 w-4 mr-1" /> Aktivite Excel</Button>
+      </div>
+      <p className="text-xs uppercase tracking-wider text-primary mt-2">Son Aktiviteler ({(activity ?? []).length})</p>
+      <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
+        {(activity ?? []).slice(0, 100).map((a) => {
+          const u = (profiles ?? []).find((p) => p.id === a.user_id);
+          return (
+            <div key={a.id} className="rounded-lg border border-border bg-card p-2 text-xs">
+              <div className="flex justify-between gap-2">
+                <span className="font-medium">{u?.full_name ?? u?.email ?? a.user_id?.slice(0, 8)}</span>
+                <span className="text-muted-foreground">{new Date(a.created_at).toLocaleString("tr-TR")}</span>
+              </div>
+              <div className="text-muted-foreground">
+                {a.action} · {a.ip ?? "-"} · {a.city ?? "-"}, {a.country ?? "-"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-xs uppercase tracking-wider text-primary mt-4">Üye Listesi ({(profiles ?? []).length})</p>
+      <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
+        {(profiles ?? []).slice(0, 100).map((p) => (
+          <div key={p.id} className="rounded-lg border border-border bg-card p-2 text-xs">
+            <p className="font-medium">{p.full_name ?? "—"}</p>
+            <p className="text-muted-foreground truncate">{p.email} · {p.phone ?? "-"}</p>
+            <p className="text-muted-foreground">
+              Kayıt: {p.created_at ? new Date(p.created_at).toLocaleDateString("tr-TR") : "-"} · Son: {p.last_seen_at ? new Date(p.last_seen_at).toLocaleDateString("tr-TR") : "-"} · {p.last_city ?? "-"}/{p.last_country ?? "-"}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

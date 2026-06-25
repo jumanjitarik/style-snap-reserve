@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
 import { Route as HesapRouteImport } from './routes/hesap'
@@ -22,6 +23,11 @@ import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RandevuAlRoute = RandevuAlRouteImport.update({
   id: '/randevu-al',
   path: '/randevu-al',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
+    | '/reset-password'
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
+    | '/reset-password'
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
+    | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
@@ -175,11 +187,19 @@ export interface RootRouteChildren {
   HesapRoute: typeof HesapRoute
   KuaforlerRoute: typeof KuaforlerRoute
   RandevuAlRoute: typeof RandevuAlRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   KuaforIdRoute: typeof KuaforIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/randevu-al': {
       id: '/randevu-al'
       path: '/randevu-al'
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   HesapRoute: HesapRoute,
   KuaforlerRoute: KuaforlerRoute,
   RandevuAlRoute: RandevuAlRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   KuaforIdRoute: KuaforIdRoute,
 }
 export const routeTree = rootRouteImport

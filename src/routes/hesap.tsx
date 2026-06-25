@@ -18,7 +18,14 @@ function AccountPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
-  useEffect(() => { supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null)); }, []);
+  const [authChecked, setAuthChecked] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+      setAuthChecked(true);
+      if (!data.user) navigate({ to: "/auth" });
+    });
+  }, [navigate]);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
@@ -88,16 +95,12 @@ function AccountPage() {
     navigate({ to: "/" });
   }
 
-  if (!userId) {
+  if (!authChecked || !userId) {
     return (
       <AppShell>
         <BackButton to="/" />
         <header className="px-4 pt-16 pb-3"><h1 className="font-display text-3xl">Hesap</h1></header>
-        <div className="px-4">
-          <Link to="/auth" className="flex items-center justify-center gap-2 h-12 rounded-xl bg-gradient-to-r from-primary to-primary/80 font-semibold text-primary-foreground active:scale-95 transition">
-            <LogIn className="h-5 w-5" /> Giriş Yap / Kayıt Ol
-          </Link>
-        </div>
+        <p className="px-4 text-sm text-muted-foreground">Giriş sayfasına yönlendiriliyorsun…</p>
       </AppShell>
     );
   }
