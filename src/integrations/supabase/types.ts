@@ -243,6 +243,8 @@ export type Database = {
           discount_value: number
           expires_at: string | null
           id: string
+          max_uses: number | null
+          per_user_limit: number | null
           updated_at: string
         }
         Insert: {
@@ -254,6 +256,8 @@ export type Database = {
           discount_value: number
           expires_at?: string | null
           id?: string
+          max_uses?: number | null
+          per_user_limit?: number | null
           updated_at?: string
         }
         Update: {
@@ -265,6 +269,8 @@ export type Database = {
           discount_value?: number
           expires_at?: string | null
           id?: string
+          max_uses?: number | null
+          per_user_limit?: number | null
           updated_at?: string
         }
         Relationships: []
