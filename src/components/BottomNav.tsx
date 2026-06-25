@@ -95,7 +95,7 @@ export function BottomNav() {
                   active ? "opacity-100" : "opacity-0",
                 )} />
                 {profile && avatar ? (
-                  <img
+                  <SafeImg
                     src={avatar}
                     alt=""
                     className={cn(
