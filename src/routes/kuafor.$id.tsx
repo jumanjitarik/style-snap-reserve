@@ -131,7 +131,7 @@ function ShopDetail() {
               <h2 className="mb-2 font-display text-lg tracking-wider">Galeri</h2>
               <div className="flex gap-2 overflow-x-auto">
                 {images.map((im) => (
-                  <img key={im.id} src={im.url} alt="" className="h-28 w-40 shrink-0 rounded-lg object-cover" />
+                  <SafeImg src={im.url} alt="" className="h-28 w-40 shrink-0 rounded-lg object-cover" />
                 ))}
               </div>
             </section>
