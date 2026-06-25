@@ -1,27 +1,27 @@
-// Open native map app. Uses Google Maps universal URL which deep-links
-// into the installed Google Maps app on iOS/Android; falls back to web.
+// Open native map app. Prefers an explicit Google Maps URL when provided
+// (set by admin per shop), else falls back to lat/lng or address search.
 export function openInDeviceMap(opts: {
   lat?: number | null;
   lng?: number | null;
   address?: string | null;
   name?: string;
+  maps_url?: string | null;
 }) {
-  const { lat, lng, address, name } = opts;
-  let url: string;
-  if (lat != null && lng != null) {
+  const { lat, lng, address, name, maps_url } = opts;
+  let url: string | null = null;
+  if (maps_url && maps_url.trim().length > 0) {
+    url = maps_url.trim();
+  } else if (lat != null && lng != null) {
     const label = encodeURIComponent(name ?? "Konum");
     url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${label}`;
   } else if (address) {
     url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-  } else {
-    return;
   }
-  // _blank lets mobile browsers hand the URL to the Maps app via universal links
+  if (!url) return;
   const win = window.open(url, "_blank", "noopener,noreferrer");
   if (!win) window.location.href = url;
 }
 
-// Open a chooser for Google / Apple / Yandex maps
 export function mapChooserUrls(opts: { lat?: number | null; lng?: number | null; address?: string | null; name?: string }) {
   const { lat, lng, address, name } = opts;
   const q = lat != null && lng != null ? `${lat},${lng}` : address ?? "";
