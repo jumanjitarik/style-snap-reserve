@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Scissors, Plus, Heart, Bell, User, Shield, CalendarCheck } from "lucide-react";
+import { Home, Scissors, Plus, Heart, Bell, User, CalendarCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,6 @@ const baseItems: NavItem[] = [
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [isAdmin, setIsAdmin] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,13 +25,9 @@ export function BottomNav() {
     async function load() {
       const { data: u } = await supabase.auth.getUser();
       if (!active) return;
-      if (!u.user) { setIsAdmin(false); setAvatar(null); return; }
-      const [{ data: roles }, { data: prof }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", u.user.id),
-        supabase.from("profiles").select("avatar_url").eq("id", u.user.id).maybeSingle(),
-      ]);
+      if (!u.user) { setAvatar(null); return; }
+      const { data: prof } = await supabase.from("profiles").select("avatar_url").eq("id", u.user.id).maybeSingle();
       if (!active) return;
-      setIsAdmin(!!roles?.some((r) => r.role === "admin"));
       setAvatar(prof?.avatar_url ?? null);
     }
     load();
@@ -40,9 +35,8 @@ export function BottomNav() {
     return () => { active = false; sub.data.subscription.unsubscribe(); };
   }, []);
 
-  const items: NavItem[] = isAdmin
-    ? [...baseItems, { to: "/admin", label: "Admin", icon: Shield }]
-    : baseItems;
+  const items: NavItem[] = baseItems;
+
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-primary/20 bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.5)]">
