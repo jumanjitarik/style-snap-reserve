@@ -29,7 +29,7 @@ export const adminUpdateUser = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    const profilePatch: Record<string, string | null> = {};
+    const profilePatch: { full_name?: string; email?: string | null; phone?: string | null } = {};
     if (data.full_name !== undefined) profilePatch.full_name = data.full_name;
     if (data.email !== undefined) profilePatch.email = data.email;
     if (data.phone !== undefined) profilePatch.phone = data.phone;
