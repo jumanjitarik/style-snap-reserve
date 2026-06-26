@@ -232,7 +232,7 @@ function AccountPage() {
               if (perm === "default") perm = await Notification.requestPermission();
               if (perm !== "granted") { toast.error("Bildirim izni reddedildi. Telefon ayarlarından izin verebilirsin."); return; }
             }
-            const reg = await navigator.serviceWorker?.ready;
+            const reg = await navigator.serviceWorker?.ready.catch(() => null);
             const opts: NotificationOptions = {
               body: "Bildirim sistemi çalışıyor ✅",
               icon: "/favicon.ico",
@@ -242,12 +242,15 @@ function AccountPage() {
             };
             (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).vibrate = [200, 100, 200];
             (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).renotify = true;
-            if (reg) {
-              await reg.showNotification("Test Bildirimi", opts);
-            } else if ("Notification" in window) {
-              new Notification("Test Bildirimi", opts);
-            } else {
-              toast.error("Bildirim gönderilemedi");
+            let shown = false;
+            if (reg && typeof reg.showNotification === "function") {
+              try { await reg.showNotification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
+            }
+            if (!shown && "Notification" in window) {
+              try { new Notification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
+            }
+            if (!shown) {
+              toast.error("Bu cihaz sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
               return;
             }
             // Also create a row so it appears in the in-app list.
