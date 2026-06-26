@@ -33,17 +33,17 @@ export function useGeolocation() {
       return;
     }
     const perms = (navigator as Navigator & { permissions?: { query: (q: { name: PermissionName }) => Promise<PermissionStatus> } }).permissions;
+    // Always attempt to get coords immediately. If permission was already granted
+    // (e.g. via LocationGate), this resolves instantly without re-prompting.
+    request();
     if (perms?.query) {
       perms.query({ name: "geolocation" as PermissionName }).then((status) => {
         setPermission(status.state as GeoPermission);
-        if (status.state === "granted") request();
         status.onchange = () => {
           setPermission(status.state as GeoPermission);
           if (status.state === "granted") request();
         };
-      }).catch(() => request());
-    } else {
-      request();
+      }).catch(() => { /* already requested above */ });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
