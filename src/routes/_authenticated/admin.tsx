@@ -715,37 +715,97 @@ function SettingsTab() {
       return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
     },
   });
-  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "" });
+  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500" });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
-    if (form.welcome_title === "" && form.welcome_subtitle === "") {
-      setForm({ welcome_title: settings.welcome_title ?? "", welcome_subtitle: settings.welcome_subtitle ?? "" });
-      initialized[1](true);
-    }
+    setForm({
+      welcome_title: settings.welcome_title ?? "",
+      welcome_subtitle: settings.welcome_subtitle ?? "",
+      app_name: settings.app_name ?? "BarberApp",
+      logo_url: settings.logo_url ?? "",
+      splash_url: settings.splash_url ?? "",
+      splash_duration_ms: settings.splash_duration_ms ?? "1500",
+    });
+    initialized[1](true);
   }
+
+  async function uploadAsset(file: File, key: "logo_url" | "splash_url") {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `${u.user!.id}/${key}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("barbershop-photos").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
+      setForm((f) => ({ ...f, [key]: data.publicUrl }));
+      toast.success("Yüklendi, kaydet'e bas");
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
   const save = useMutation({
     mutationFn: async () => {
       const rows = [
         { key: "welcome_title", value: form.welcome_title },
         { key: "welcome_subtitle", value: form.welcome_subtitle },
+        { key: "app_name", value: form.app_name },
+        { key: "logo_url", value: form.logo_url },
+        { key: "splash_url", value: form.splash_url },
+        { key: "splash_duration_ms", value: String(Number(form.splash_duration_ms) || 1500) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Kaydedildi"); qc.invalidateQueries({ queryKey: ["welcome-text"] }); qc.invalidateQueries({ queryKey: ["admin-settings"] }); },
+    onSuccess: () => {
+      toast.success("Kaydedildi");
+      qc.invalidateQueries({ queryKey: ["welcome-text"] });
+      qc.invalidateQueries({ queryKey: ["admin-settings"] });
+      qc.invalidateQueries({ queryKey: ["app-branding"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
   return (
     <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Uygulama Markası</p>
+        <div><Label>Uygulama Adı (üst bar)</Label><Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} placeholder="BarberApp" /></div>
+        <div>
+          <Label>Logo</Label>
+          <div className="flex items-center gap-2">
+            {form.logo_url && <SafeImg src={form.logo_url} alt="logo" className="h-10 w-10 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Logo yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAsset(f, "logo_url"); }} />
+            </label>
+            {form.logo_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, logo_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div>
+          <Label>Splash (açılış) Görseli</Label>
+          <div className="flex items-center gap-2">
+            {form.splash_url && <SafeImg src={form.splash_url} alt="splash" className="h-14 w-14 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Splash yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAsset(f, "splash_url"); }} />
+            </label>
+            {form.splash_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, splash_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div>
+          <Label>Splash Bekleme Süresi (ms)</Label>
+          <Input type="number" min="0" max="10000" step="100" value={form.splash_duration_ms} onChange={(e) => setForm({ ...form, splash_duration_ms: e.target.value })} placeholder="1500" />
+        </div>
+      </div>
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin</p>
         <div><Label>Üst yazı (küçük)</Label><Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} placeholder="Hoş geldin" /></div>
         <div><Label>Ana başlık</Label><Input value={form.welcome_title} onChange={(e) => setForm({ ...form, welcome_title: e.target.value })} placeholder="Bugün nasıl şıklaşıyoruz?" /></div>
-        <Button className="w-full" onClick={() => save.mutate()} disabled={save.isPending}>Kaydet</Button>
       </div>
+      <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
     </div>
   );
 }
+
 
 function ActivityTab() {
   const { data: profiles } = useQuery({
