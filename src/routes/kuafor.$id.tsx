@@ -14,8 +14,54 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
+const BASE_URL = "https://style-snap-reserve.lovable.app";
+
 export const Route = createFileRoute("/kuafor/$id")({
   component: ShopDetail,
+  loader: async ({ params }) => {
+    const { data } = await supabase
+      .from("barbershops")
+      .select("name, description, address, phone, category, cover_image_url")
+      .eq("id", params.id)
+      .maybeSingle();
+    return { shop: data };
+  },
+  head: ({ params, loaderData }) => {
+    const shop = loaderData?.shop;
+    const title = shop ? `${shop.name} — BarberApp` : "Salon — BarberApp";
+    const desc = shop
+      ? `${shop.name}${shop.address ? `, ${shop.address}` : ""}. ${shop.description ?? "Online randevu al."}`.slice(0, 158)
+      : "Salon detayları ve online randevu.";
+    const url = `${BASE_URL}/kuafor/${params.id}`;
+    const meta: Array<Record<string, string>> = [
+      { title },
+      { name: "description", content: desc },
+      { property: "og:title", content: title },
+      { property: "og:description", content: desc },
+      { property: "og:url", content: url },
+      { property: "og:type", content: "business.business" },
+    ];
+    if (shop?.cover_image_url) {
+      meta.push({ property: "og:image", content: shop.cover_image_url });
+      meta.push({ name: "twitter:image", content: shop.cover_image_url });
+    }
+    const scripts = shop
+      ? [{
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HealthAndBeautyBusiness",
+            name: shop.name,
+            description: shop.description ?? undefined,
+            address: shop.address ?? undefined,
+            telephone: shop.phone ?? undefined,
+            image: shop.cover_image_url ?? undefined,
+            url,
+          }),
+        }]
+      : undefined;
+    return { meta, links: [{ rel: "canonical", href: url }], scripts };
+  },
   errorComponent: ({ error }) => <div className="p-8 text-center text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8 text-center">Salon bulunamadı</div>,
 });
