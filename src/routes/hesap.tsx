@@ -274,11 +274,17 @@ function AccountPage() {
         <Link to="/favoriler" className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
           <Heart className="h-5 w-5 text-primary" /><span>Favoriler</span>
         </Link>
+        {isOwner && (
+          <Link to="/salon-yonetimi" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
+            <Shield className="h-5 w-5 text-primary" /><span className="font-semibold">Salon Yönetimi</span>
+          </Link>
+        )}
         {isAdmin && (
           <Link to="/admin" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
             <Shield className="h-5 w-5 text-primary" /><span className="font-semibold">Yönetici Paneli</span>
           </Link>
         )}
+
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
         </Button>
