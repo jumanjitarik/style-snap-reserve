@@ -291,6 +291,27 @@ function BookPage() {
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
             </div>
+
+            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Ödeme Şekli</p>
+              <button type="button" onClick={() => setPaymentMethod("full")}
+                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
+                  <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
+              </button>
+              <button type="button" onClick={() => setPaymentMethod("deposit")}
+                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-sm">%25 kapora · kalanı salonda öde</span>
+                  <span className="font-display text-primary">{Math.round(finalTotal * 0.25)}₺</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
+              </button>
+            </div>
+
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
               <input placeholder="Kart Numarası" className="w-full rounded-md bg-input border border-border p-2 text-sm" defaultValue="4242 4242 4242 4242" />
@@ -300,9 +321,12 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
+              {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
+                ? `Kaporayı Öde · ${Math.round(finalTotal * 0.25)}₺`
+                : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
+
           </>
         )}
       </div>
