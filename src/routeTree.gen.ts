@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
@@ -23,6 +24,11 @@ import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/kuaforler'
     | '/randevu-al'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/kuaforler'
     | '/randevu-al'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/kuaforler'
     | '/randevu-al'
     | '/reset-password'
+    | '/sitemap.xml'
     | '/_authenticated/admin'
     | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
@@ -188,11 +200,19 @@ export interface RootRouteChildren {
   KuaforlerRoute: typeof KuaforlerRoute
   RandevuAlRoute: typeof RandevuAlRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   KuaforIdRoute: typeof KuaforIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -314,6 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
   KuaforlerRoute: KuaforlerRoute,
   RandevuAlRoute: RandevuAlRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   KuaforIdRoute: KuaforIdRoute,
 }
 export const routeTree = rootRouteImport
