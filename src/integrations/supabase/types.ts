@@ -507,33 +507,6 @@ export type Database = {
           },
         ]
       }
-      translations: {
-        Row: {
-          created_at: string
-          id: string
-          note: string | null
-          source: string
-          tr: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          note?: string | null
-          source: string
-          tr: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          note?: string | null
-          source?: string
-          tr?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       user_activity: {
         Row: {
           action: string
