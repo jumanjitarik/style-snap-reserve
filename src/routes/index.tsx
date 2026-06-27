@@ -128,6 +128,7 @@ function Index() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Berber, salon, hizmet ara..."
+            aria-label="Salon veya hizmet ara"
             className="pl-9 bg-card border-border h-12"
           />
         </div>
