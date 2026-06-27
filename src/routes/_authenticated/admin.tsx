@@ -715,37 +715,97 @@ function SettingsTab() {
       return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
     },
   });
-  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "" });
+  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500" });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
-    if (form.welcome_title === "" && form.welcome_subtitle === "") {
-      setForm({ welcome_title: settings.welcome_title ?? "", welcome_subtitle: settings.welcome_subtitle ?? "" });
-      initialized[1](true);
-    }
+    setForm({
+      welcome_title: settings.welcome_title ?? "",
+      welcome_subtitle: settings.welcome_subtitle ?? "",
+      app_name: settings.app_name ?? "BarberApp",
+      logo_url: settings.logo_url ?? "",
+      splash_url: settings.splash_url ?? "",
+      splash_duration_ms: settings.splash_duration_ms ?? "1500",
+    });
+    initialized[1](true);
   }
+
+  async function uploadAsset(file: File, key: "logo_url" | "splash_url") {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `${u.user!.id}/${key}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("barbershop-photos").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
+      setForm((f) => ({ ...f, [key]: data.publicUrl }));
+      toast.success("Yüklendi, kaydet'e bas");
+    } catch (e) { toast.error((e as Error).message); }
+  }
+
   const save = useMutation({
     mutationFn: async () => {
       const rows = [
         { key: "welcome_title", value: form.welcome_title },
         { key: "welcome_subtitle", value: form.welcome_subtitle },
+        { key: "app_name", value: form.app_name },
+        { key: "logo_url", value: form.logo_url },
+        { key: "splash_url", value: form.splash_url },
+        { key: "splash_duration_ms", value: String(Number(form.splash_duration_ms) || 1500) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
     },
-    onSuccess: () => { toast.success("Kaydedildi"); qc.invalidateQueries({ queryKey: ["welcome-text"] }); qc.invalidateQueries({ queryKey: ["admin-settings"] }); },
+    onSuccess: () => {
+      toast.success("Kaydedildi");
+      qc.invalidateQueries({ queryKey: ["welcome-text"] });
+      qc.invalidateQueries({ queryKey: ["admin-settings"] });
+      qc.invalidateQueries({ queryKey: ["app-branding"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
   return (
     <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Uygulama Markası</p>
+        <div><Label>Uygulama Adı (üst bar)</Label><Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} placeholder="BarberApp" /></div>
+        <div>
+          <Label>Logo</Label>
+          <div className="flex items-center gap-2">
+            {form.logo_url && <SafeImg src={form.logo_url} alt="logo" className="h-10 w-10 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Logo yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAsset(f, "logo_url"); }} />
+            </label>
+            {form.logo_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, logo_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div>
+          <Label>Splash (açılış) Görseli</Label>
+          <div className="flex items-center gap-2">
+            {form.splash_url && <SafeImg src={form.splash_url} alt="splash" className="h-14 w-14 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Splash yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAsset(f, "splash_url"); }} />
+            </label>
+            {form.splash_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, splash_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div>
+          <Label>Splash Bekleme Süresi (ms)</Label>
+          <Input type="number" min="0" max="10000" step="100" value={form.splash_duration_ms} onChange={(e) => setForm({ ...form, splash_duration_ms: e.target.value })} placeholder="1500" />
+        </div>
+      </div>
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin</p>
         <div><Label>Üst yazı (küçük)</Label><Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} placeholder="Hoş geldin" /></div>
         <div><Label>Ana başlık</Label><Input value={form.welcome_title} onChange={(e) => setForm({ ...form, welcome_title: e.target.value })} placeholder="Bugün nasıl şıklaşıyoruz?" /></div>
-        <Button className="w-full" onClick={() => save.mutate()} disabled={save.isPending}>Kaydet</Button>
       </div>
+      <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
     </div>
   );
 }
+
 
 function ActivityTab() {
   const { data: profiles } = useQuery({
@@ -927,7 +987,7 @@ function AccountingTab() {
     queryFn: async () => {
       let q = supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, payment_method, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
         .order("starts_at", { ascending: false });
       if (shopId !== "ALL") q = q.eq("shop_id", shopId);
       const { data, error } = await q;
@@ -951,6 +1011,8 @@ function AccountingTab() {
     .reduce((s: number, r: any) => s + Number(r.payment_amount ?? 0), 0);
   const totalCount = (rows ?? []).length;
 
+  const totalRemaining = (rows ?? []).reduce((s: number, r: any) => s + Number(r.remaining_amount ?? 0), 0);
+
   const exportXlsx = () => {
     const data = (rows ?? []).map((r: any) => ({
       Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
@@ -958,8 +1020,10 @@ function AccountingTab() {
       Telefon: r.profiles?.phone ?? "—",
       Salon: r.barbershops?.name ?? "—",
       Hizmetler: (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", "),
+      Ödeme_Şekli: r.payment_method === "deposit" ? "%25 Kapora" : "Tamamı",
+      Sistemden_Ödenen: Number(r.payment_amount ?? 0),
+      Salonda_Ödenecek: Number(r.remaining_amount ?? 0),
       Durum: r.status,
-      Tutar: Number(r.payment_amount ?? 0),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -978,14 +1042,18 @@ function AccountingTab() {
         </SelectContent>
       </Select>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] text-muted-foreground">Toplam Ciro</p>
-          <p className="font-display text-2xl text-primary">{totalRevenue.toFixed(0)}₺</p>
+          <p className="text-[10px] text-muted-foreground">Sistemden</p>
+          <p className="font-display text-xl text-primary">{totalRevenue.toFixed(0)}₺</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] text-muted-foreground">Toplam Randevu</p>
-          <p className="font-display text-2xl">{totalCount}</p>
+          <p className="text-[10px] text-muted-foreground">Salonda</p>
+          <p className="font-display text-xl">{totalRemaining.toFixed(0)}₺</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-[10px] text-muted-foreground">Randevu</p>
+          <p className="font-display text-xl">{totalCount}</p>
         </div>
       </div>
 
@@ -997,16 +1065,24 @@ function AccountingTab() {
         {(rows ?? []).map((r: any) => {
           const d = new Date(r.starts_at);
           const names = (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", ");
+          const total = Number(r.payment_amount ?? 0) + Number(r.remaining_amount ?? 0);
           return (
             <div key={r.id} className="rounded-xl border border-border bg-card p-3 text-xs space-y-0.5">
               <div className="flex justify-between gap-2">
                 <p className="font-semibold text-sm truncate">{r.profiles?.full_name ?? "—"}</p>
-                <p className="font-display text-primary text-base">{Number(r.payment_amount ?? 0).toFixed(0)}₺</p>
+                <p className="font-display text-primary text-base">{total.toFixed(0)}₺</p>
               </div>
               <p className="text-muted-foreground">📞 {r.profiles?.phone ?? "—"}</p>
               <p>🗓 {d.toLocaleDateString("tr-TR")} · {d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>
               <p>✂️ {names || "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{r.status}</p>
+              <p>🏪 {r.barbershops?.name ?? "—"}</p>
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">Sistemden: {Number(r.payment_amount ?? 0).toFixed(0)}₺</span>
+                {Number(r.remaining_amount ?? 0) > 0 && (
+                  <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[10px] font-bold">Salonda: {Number(r.remaining_amount ?? 0).toFixed(0)}₺</span>
+                )}
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider">{r.status}</span>
+              </div>
             </div>
           );
         })}
@@ -1015,6 +1091,7 @@ function AccountingTab() {
     </div>
   );
 }
+
 
 function DiscountsTab() {
   const qc = useQueryClient();

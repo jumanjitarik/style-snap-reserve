@@ -65,6 +65,7 @@ export type Database = {
       appointments: {
         Row: {
           created_at: string
+          deposit_amount: number
           discount_amount: number | null
           discount_code: string | null
           guest_name: string | null
@@ -72,7 +73,9 @@ export type Database = {
           id: string
           notes: string | null
           payment_amount: number | null
+          payment_method: string
           payment_ref: string | null
+          remaining_amount: number
           reminded_1h: boolean
           reminded_2h: boolean
           service_id: string
@@ -85,6 +88,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deposit_amount?: number
           discount_amount?: number | null
           discount_code?: string | null
           guest_name?: string | null
@@ -92,7 +96,9 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_amount?: number | null
+          payment_method?: string
           payment_ref?: string | null
+          remaining_amount?: number
           reminded_1h?: boolean
           reminded_2h?: boolean
           service_id: string
@@ -105,6 +111,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deposit_amount?: number
           discount_amount?: number | null
           discount_code?: string | null
           guest_name?: string | null
@@ -112,7 +119,9 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_amount?: number | null
+          payment_method?: string
           payment_ref?: string | null
+          remaining_amount?: number
           reminded_1h?: boolean
           reminded_2h?: boolean
           service_id?: string

@@ -45,8 +45,10 @@ function BookPage() {
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
   const [time, setTime] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"full" | "deposit">("full");
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
+
 
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
@@ -104,6 +106,8 @@ function BookPage() {
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
+      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal;
+      const remaining = Math.max(0, finalTotal - deposit);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
         shop_id: shopId,
@@ -112,19 +116,40 @@ function BookPage() {
         staff_id: staffId,
         starts_at: starts.toISOString(),
         status: "confirmed",
-        payment_amount: finalTotal,
+        payment_amount: deposit,
+        deposit_amount: deposit,
+        remaining_amount: remaining,
+        payment_method: paymentMethod,
         discount_code: appliedDiscount?.code ?? null,
         discount_amount: appliedDiscount?.amount ?? 0,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
+
+      // Salon sahibine bilgi bildirimi gönder
+      try {
+        const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
+        if (shop?.owner_id) {
+          const dt = starts.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
+          const body = paymentMethod === "deposit"
+            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.`
+            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).`;
+          await supabase.from("notifications").insert({
+            user_id: shop.owner_id,
+            title: paymentMethod === "deposit" ? "Yeni randevu (Kapora)" : "Yeni randevu",
+            body,
+          });
+        }
+      } catch { /* sessiz */ }
     },
+
     onSuccess: () => {
-      toast.success("Ödeme alındı, randevu onaylandı!");
+      toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
       navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (authChecked && !userId) {
     return (
@@ -283,6 +308,27 @@ function BookPage() {
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
             </div>
+
+            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Ödeme Şekli</p>
+              <button type="button" onClick={() => setPaymentMethod("full")}
+                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
+                  <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
+              </button>
+              <button type="button" onClick={() => setPaymentMethod("deposit")}
+                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-sm">%25 kapora · kalanı salonda öde</span>
+                  <span className="font-display text-primary">{Math.round(finalTotal * 0.25)}₺</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
+              </button>
+            </div>
+
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
               <input placeholder="Kart Numarası" className="w-full rounded-md bg-input border border-border p-2 text-sm" defaultValue="4242 4242 4242 4242" />
@@ -292,9 +338,12 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
+              {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
+                ? `Kaporayı Öde · ${Math.round(finalTotal * 0.25)}₺`
+                : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
+
           </>
         )}
       </div>
