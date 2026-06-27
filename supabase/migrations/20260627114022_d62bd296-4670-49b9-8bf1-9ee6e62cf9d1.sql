@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.admin_broadcast(text, text, text, text, text);

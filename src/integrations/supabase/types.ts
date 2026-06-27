@@ -566,16 +566,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_broadcast: {
-        Args: {
-          _audience: string
-          _body: string
-          _image_url: string
-          _link_url: string
-          _title: string
-        }
-        Returns: number
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

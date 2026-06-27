@@ -17,6 +17,7 @@ import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
 import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
+import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
 import * as XLSX from "xlsx";
 
@@ -847,15 +848,16 @@ function BroadcastTab() {
 
   const send = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("admin_broadcast", {
-        _title: form.title,
-        _body: form.body,
-        _image_url: form.image_url || "",
-        _link_url: form.link_url || "",
-        _audience: form.audience,
+      const n = await adminBroadcast({
+        data: {
+          title: form.title,
+          body: form.body,
+          image_url: form.image_url || "",
+          link_url: form.link_url || "",
+          audience: form.audience,
+        },
       });
-      if (error) throw error;
-      return data as number;
+      return n as number;
     },
     onSuccess: (n) => toast.success(`${n} kişiye gönderildi`),
     onError: (e: Error) => toast.error(e.message),
