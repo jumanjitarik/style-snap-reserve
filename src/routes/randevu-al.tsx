@@ -45,8 +45,10 @@ function BookPage() {
   const [staffId, setStaffId] = useState<string | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
   const [time, setTime] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"full" | "deposit">("full");
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
+
 
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
