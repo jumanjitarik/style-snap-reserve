@@ -1011,6 +1011,8 @@ function AccountingTab() {
     .reduce((s: number, r: any) => s + Number(r.payment_amount ?? 0), 0);
   const totalCount = (rows ?? []).length;
 
+  const totalRemaining = (rows ?? []).reduce((s: number, r: any) => s + Number(r.remaining_amount ?? 0), 0);
+
   const exportXlsx = () => {
     const data = (rows ?? []).map((r: any) => ({
       Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
@@ -1018,8 +1020,10 @@ function AccountingTab() {
       Telefon: r.profiles?.phone ?? "—",
       Salon: r.barbershops?.name ?? "—",
       Hizmetler: (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", "),
+      Ödeme_Şekli: r.payment_method === "deposit" ? "%25 Kapora" : "Tamamı",
+      Sistemden_Ödenen: Number(r.payment_amount ?? 0),
+      Salonda_Ödenecek: Number(r.remaining_amount ?? 0),
       Durum: r.status,
-      Tutar: Number(r.payment_amount ?? 0),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -1038,14 +1042,18 @@ function AccountingTab() {
         </SelectContent>
       </Select>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] text-muted-foreground">Toplam Ciro</p>
-          <p className="font-display text-2xl text-primary">{totalRevenue.toFixed(0)}₺</p>
+          <p className="text-[10px] text-muted-foreground">Sistemden</p>
+          <p className="font-display text-xl text-primary">{totalRevenue.toFixed(0)}₺</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] text-muted-foreground">Toplam Randevu</p>
-          <p className="font-display text-2xl">{totalCount}</p>
+          <p className="text-[10px] text-muted-foreground">Salonda</p>
+          <p className="font-display text-xl">{totalRemaining.toFixed(0)}₺</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-[10px] text-muted-foreground">Randevu</p>
+          <p className="font-display text-xl">{totalCount}</p>
         </div>
       </div>
 
@@ -1057,16 +1065,24 @@ function AccountingTab() {
         {(rows ?? []).map((r: any) => {
           const d = new Date(r.starts_at);
           const names = (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", ");
+          const total = Number(r.payment_amount ?? 0) + Number(r.remaining_amount ?? 0);
           return (
             <div key={r.id} className="rounded-xl border border-border bg-card p-3 text-xs space-y-0.5">
               <div className="flex justify-between gap-2">
                 <p className="font-semibold text-sm truncate">{r.profiles?.full_name ?? "—"}</p>
-                <p className="font-display text-primary text-base">{Number(r.payment_amount ?? 0).toFixed(0)}₺</p>
+                <p className="font-display text-primary text-base">{total.toFixed(0)}₺</p>
               </div>
               <p className="text-muted-foreground">📞 {r.profiles?.phone ?? "—"}</p>
               <p>🗓 {d.toLocaleDateString("tr-TR")} · {d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>
               <p>✂️ {names || "—"}</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{r.status}</p>
+              <p>🏪 {r.barbershops?.name ?? "—"}</p>
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">Sistemden: {Number(r.payment_amount ?? 0).toFixed(0)}₺</span>
+                {Number(r.remaining_amount ?? 0) > 0 && (
+                  <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[10px] font-bold">Salonda: {Number(r.remaining_amount ?? 0).toFixed(0)}₺</span>
+                )}
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider">{r.status}</span>
+              </div>
             </div>
           );
         })}
@@ -1075,6 +1091,7 @@ function AccountingTab() {
     </div>
   );
 }
+
 
 function DiscountsTab() {
   const qc = useQueryClient();
