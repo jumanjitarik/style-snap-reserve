@@ -106,6 +106,8 @@ function BookPage() {
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
+      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal;
+      const remaining = Math.max(0, finalTotal - deposit);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
         shop_id: shopId,
@@ -114,7 +116,10 @@ function BookPage() {
         staff_id: staffId,
         starts_at: starts.toISOString(),
         status: "confirmed",
-        payment_amount: finalTotal,
+        payment_amount: deposit,
+        deposit_amount: deposit,
+        remaining_amount: remaining,
+        payment_method: paymentMethod,
         discount_code: appliedDiscount?.code ?? null,
         discount_amount: appliedDiscount?.amount ?? 0,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
@@ -122,11 +127,12 @@ function BookPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Ödeme alındı, randevu onaylandı!");
+      toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
       navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (authChecked && !userId) {
     return (
