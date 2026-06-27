@@ -17,6 +17,7 @@ import { CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
 import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
+import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
 import * as XLSX from "xlsx";
 
