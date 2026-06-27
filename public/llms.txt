@@ -1,0 +1,10 @@
+# BarberApp
+
+> Türkiye'de berber, kuaför, lazer epilasyon, tırnak, cilt ve estetik salonları için online randevu uygulaması.
+
+BarberApp; kullanıcıların yakınındaki güzellik ve bakım salonlarını keşfetmesini, hizmetleri inceleyip puan ve yorumları görmesini ve online randevu almasını sağlar.
+
+## Pages
+
+- [Ana Sayfa](/): Öne çıkan ve yakındaki salonları keşfet.
+- [Salonlar](/kuaforler): Tüm salonları kategoriye, yakınlığa, puana ve fiyata göre filtrele.
