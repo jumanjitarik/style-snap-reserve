@@ -126,18 +126,6 @@ function ShopDetail() {
             )}
           </div>
 
-          {images && images.length > 0 && (
-            <section className="mt-6">
-              <h2 className="mb-2 font-display text-lg tracking-wider">Galeri</h2>
-              <div className="flex gap-2 overflow-x-auto">
-                {images.map((im) => (
-                  <div key={im.id} className="shrink-0">
-                    <SafeImg src={im.url} alt="" className="h-28 w-40 rounded-lg object-cover" />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
           <ServicesSection shopId={id} services={services ?? []} />
 
