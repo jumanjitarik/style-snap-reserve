@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { TopBar } from "./TopBar";
+import { SplashScreen } from "./SplashScreen";
 import { AnnouncementPopup } from "./AnnouncementPopup";
 import { PullToRefresh } from "./PullToRefresh";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +27,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-28 pt-12">
+      {mounted && <SplashScreen />}
+      <TopBar />
       {mounted && <PullToRefresh />}
       <div className="mx-auto max-w-md">{children}</div>
       <BottomNav />
@@ -33,3 +37,4 @@ export function AppShell({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
