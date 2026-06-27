@@ -137,6 +137,7 @@ function ShopDetail() {
           {userId && (
             <button
               onClick={() => toggleFav.mutate()}
+              aria-label={isFav ? "Favorilerden çıkar" : "Favorilere ekle"}
               className="absolute top-3 right-3 rounded-full bg-background/80 backdrop-blur p-2 active:scale-90 transition"
             >
               <Heart className={`h-5 w-5 ${isFav ? "fill-primary text-primary" : ""}`} />
