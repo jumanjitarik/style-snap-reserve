@@ -125,7 +125,24 @@ function BookPage() {
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
+
+      // Salon sahibine bilgi bildirimi gönder
+      try {
+        const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
+        if (shop?.owner_id) {
+          const dt = starts.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
+          const body = paymentMethod === "deposit"
+            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.`
+            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).`;
+          await supabase.from("notifications").insert({
+            user_id: shop.owner_id,
+            title: paymentMethod === "deposit" ? "Yeni randevu (Kapora)" : "Yeni randevu",
+            body,
+          });
+        }
+      } catch { /* sessiz */ }
     },
+
     onSuccess: () => {
       toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
       navigate({ to: "/randevularim" });
