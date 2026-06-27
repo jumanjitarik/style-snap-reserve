@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
+import { Route as AuthenticatedSalonYonetimiRouteImport } from './routes/_authenticated/salon-yonetimi'
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
 import { Route as AuthenticatedMusterilerRouteImport } from './routes/_authenticated/musteriler'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
@@ -68,6 +69,12 @@ const KuaforIdRoute = KuaforIdRouteImport.update({
   path: '/kuafor/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSalonYonetimiRoute =
+  AuthenticatedSalonYonetimiRouteImport.update({
+    id: '/salon-yonetimi',
+    path: '/salon-yonetimi',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRandevularimRoute =
   AuthenticatedRandevularimRouteImport.update({
     id: '/randevularim',
@@ -109,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/favoriler': typeof AuthenticatedFavorilerRoute
   '/musteriler': typeof AuthenticatedMusterilerRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
+  '/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRoutesByTo {
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
   '/favoriler': typeof AuthenticatedFavorilerRoute
   '/musteriler': typeof AuthenticatedMusterilerRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
+  '/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRoutesById {
@@ -141,6 +150,7 @@ export interface FileRoutesById {
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
   '/_authenticated/musteriler': typeof AuthenticatedMusterilerRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
+  '/_authenticated/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
 }
 export interface FileRouteTypes {
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/favoriler'
     | '/musteriler'
     | '/randevularim'
+    | '/salon-yonetimi'
     | '/kuafor/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/favoriler'
     | '/musteriler'
     | '/randevularim'
+    | '/salon-yonetimi'
     | '/kuafor/$id'
   id:
     | '__root__'
@@ -189,6 +201,7 @@ export interface FileRouteTypes {
     | '/_authenticated/favoriler'
     | '/_authenticated/musteriler'
     | '/_authenticated/randevularim'
+    | '/_authenticated/salon-yonetimi'
     | '/kuafor/$id'
   fileRoutesById: FileRoutesById
 }
@@ -269,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KuaforIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/salon-yonetimi': {
+      id: '/_authenticated/salon-yonetimi'
+      path: '/salon-yonetimi'
+      fullPath: '/salon-yonetimi'
+      preLoaderRoute: typeof AuthenticatedSalonYonetimiRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/randevularim': {
       id: '/_authenticated/randevularim'
       path: '/randevularim'
@@ -313,6 +333,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
   AuthenticatedMusterilerRoute: typeof AuthenticatedMusterilerRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
+  AuthenticatedSalonYonetimiRoute: typeof AuthenticatedSalonYonetimiRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -321,6 +342,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
   AuthenticatedMusterilerRoute: AuthenticatedMusterilerRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
+  AuthenticatedSalonYonetimiRoute: AuthenticatedSalonYonetimiRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
