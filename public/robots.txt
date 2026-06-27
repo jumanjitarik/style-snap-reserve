@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /auth
+Disallow: /reset-password
+Disallow: /hesap
+Disallow: /randevu-al
+Disallow: /randevularim
+Disallow: /favoriler
+Disallow: /bildirimler
+Disallow: /musteriler
+
+Sitemap: https://style-snap-reserve.lovable.app/sitemap.xml

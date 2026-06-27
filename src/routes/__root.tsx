@@ -81,6 +81,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "BarberApp — Online Berber Randevu" },
       { name: "description", content: "Erkek/kadın kuaförü, lazer, tırnak, cilt ve estetik için online randevu." },
       { name: "theme-color", content: "#1a1410" },
+      { property: "og:site_name", content: "BarberApp" },
+      { property: "og:type", content: "website" },
+      { property: "og:title", content: "BarberApp — Online Berber Randevu" },
+      { property: "og:description", content: "Erkek/kadın kuaförü, lazer, tırnak, cilt ve estetik için online randevu." },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

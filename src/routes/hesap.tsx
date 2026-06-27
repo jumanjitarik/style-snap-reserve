@@ -167,7 +167,7 @@ function AccountPage() {
             <Button size="sm" className="flex-1" onClick={saveAvatar}>
               <Save className="h-4 w-4 mr-1" /> Kaydet
             </Button>
-            <Button size="sm" variant="destructive" onClick={removeAvatar}>
+            <Button size="sm" variant="destructive" onClick={removeAvatar} aria-label="Profil fotoğrafını sil">
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
