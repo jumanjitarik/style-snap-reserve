@@ -1135,3 +1135,121 @@ function DiscountsTab() {
     </div>
   );
 }
+
+function TranslationsTab() {
+  const qc = useQueryClient();
+  const [src, setSrc] = useState("");
+  const [tr, setTr] = useState("");
+  const [q, setQ] = useState("");
+  const { data } = useQuery({
+    queryKey: ["translations-admin"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("translations")
+        .select("id,source,tr,updated_at")
+        .order("source", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const upsert = useMutation({
+    mutationFn: async (payload: { id?: string; source: string; tr: string }) => {
+      if (payload.id) {
+        const { error } = await supabase.from("translations").update({ source: payload.source, tr: payload.tr }).eq("id", payload.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("translations").upsert({ source: payload.source, tr: payload.tr }, { onConflict: "source" });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Çeviri kaydedildi");
+      setSrc(""); setTr("");
+      qc.invalidateQueries({ queryKey: ["translations-admin"] });
+      import("@/lib/translations").then((m) => m.loadTranslations());
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("translations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Silindi");
+      qc.invalidateQueries({ queryKey: ["translations-admin"] });
+      import("@/lib/translations").then((m) => m.loadTranslations());
+    },
+  });
+
+  const list = (data ?? []).filter((r) =>
+    !q ? true : r.source.toLowerCase().includes(q.toLowerCase()) || r.tr.toLowerCase().includes(q.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-4 pb-32">
+      <div className="rounded-xl border border-border/40 bg-card/50 p-3 space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Uygulamada görünen herhangi bir İngilizce (veya başka) yazının yerine Türkçe karşılığını koyabilirsiniz. Yazı eşleştiği her yerde otomatik değiştirilir.
+        </p>
+        <div className="grid gap-2">
+          <Label className="text-xs">Orijinal metin</Label>
+          <Textarea value={src} onChange={(e) => setSrc(e.target.value)} placeholder="Page not found" rows={2} />
+          <Label className="text-xs">Türkçe karşılığı</Label>
+          <Textarea value={tr} onChange={(e) => setTr(e.target.value)} placeholder="Sayfa bulunamadı" rows={2} />
+          <Button
+            onClick={() => {
+              if (!src.trim() || !tr.trim()) return toast.error("Her iki alanı doldurun");
+              upsert.mutate({ source: src.trim(), tr: tr.trim() });
+            }}
+            disabled={upsert.isPending}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Ekle / Güncelle
+          </Button>
+        </div>
+      </div>
+
+      <Input placeholder="Çevirilerde ara…" value={q} onChange={(e) => setQ(e.target.value)} />
+
+      <div className="space-y-2">
+        {list.map((r) => (
+          <TranslationRow
+            key={r.id}
+            row={r}
+            onSave={(source, tr) => upsert.mutate({ id: r.id, source, tr })}
+            onDelete={() => del.mutate(r.id)}
+          />
+        ))}
+        {list.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Çeviri yok.</p>}
+      </div>
+    </div>
+  );
+}
+
+function TranslationRow({
+  row,
+  onSave,
+  onDelete,
+}: {
+  row: { id: string; source: string; tr: string };
+  onSave: (source: string, tr: string) => void;
+  onDelete: () => void;
+}) {
+  const [s, setS] = useState(row.source);
+  const [t, setT] = useState(row.tr);
+  const dirty = s !== row.source || t !== row.tr;
+  return (
+    <div className="rounded-lg border border-border/40 bg-card/40 p-2 space-y-1">
+      <Textarea value={s} onChange={(e) => setS(e.target.value)} rows={2} className="text-xs" />
+      <Textarea value={t} onChange={(e) => setT(e.target.value)} rows={2} className="text-xs" />
+      <div className="flex justify-end gap-1">
+        {dirty && (
+          <Button size="sm" onClick={() => onSave(s.trim(), t.trim())}>Kaydet</Button>
+        )}
+        <Button size="icon" variant="ghost" onClick={onDelete}><Trash2 className="h-4 w-4" /></Button>
+      </div>
+    </div>
+  );
+}
