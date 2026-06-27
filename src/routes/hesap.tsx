@@ -40,6 +40,8 @@ function AccountPage() {
   });
 
   const isAdmin = roles?.some((r) => r.role === "admin");
+  const isOwner = roles?.some((r) => r.role === "owner" || r.role === "admin");
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", avatar_url: "" });
   const fileRef = useRef<HTMLInputElement>(null);
