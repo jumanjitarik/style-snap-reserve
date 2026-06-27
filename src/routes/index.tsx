@@ -16,7 +16,11 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "BarberApp — Berber & Güzellik Randevusu" },
       { name: "description", content: "Yakınındaki en iyi berberleri keşfet, online randevu al." },
+      { property: "og:title", content: "BarberApp — Berber & Güzellik Randevusu" },
+      { property: "og:description", content: "Yakınındaki en iyi berberleri keşfet, online randevu al." },
+      { property: "og:url", content: "https://style-snap-reserve.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://style-snap-reserve.lovable.app/" }],
   }),
   component: Index,
 });
