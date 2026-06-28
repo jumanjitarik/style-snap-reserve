@@ -155,7 +155,7 @@ function BookPage() {
     return (
       <AppShell>
         <BackButton to="/" />
-        <header className="px-4 pt-16 pb-3">
+        <header className="px-4 pt-4 pb-3">
           <h1 className="font-display text-3xl">Randevu Al</h1>
           <p className="text-sm text-muted-foreground mt-1">Giriş sayfasına yönlendiriliyorsun…</p>
         </header>
@@ -166,7 +166,7 @@ function BookPage() {
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Randevu Al</h1>
         <div className="mt-3 flex gap-1">
           {[1,2,3,4,5].map((n) => (

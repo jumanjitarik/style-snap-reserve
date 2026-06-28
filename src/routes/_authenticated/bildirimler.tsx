@@ -62,12 +62,27 @@ function NotifPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
+  const deleteAll = useMutation({
+    mutationFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase.from("notifications").delete().eq("user_id", u.user.id);
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); toast.success("Tüm bildirimler silindi"); },
+  });
+
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3 flex items-center justify-between">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Bildirimler</h1>
-        <button onClick={() => markAll.mutate()} className="text-xs text-primary active:opacity-60">Tümünü okundu işaretle</button>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button onClick={() => markAll.mutate()} className="text-[11px] rounded-full border border-primary/40 text-primary px-3 py-1 active:opacity-60">Tümünü okundu işaretle</button>
+          <button
+            onClick={() => { if (confirm("Tüm bildirimler silinsin mi?")) deleteAll.mutate(); }}
+            className="text-[11px] rounded-full border border-destructive/40 text-destructive px-3 py-1 active:opacity-60"
+          >Tümünü sil</button>
+        </div>
       </header>
       <div className="px-4 space-y-2">
         {(data ?? []).map((n) => (

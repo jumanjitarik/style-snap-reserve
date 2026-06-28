@@ -78,7 +78,7 @@ function StaffCustomersPage() {
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <div className="flex items-center gap-2">
           <UsersIcon className="h-6 w-6 text-primary" />
           <h1 className="font-display text-3xl">Müşterilerim</h1>

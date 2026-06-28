@@ -40,7 +40,7 @@ function ResetPasswordPage() {
   return (
     <AppShell>
       <BackButton to="/auth" />
-      <div className="px-6 pt-16 max-w-md mx-auto">
+      <div className="px-6 pt-4 max-w-md mx-auto">
         <h1 className="font-display text-3xl">Yeni Şifre Belirle</h1>
         <p className="text-sm text-muted-foreground mt-1">İki kez aynı şifreyi gir ve devam et.</p>
         {!ready ? (

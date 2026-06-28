@@ -130,7 +130,7 @@ function AccountPage() {
     return (
       <AppShell>
         <BackButton to="/" />
-        <header className="px-4 pt-16 pb-3"><h1 className="font-display text-3xl">Hesap</h1></header>
+        <header className="px-4 pt-4 pb-3"><h1 className="font-display text-3xl">Hesap</h1></header>
         <p className="px-4 text-sm text-muted-foreground">Giriş sayfasına yönlendiriliyorsun…</p>
       </AppShell>
     );
@@ -139,7 +139,7 @@ function AccountPage() {
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Hesap</h1>
       </header>
       <div className="px-4 space-y-3">
