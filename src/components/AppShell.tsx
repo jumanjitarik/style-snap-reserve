@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./BottomNav";
 import { TopBar } from "./TopBar";
 import { SplashScreen } from "./SplashScreen";
@@ -9,6 +10,7 @@ import { startPushNotifications } from "@/lib/push";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     setMounted(true);
@@ -27,14 +29,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen pb-28 pt-12">
+    <div className="min-h-screen pb-24 pt-11">
       {mounted && <SplashScreen />}
       <TopBar />
       {mounted && <PullToRefresh />}
-      <div className="mx-auto max-w-md">{children}</div>
+      <div key={pathname} className="mx-auto max-w-md page-transition">{children}</div>
       <BottomNav />
       {mounted && <AnnouncementPopup />}
     </div>
   );
 }
+
 

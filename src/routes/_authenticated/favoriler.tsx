@@ -27,7 +27,7 @@ function Favs() {
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Favorilerim</h1>
       </header>
       <div className="px-4 space-y-3">

@@ -117,7 +117,7 @@ function SalonYonetimi() {
   return (
     <AppShell>
       <BackButton to="/hesap" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Salon Yönetimi</h1>
         <p className="text-xs text-muted-foreground">Müşterilerin, randevuların ve ödemeler</p>
       </header>

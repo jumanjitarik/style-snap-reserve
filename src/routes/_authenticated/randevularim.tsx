@@ -55,7 +55,7 @@ function MyAppts() {
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Randevularım</h1>
         <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
       </header>

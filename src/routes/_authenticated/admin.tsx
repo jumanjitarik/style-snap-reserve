@@ -37,7 +37,7 @@ function AdminPanel() {
   return (
     <AppShell>
       <BackButton to="/" />
-      <header className="px-4 pt-16 pb-3">
+      <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl">Yönetici Paneli</h1>
         <p className="text-xs text-muted-foreground">Salonlar, hizmetler, üyeler, duyurular ve istatistikler</p>
       </header>

@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Heart, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "./SafeImg";
+import defaultLogo from "@/assets/barber-logo.png.asset.json";
 
 export function TopBar() {
   const [hidden, setHidden] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [signedIn, setSignedIn] = useState(false);
+
   const { data: branding } = useQuery({
     queryKey: ["app-branding"],
     queryFn: async () => {
@@ -13,6 +19,24 @@ export function TopBar() {
     },
     staleTime: 30_000,
   });
+
+  useEffect(() => {
+    let active = true;
+    let userId: string | null = null;
+    async function loadUnread() {
+      const { data: u } = await supabase.auth.getUser();
+      if (!active) return;
+      userId = u.user?.id ?? null;
+      setSignedIn(!!userId);
+      if (!userId) { setUnread(0); return; }
+      const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("read", false);
+      if (active) setUnread(count ?? 0);
+    }
+    loadUnread();
+    const sub = supabase.auth.onAuthStateChange(() => loadUnread());
+    const ch = supabase.channel("topbar-notif").on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => loadUnread()).subscribe();
+    return () => { active = false; sub.data.subscription.unsubscribe(); supabase.removeChannel(ch); };
+  }, []);
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -29,20 +53,37 @@ export function TopBar() {
   }, []);
 
   const name = branding?.app_name?.trim() || "BarberApp";
-  const logo = branding?.logo_url?.trim();
+  const logo = branding?.logo_url?.trim() || defaultLogo.url;
 
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ${hidden ? "-translate-y-full" : "translate-y-0"}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto max-w-md px-4 py-2.5 flex items-center gap-2 bg-background/80 backdrop-blur-xl border-b border-primary/15">
-        {logo ? (
-          <SafeImg src={logo} alt="logo" className="h-7 w-7 rounded-md object-cover" />
-        ) : (
-          <div className="h-7 w-7 rounded-md bg-gradient-to-br from-primary to-primary/40" />
+      <div className="mx-auto max-w-md px-4 py-2 flex items-center gap-2 bg-background/85 backdrop-blur-xl border-b border-primary/15">
+        <Link to="/" className="flex items-center gap-2 flex-1 min-w-0 active:opacity-70">
+          {logo ? (
+            <SafeImg src={logo} alt="logo" className="h-7 w-7 rounded-md object-cover" />
+          ) : (
+            <div className="h-7 w-7 rounded-md bg-gradient-to-br from-primary to-primary/40" />
+          )}
+          <span className="font-display text-lg tracking-wide text-primary truncate">{name}</span>
+        </Link>
+        {signedIn && (
+          <div className="flex items-center gap-1">
+            <Link to="/favoriler" aria-label="Favoriler" className="rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10">
+              <Heart className="h-5 w-5" />
+            </Link>
+            <Link to="/bildirimler" aria-label="Bildirimler" className="relative rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10">
+              <Bell className="h-5 w-5" />
+              {unread > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-background">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+          </div>
         )}
-        <span className="font-display text-lg tracking-wide text-primary">{name}</span>
       </div>
     </div>
   );
