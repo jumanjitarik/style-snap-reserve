@@ -179,15 +179,22 @@ function ShopDetail() {
           <section className="mt-6">
             <h2 className="mb-2 font-display text-lg tracking-wider">Ekibimiz</h2>
             <div className="flex gap-3 overflow-x-auto pb-2">
-              {(staff ?? []).map((p) => (
-                <div key={p.id} className="w-24 shrink-0 text-center">
-                  <div className="h-20 w-20 mx-auto rounded-full bg-muted overflow-hidden">
-                    {p.photo_url && <SafeImg src={p.photo_url} alt={p.name} className="h-full w-full object-cover" />}
+              {(staff ?? []).map((p) => {
+                const initial = (p.name ?? "?").trim().charAt(0).toLocaleUpperCase("tr-TR");
+                return (
+                  <div key={p.id} className="w-24 shrink-0 text-center">
+                    <div className="h-20 w-20 mx-auto rounded-full bg-gradient-to-br from-primary/30 to-primary/10 overflow-hidden flex items-center justify-center ring-2 ring-primary/30">
+                      {p.photo_url ? (
+                        <SafeImg src={p.photo_url} alt={p.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="font-display text-3xl text-primary">{initial}</span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs font-medium truncate">{p.name}</p>
+                    {p.title && <p className="text-[10px] text-muted-foreground truncate">{p.title}</p>}
                   </div>
-                  <p className="mt-1 text-xs font-medium truncate">{p.name}</p>
-                  {p.title && <p className="text-[10px] text-muted-foreground truncate">{p.title}</p>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
 

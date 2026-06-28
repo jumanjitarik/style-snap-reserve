@@ -43,9 +43,9 @@ function Index() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("barbershops")
-        .select("id, name, category, address, city, cover_image_url, is_featured, lat, lng")
+        .select("id, name, category, address, city, cover_image_url, is_featured, lat, lng, description")
         .order("is_featured", { ascending: false })
-        .limit(80);
+        .limit(120);
       if (error) throw error;
       return data;
     },
@@ -63,6 +63,28 @@ function Index() {
       });
       return map;
     },
+  });
+
+  // Search corpus: services + staff names per shop, used by the smart matcher
+  const { data: searchCorpus } = useQuery({
+    queryKey: ["search-corpus"],
+    queryFn: async () => {
+      const [svc, st] = await Promise.all([
+        supabase.from("services").select("shop_id, name, description"),
+        supabase.from("staff").select("shop_id, name, title"),
+      ]);
+      const map = new Map<string, string>();
+      (svc.data ?? []).forEach((s) => {
+        const cur = map.get(s.shop_id) ?? "";
+        map.set(s.shop_id, cur + " " + (s.name ?? "") + " " + (s.description ?? ""));
+      });
+      (st.data ?? []).forEach((s) => {
+        const cur = map.get(s.shop_id) ?? "";
+        map.set(s.shop_id, cur + " " + (s.name ?? "") + " " + (s.title ?? ""));
+      });
+      return map;
+    },
+    staleTime: 60_000,
   });
 
   const { data: welcome } = useQuery({
@@ -94,9 +116,23 @@ function Index() {
   }, [shops, reviews, coords]);
 
   const isSearching = q.trim().length > 0;
-  const filtered = enriched.filter((s) =>
-    !q || s.name.toLowerCase().includes(q.toLowerCase()) || s.address?.toLowerCase().includes(q.toLowerCase()),
-  );
+  // Turkish-aware normalize: lowercase + strip diacritics + Turkish-specific chars
+  const normalize = (str: string) => str
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ı/g, "i").replace(/i̇/g, "i")
+    .replace(/ş/g, "s").replace(/ğ/g, "g")
+    .replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const filtered = useMemo(() => {
+    if (!isSearching) return enriched;
+    const tokens = normalize(q).split(/\s+/).filter(Boolean);
+    return enriched.filter((s) => {
+      const hay = normalize(
+        [s.name, s.address, s.city, s.description, categoryLabel(s.category), searchCorpus?.get(s.id) ?? ""].filter(Boolean).join(" "),
+      );
+      return tokens.every((t) => hay.includes(t));
+    });
+  }, [enriched, q, isSearching, searchCorpus]);
 
   // Featured filtered by user's city (if known)
   const featured = useMemo(() => {
