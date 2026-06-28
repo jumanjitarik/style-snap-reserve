@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Store, Plus, User, CalendarCheck } from "lucide-react";
+import { Home, Store, Plus, Heart, Bell, User, CalendarCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +7,13 @@ import { SafeImg } from "@/components/SafeImg";
 
 type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean; profile?: boolean };
 
-const items: NavItem[] = [
+const baseItems: NavItem[] = [
   { to: "/", label: "Ana", icon: Home },
   { to: "/kuaforler", label: "Salonlar", icon: Store },
+  { to: "/favoriler", label: "Favori", icon: Heart },
   { to: "/randevu-al", label: "Randevu Al", icon: Plus, fab: true },
   { to: "/randevularim", label: "Randevu", icon: CalendarCheck },
+  { to: "/bildirimler", label: "Bildirim", icon: Bell },
   { to: "/hesap", label: "Hesap", icon: User, profile: true },
 ];
 
@@ -24,17 +26,21 @@ function readCachedAvatar(): string | null {
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Initialise from cache so the avatar persists across route changes without a flicker.
   const [avatar, setAvatar] = useState<string | null>(() => readCachedAvatar());
+  const [unread, setUnread] = useState(0);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     let active = true;
+    let userId: string | null = null;
     async function loadProfile() {
       const { data: u } = await supabase.auth.getUser();
       if (!active) return;
-      const userId = u.user?.id ?? null;
+      userId = u.user?.id ?? null;
       if (!userId) {
         setAvatar(null);
+        setUnread(0);
         try { window.localStorage.removeItem(AVATAR_CACHE_KEY); } catch { /* noop */ }
         return;
       }
@@ -46,12 +52,24 @@ export function BottomNav() {
         if (next) window.localStorage.setItem(AVATAR_CACHE_KEY, next);
         else window.localStorage.removeItem(AVATAR_CACHE_KEY);
       } catch { /* noop */ }
+      loadUnread();
+    }
+    async function loadUnread() {
+      if (!userId) return;
+      const { count } = await supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", userId).eq("read", false);
+      if (!active) return;
+      setUnread(count ?? 0);
     }
     loadProfile();
     const sub = supabase.auth.onAuthStateChange(() => loadProfile());
-    return () => { active = false; sub.data.subscription.unsubscribe(); };
+    const ch = supabase
+      .channel("nav-notif")
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => loadUnread())
+      .subscribe();
+    return () => { active = false; sub.data.subscription.unsubscribe(); supabase.removeChannel(ch); };
   }, []);
 
+  // Hide completely when the page is scrolled down; reveal again at the top or on upward scroll.
   useEffect(() => {
     let lastY = window.scrollY;
     let ticking = false;
@@ -72,6 +90,8 @@ export function BottomNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const items: NavItem[] = baseItems;
+
   return (
     <div
       className={cn(
@@ -81,7 +101,7 @@ export function BottomNav() {
       style={{ bottom: `calc(env(safe-area-inset-bottom) + 12px)` }}
     >
       <nav className="pointer-events-auto w-full max-w-md rounded-[28px] border border-primary/25 bg-card/80 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.55)]">
-        <ul className="flex items-end justify-between px-2 pt-1.5 pb-1">
+        <ul className="flex items-end justify-between px-2 pt-2 pb-1.5">
           {items.map(({ to, label, icon: Icon, fab, profile }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             if (fab) {
@@ -97,12 +117,13 @@ export function BottomNav() {
                 </li>
               );
             }
+            const showBadge = to === "/bildirimler" && unread > 0;
             return (
               <li key={to} className="flex-1">
                 <Link
                   to={to as never}
                   className={cn(
-                    "group relative flex flex-col items-center gap-0.5 px-1 py-1 text-[10px] font-medium transition-all duration-150 active:scale-90",
+                    "group relative flex flex-col items-center gap-0.5 px-1 py-1.5 text-[10px] font-medium transition-all duration-150 active:scale-90",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -126,6 +147,11 @@ export function BottomNav() {
                       )
                     ) : (
                       <Icon className="h-6 w-6" />
+                    )}
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-card">
+                        {unread > 9 ? "9+" : unread}
+                      </span>
                     )}
                   </div>
                   <span className="truncate">{label}</span>
