@@ -3,9 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "./SafeImg";
 
+const SHOWN_KEY = "splash_shown_v1";
+
 export function SplashScreen() {
-  const [visible, setVisible] = useState(true);
+  const alreadyShown = typeof window !== "undefined" && sessionStorage.getItem(SHOWN_KEY) === "1";
+  const [visible, setVisible] = useState(!alreadyShown);
   const { data, isLoading } = useQuery({
+    enabled: !alreadyShown,
     queryKey: ["splash-settings"],
     queryFn: async () => {
       const { data } = await supabase.from("app_settings").select("key, value").in("key", ["splash_url", "splash_duration_ms", "app_name", "logo_url"]);
@@ -15,12 +19,13 @@ export function SplashScreen() {
   });
 
   useEffect(() => {
-    if (isLoading) return;
-    const ms = Math.max(0, Math.min(10000, Number(data?.splash_duration_ms ?? "1500") || 1500));
-    if (ms === 0) { setVisible(false); return; }
-    const t = setTimeout(() => setVisible(false), ms);
+    if (alreadyShown || isLoading) return;
+    const ms = Math.max(0, Math.min(15000, Number(data?.splash_duration_ms ?? "1500") || 1500));
+    const finish = () => { try { sessionStorage.setItem(SHOWN_KEY, "1"); } catch {} setVisible(false); };
+    if (ms === 0) { finish(); return; }
+    const t = setTimeout(finish, ms);
     return () => clearTimeout(t);
-  }, [isLoading, data]);
+  }, [isLoading, data, alreadyShown]);
 
   if (!visible) return null;
   const splash = data?.splash_url?.trim();
