@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { toast } from "sonner";
 import { Scissors, Apple } from "lucide-react";
 import { z } from "zod";
@@ -120,7 +121,8 @@ function AuthPage() {
           <span className="font-display text-2xl tracking-wider">BARBERAPP</span>
         </Link>
 
-        <h1 className="font-display text-4xl">{mode === "login" ? "Tekrar Hoş Geldin" : "Aramıza Katıl"}</h1>
+        <LanguageSwitcher variant="row" />
+        <h1 className="font-display text-4xl mt-4">{mode === "login" ? "Tekrar Hoş Geldin" : "Aramıza Katıl"}</h1>
         <p className="text-sm text-muted-foreground mt-1">{mode === "login" ? "Hesabına giriş yap" : "Yeni bir hesap oluştur"}</p>
 
         {mode === "login" && (

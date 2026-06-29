@@ -4,17 +4,18 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "@/components/SafeImg";
+import { useT } from "@/lib/i18n";
 
-type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean; profile?: boolean };
+type NavItem = { to: string; labelKey: string; icon: typeof Home; fab?: boolean; profile?: boolean };
 
 const items: NavItem[] = [
-  { to: "/", label: "Ana", icon: Home },
-  { to: "/kuaforler", label: "Salonlar", icon: Store },
-  { to: "/borsa", label: "Borsa", icon: LineChart },
-  { to: "/randevu-al", label: "Randevu Al", icon: Plus, fab: true },
-  { to: "/puanlarim", label: "Puan", icon: Coins },
-  { to: "/randevularim", label: "Randevu", icon: CalendarCheck },
-  { to: "/hesap", label: "Hesap", icon: User, profile: true },
+  { to: "/", labelKey: "nav.home", icon: Home },
+  { to: "/kuaforler", labelKey: "nav.shops", icon: Store },
+  { to: "/borsa", labelKey: "nav.borsa", icon: LineChart },
+  { to: "/randevu-al", labelKey: "nav.book", icon: Plus, fab: true },
+  { to: "/puanlarim", labelKey: "nav.points", icon: Coins },
+  { to: "/randevularim", labelKey: "nav.appointments", icon: CalendarCheck },
+  { to: "/hesap", labelKey: "nav.account", icon: User, profile: true },
 ];
 
 const AVATAR_CACHE_KEY = "nav.avatarUrl";
@@ -26,6 +27,7 @@ function readCachedAvatar(): string | null {
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { t } = useT();
   const [avatar, setAvatar] = useState<string | null>(() => readCachedAvatar());
   const [hidden, setHidden] = useState(false);
 
@@ -84,7 +86,8 @@ export function BottomNav() {
     >
       <nav className="pointer-events-auto w-full max-w-[460px] rounded-[26px] border border-primary/25 bg-card/85 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
         <ul className="grid grid-cols-7 items-end px-1.5 pt-1.5 pb-1">
-          {items.map(({ to, label, icon: Icon, fab, profile }) => {
+          {items.map(({ to, labelKey, icon: Icon, fab, profile }) => {
+            const label = t(labelKey);
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             if (fab) {
               return (
