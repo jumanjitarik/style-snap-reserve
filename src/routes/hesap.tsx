@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -291,10 +291,7 @@ function AccountPage() {
           </Link>
         )}
 
-        <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-xs text-muted-foreground mb-2">Dil / Language</p>
-          <LanguageSwitcher variant="row" />
-        </div>
+
 
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap

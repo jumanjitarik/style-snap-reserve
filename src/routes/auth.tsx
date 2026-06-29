@@ -121,8 +121,7 @@ function AuthPage() {
           <span className="font-display text-2xl tracking-wider">BARBERAPP</span>
         </Link>
 
-        <LanguageSwitcher variant="row" />
-        <h1 className="font-display text-4xl mt-4">{mode === "login" ? "Tekrar Hoş Geldin" : "Aramıza Katıl"}</h1>
+        <h1 className="font-display text-4xl">{mode === "login" ? "Tekrar Hoş Geldin" : "Aramıza Katıl"}</h1>
         <p className="text-sm text-muted-foreground mt-1">{mode === "login" ? "Hesabına giriş yap" : "Yeni bir hesap oluştur"}</p>
 
         {mode === "login" && (
