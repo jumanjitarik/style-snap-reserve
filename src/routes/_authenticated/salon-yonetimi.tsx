@@ -34,7 +34,7 @@ function SalonYonetimi() {
       const { data: u } = await supabase.auth.getUser();
       const { data } = await supabase
         .from("barbershops")
-        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city, district")
+        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city")
         .eq("owner_id", u.user!.id)
         .order("name");
       return data ?? [];
@@ -282,7 +282,7 @@ type ShopRow = {
   id: string; name: string; description: string | null; address: string | null;
   phone: string | null; lat: number | null; lng: number | null;
   category: string | null; cover_image_url: string | null;
-  city: string | null; district: string | null;
+  city: string | null;
 };
 
 async function uploadImage(file: File, folder: string): Promise<string> {
@@ -299,8 +299,8 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     name: shop.name, description: shop.description ?? "", address: shop.address ?? "",
-    phone: shop.phone ?? "", lat: shop.lat ?? "", lng: shop.lng ?? "",
-    city: shop.city ?? "", district: shop.district ?? "", cover_image_url: shop.cover_image_url ?? "",
+    phone: shop.phone ?? "", lat: shop.lat ?? "" as number | string, lng: shop.lng ?? "" as number | string,
+    city: shop.city ?? "", cover_image_url: shop.cover_image_url ?? "",
   });
 
   const save = useMutation({
@@ -310,7 +310,7 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
         phone: form.phone || null,
         lat: form.lat === "" ? null : Number(form.lat),
         lng: form.lng === "" ? null : Number(form.lng),
-        city: form.city || null, district: form.district || null,
+        city: form.city || null,
         cover_image_url: form.cover_image_url || null,
       }).eq("id", shop.id);
       if (error) throw error;
@@ -341,9 +341,9 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
         <div><Label className="text-xs">Salon Adı</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
         <div><Label className="text-xs">Açıklama</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} /></div>
         <div><Label className="text-xs">Adres</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-        <div className="grid grid-cols-2 gap-2">
-          <div><Label className="text-xs">Şehir</Label><Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-          <div><Label className="text-xs">İlçe</Label><Input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div>
+        <div>
+          <Label className="text-xs">Şehir</Label>
+          <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
         </div>
         <div><Label className="text-xs">Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
         <div className="grid grid-cols-2 gap-2">
