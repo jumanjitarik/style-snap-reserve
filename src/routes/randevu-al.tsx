@@ -92,7 +92,11 @@ function BookPage() {
     setServiceIds((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   }
 
-  const finalTotal = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+  const balance = profilePts ?? 0;
+  const afterDiscount = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+  // 1 puan = 1₺. Toplamı geçemez.
+  const pointsToUse = usePoints ? Math.min(balance, Math.floor(afterDiscount)) : 0;
+  const finalTotal = Math.max(0, afterDiscount - pointsToUse);
 
   async function applyDiscount() {
     const code = discountCode.trim().toUpperCase();
@@ -135,6 +139,8 @@ function BookPage() {
         payment_method: paymentMethod,
         discount_code: appliedDiscount?.code ?? null,
         discount_amount: appliedDiscount?.amount ?? 0,
+        points_used: pointsToUse,
+        notes: customerNote.trim() || null,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
@@ -144,9 +150,10 @@ function BookPage() {
         const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
         if (shop?.owner_id) {
           const dt = starts.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
+          const note = customerNote.trim() ? ` · Not: ${customerNote.trim().slice(0, 120)}` : "";
           const body = paymentMethod === "deposit"
-            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.`
-            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).`;
+            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.${note}`
+            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).${note}`;
           await supabase.from("notifications").insert({
             user_id: shop.owner_id,
             title: paymentMethod === "deposit" ? "Yeni randevu (Kapora)" : "Yeni randevu",
