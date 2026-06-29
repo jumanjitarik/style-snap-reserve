@@ -56,7 +56,7 @@ function StaffCustomersPage() {
     queryKey: ["appt-profiles", userIds],
     enabled: userIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, full_name, phone, email").in("id", userIds);
+      const { data } = await supabase.rpc("get_customer_basics", { _ids: userIds });
       const map = new Map<string, { full_name: string | null; phone: string | null; email: string | null }>();
       (data ?? []).forEach((p) => map.set(p.id, p));
       return map;
