@@ -303,3 +303,32 @@ function AccountPage() {
     </AppShell>
   );
 }
+
+function PointsBreakdown({ userId }: { userId: string | null }) {
+  const { data } = useQuery({
+    queryKey: ["points-breakdown", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("appointments")
+        .select("points_earned, points_used")
+        .eq("user_id", userId!);
+      let earned = 0, used = 0;
+      (data ?? []).forEach((r: any) => { earned += Number(r.points_earned ?? 0); used += Number(r.points_used ?? 0); });
+      return { earned, used };
+    },
+  });
+  if (!data || (data.earned === 0 && data.used === 0)) return null;
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="rounded-lg border border-border bg-card p-2 text-center">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kazanılan</p>
+        <p className="font-display text-lg text-primary">+{data.earned}P</p>
+      </div>
+      <div className="rounded-lg border border-border bg-card p-2 text-center">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kullanılan</p>
+        <p className="font-display text-lg">-{data.used}P</p>
+      </div>
+    </div>
+  );
+}
