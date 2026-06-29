@@ -306,8 +306,8 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("barbershops").update({
-        name: form.name, description: form.description || undefined, address: form.address || null,
-        phone: form.phone || null,
+        name: form.name, description: form.description || undefined, address: form.address || undefined,
+        phone: form.phone || undefined,
         lat: form.lat === "" ? null : Number(form.lat),
         lng: form.lng === "" ? null : Number(form.lng),
         city: form.city || null,
