@@ -293,12 +293,13 @@ function ServicesTab() {
   const qc = useQueryClient();
   const [shopId, setShopId] = useState<string>("");
   const [form, setForm] = useState({ name: "", description: "", duration_min: "30", price: "" });
-  const [editPrices, setEditPrices] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, { name: string; duration_min: string; price: string }>>({});
+  const [search, setSearch] = useState("");
 
-  const { data: shops } = useQuery({ queryKey: ["admin-shops-min"], queryFn: async () => (await supabase.from("barbershops").select("id, name")).data ?? [] });
+  const { data: shops } = useQuery({ queryKey: ["admin-shops-min"], queryFn: async () => (await supabase.from("barbershops").select("id, name").order("name")).data ?? [] });
   const { data: services } = useQuery({
     queryKey: ["admin-services", shopId], enabled: !!shopId,
-    queryFn: async () => (await supabase.from("services").select("*").eq("shop_id", shopId)).data ?? [],
+    queryFn: async () => (await supabase.from("services").select("*").eq("shop_id", shopId).order("name")).data ?? [],
   });
 
   const add = useMutation({
@@ -312,18 +313,20 @@ function ServicesTab() {
     onSuccess: () => { setForm({ name: "", description: "", duration_min: "30", price: "" }); qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Eklendi"); },
     onError: (e: Error) => toast.error(e.message),
   });
-  const updatePrice = useMutation({
-    mutationFn: async ({ id, price }: { id: string; price: number }) => {
-      const { error } = await supabase.from("services").update({ price }).eq("id", id);
+  const updateRow = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: { name?: string; duration_min?: number; price?: number } }) => {
+      const { error } = await supabase.from("services").update(patch).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Fiyat güncellendi"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Güncellendi"); },
     onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("services").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-services"] }),
   });
+
+  const filteredServices = (services ?? []).filter((s) => !search.trim() || s.name.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR")));
 
   return (
     <div className="py-4 space-y-3">
@@ -343,39 +346,32 @@ function ServicesTab() {
             </div>
             <Button onClick={() => add.mutate()} disabled={!form.name || !form.price} className="w-full">Ekle</Button>
           </div>
+          <Input placeholder="Hizmet ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="space-y-2">
-            {(services ?? []).map((s) => {
-              const draft = editPrices[s.id];
+            {filteredServices.map((s) => {
+              const d = drafts[s.id] ?? { name: s.name, duration_min: String(s.duration_min ?? ""), price: String(s.price ?? "") };
+              const dirty = d.name !== s.name || parseFloat(d.price) !== Number(s.price) || parseInt(d.duration_min) !== Number(s.duration_min);
+              const update = (patch: Partial<typeof d>) => setDrafts((m) => ({ ...m, [s.id]: { ...d, ...patch } }));
               return (
-                <div key={s.id} className="rounded-xl border border-border bg-card p-3">
-                  <div className="flex justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">{s.duration_min} dk</p>
-                    </div>
-                    <Button size="icon" variant="ghost" onClick={() => del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                <div key={s.id} className="rounded-xl border border-border bg-card p-3 space-y-2">
+                  <Input value={d.name} onChange={(e) => update({ name: e.target.value })} placeholder="Hizmet adı" />
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs !m-0 text-muted-foreground w-12">Süre</Label>
+                    <Input type="number" className="h-9 w-24" value={d.duration_min} onChange={(e) => update({ duration_min: e.target.value })} />
+                    <Label className="text-xs !m-0 text-muted-foreground ml-2">Fiyat</Label>
+                    <Input type="number" className="h-9 w-24" value={d.price} onChange={(e) => update({ price: e.target.value })} />
+                    <span className="text-xs text-muted-foreground">₺</span>
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Label className="text-xs !m-0 text-muted-foreground">Fiyat (₺)</Label>
-                    <Input
-                      type="number" className="h-9 w-24"
-                      value={draft ?? s.price?.toString() ?? ""}
-                      onChange={(e) => setEditPrices({ ...editPrices, [s.id]: e.target.value })}
-                    />
-                    <Button
-                      size="sm"
-                      disabled={!draft || parseFloat(draft) === Number(s.price)}
-                      onClick={() => {
-                        const p = parseFloat(draft ?? "");
-                        if (!isNaN(p)) updatePrice.mutate({ id: s.id, price: p });
-                      }}
-                    >
-                      Güncelle
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1" disabled={!dirty} onClick={() => updateRow.mutate({ id: s.id, patch: { name: d.name.trim(), duration_min: parseInt(d.duration_min) || 30, price: parseFloat(d.price) || 0 } })}>
+                      Kaydet
                     </Button>
+                    <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
               );
             })}
+            {filteredServices.length === 0 && <p className="text-xs text-center text-muted-foreground py-4">Hizmet bulunamadı.</p>}
           </div>
         </>
       )}
