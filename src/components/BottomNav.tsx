@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "@/components/SafeImg";
 import { useT } from "@/lib/i18n";
-import { useT } from "@/lib/i18n";
 
 type NavItem = { to: string; labelKey: string; icon: typeof Home; fab?: boolean; profile?: boolean };
 
@@ -28,6 +27,7 @@ function readCachedAvatar(): string | null {
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { t } = useT();
   const [avatar, setAvatar] = useState<string | null>(() => readCachedAvatar());
   const [hidden, setHidden] = useState(false);
 
