@@ -82,7 +82,7 @@ export function TopBar() {
           )}
           <span className="font-display text-lg tracking-wide text-primary truncate">{name}</span>
         </Link>
-        {signedIn ? (
+        {signedIn && (
           <div className="flex items-center gap-1">
             <Link to="/favoriler" aria-label="Favoriler" className="rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10">
               <Heart className="h-5 w-5" />
@@ -96,8 +96,6 @@ export function TopBar() {
               )}
             </Link>
           </div>
-        ) : (
-          <LanguageSwitcher />
         )}
       </div>
     </div>

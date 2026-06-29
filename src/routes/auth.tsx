@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+
 import { toast } from "sonner";
 import { Scissors, Apple } from "lucide-react";
 import { z } from "zod";
