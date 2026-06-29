@@ -150,9 +150,19 @@ function ShopsTab() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
+  const [search, setSearch] = useState("");
+  const [filterCity, setFilterCity] = useState<string>("ALL");
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
-    queryFn: async () => (await supabase.from("barbershops").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("barbershops").select("*").order("name", { ascending: true })).data ?? [],
+  });
+  const cities = Array.from(new Set((shops ?? []).map((s) => (s.city ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "tr"));
+  const norm = (x: string) => x.toLocaleLowerCase("tr-TR");
+  const filteredShops = (shops ?? []).filter((s) => {
+    if (filterCity !== "ALL" && (s.city ?? "") !== filterCity) return false;
+    if (!search.trim()) return true;
+    const q = norm(search);
+    return norm(s.name).includes(q) || norm(s.address ?? "").includes(q) || norm(s.city ?? "").includes(q);
   });
 
   const save = useMutation({
