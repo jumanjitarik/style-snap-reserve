@@ -32,27 +32,52 @@ async function ensureSW() {
   return swReg;
 }
 
+function safeLink(link?: string | null): string | null {
+  if (!link) return null;
+  const trimmed = link.trim();
+  if (!trimmed) return null;
+  // Allow only same-origin relative paths or explicit http(s) URLs
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) return trimmed;
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol === "http:" || u.protocol === "https:") return u.toString();
+  } catch { /* noop */ }
+  return null;
+}
+
+function safeImage(image?: string | null): string | null {
+  if (!image) return null;
+  const trimmed = image.trim();
+  try {
+    const u = new URL(trimmed, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    if (u.protocol === "http:" || u.protocol === "https:") return u.toString();
+  } catch { /* noop */ }
+  return null;
+}
+
 async function showNotif(title: string, body: string, image?: string | null, link?: string | null) {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
+  const safeImg = safeImage(image);
+  const safeUrl = safeLink(link) ?? "/";
   const opts: NotificationOptions = {
     body,
-    icon: image || "/favicon.ico",
+    icon: safeImg || "/favicon.ico",
     badge: "/favicon.ico",
     tag: "barber-app",
-    data: { url: link || "/" },
+    data: { url: safeUrl },
   };
   // @ts-expect-error mobile-only fields
   opts.vibrate = [200, 100, 200];
   // @ts-expect-error mobile-only fields
-  if (image) opts.image = image;
+  if (safeImg) opts.image = safeImg;
   try {
     const reg = await ensureSW();
     if (reg) {
       await reg.showNotification(title, opts);
     } else {
       const n = new Notification(title, opts);
-      if (link) n.onclick = () => { window.focus(); window.open(link!, "_self"); };
+      n.onclick = () => { window.focus(); window.open(safeUrl, "_self"); };
     }
   } catch { /* noop */ }
 }
