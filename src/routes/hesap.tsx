@@ -160,8 +160,13 @@ function AccountPage() {
               <p className="font-display text-xl truncate">{profile?.full_name ?? "Kullanıcı"}</p>
               <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
               {profile?.phone && <p className="text-xs text-muted-foreground">{profile.phone}</p>}
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1">
+                <span className="text-[10px] uppercase tracking-wider text-primary">Puanlarım</span>
+                <span className="font-display text-sm text-primary">{Number(profile?.points ?? 0)}P</span>
+              </div>
             </div>
           </div>
+          <PointsBreakdown userId={userId} />
           <div className="mt-3 flex gap-2">
             <Button size="sm" variant="outline" className="flex-1" onClick={() => fileRef.current?.click()}>
               <Upload className="h-4 w-4 mr-1" /> Fotoğraf Yükle
