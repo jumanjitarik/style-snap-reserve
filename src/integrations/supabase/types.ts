@@ -248,6 +248,33 @@ export type Database = {
         }
         Relationships: []
       }
+      content_translations: {
+        Row: {
+          created_at: string
+          id: string
+          source_lang: string
+          source_text: string
+          target_lang: string
+          translation: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          source_lang?: string
+          source_text: string
+          target_lang: string
+          translation: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          source_lang?: string
+          source_text?: string
+          target_lang?: string
+          translation?: string
+        }
+        Relationships: []
+      }
       discount_codes: {
         Row: {
           active: boolean
