@@ -160,8 +160,13 @@ function AccountPage() {
               <p className="font-display text-xl truncate">{profile?.full_name ?? "Kullanıcı"}</p>
               <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
               {profile?.phone && <p className="text-xs text-muted-foreground">{profile.phone}</p>}
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1">
+                <span className="text-[10px] uppercase tracking-wider text-primary">Puanlarım</span>
+                <span className="font-display text-sm text-primary">{Number(profile?.points ?? 0)}P</span>
+              </div>
             </div>
           </div>
+          <PointsBreakdown userId={userId} />
           <div className="mt-3 flex gap-2">
             <Button size="sm" variant="outline" className="flex-1" onClick={() => fileRef.current?.click()}>
               <Upload className="h-4 w-4 mr-1" /> Fotoğraf Yükle
@@ -296,5 +301,34 @@ function AccountPage() {
 
       </div>
     </AppShell>
+  );
+}
+
+function PointsBreakdown({ userId }: { userId: string | null }) {
+  const { data } = useQuery({
+    queryKey: ["points-breakdown", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("appointments")
+        .select("points_earned, points_used")
+        .eq("user_id", userId!);
+      let earned = 0, used = 0;
+      (data ?? []).forEach((r: any) => { earned += Number(r.points_earned ?? 0); used += Number(r.points_used ?? 0); });
+      return { earned, used };
+    },
+  });
+  if (!data || (data.earned === 0 && data.used === 0)) return null;
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="rounded-lg border border-border bg-card p-2 text-center">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kazanılan</p>
+        <p className="font-display text-lg text-primary">+{data.earned}P</p>
+      </div>
+      <div className="rounded-lg border border-border bg-card p-2 text-center">
+        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Kullanılan</p>
+        <p className="font-display text-lg">-{data.used}P</p>
+      </div>
+    </div>
   );
 }

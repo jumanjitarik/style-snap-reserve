@@ -90,11 +90,12 @@ function Index() {
   const { data: welcome } = useQuery({
     queryKey: ["welcome-text"],
     queryFn: async () => {
-      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["welcome_title", "welcome_subtitle"]);
+      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["welcome_title", "welcome_subtitle", "search_placeholder"]);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
       return {
         title: map.welcome_title || "Bugün nasıl şıklaşıyoruz?",
         subtitle: map.welcome_subtitle || "Hoş geldin",
+        searchPlaceholder: map.search_placeholder || "Berber, salon, hizmet ara...",
       };
     },
     staleTime: 60_000,
@@ -163,7 +164,7 @@ function Index() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Berber, salon, hizmet ara..."
+            placeholder={welcome?.searchPlaceholder ?? "Berber, salon, hizmet ara..."}
             aria-label="Salon veya hizmet ara"
             className="pl-9 bg-card border-border h-12"
           />
@@ -176,9 +177,9 @@ function Index() {
           <div className="grid grid-cols-3 gap-2">
             {CATEGORIES.map((c) => (
               <Link
-                key={c.value}
+                key={c.key}
                 to="/kuaforler"
-                search={{ cat: c.value } as never}
+                search={{ cat: c.key } as never}
                 className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-3 hover:border-primary/50 transition active:scale-95"
               >
                 <c.icon className="h-6 w-6 text-primary" />

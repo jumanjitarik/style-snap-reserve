@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { Heart, Bell } from "lucide-react";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { Heart, Bell, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "./SafeImg";
 import defaultLogo from "@/assets/barber-logo.png.asset.json";
 
 export function TopBar() {
+  const router = useRouter();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [hidden, setHidden] = useState(false);
   const [unread, setUnread] = useState(0);
   const [signedIn, setSignedIn] = useState(false);
@@ -54,13 +56,23 @@ export function TopBar() {
 
   const name = branding?.app_name?.trim() || "BarberApp";
   const logo = branding?.logo_url?.trim() || defaultLogo.url;
+  const isHome = pathname === "/";
 
   return (
     <div
       className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ${hidden ? "-translate-y-full" : "translate-y-0"}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto max-w-md px-4 py-2 flex items-center gap-2 bg-background/85 backdrop-blur-xl border-b border-primary/15">
+      <div className="mx-auto max-w-md px-3 py-2 flex items-center gap-2 bg-background/85 backdrop-blur-xl border-b border-primary/15">
+        {!isHome && (
+          <button
+            onClick={() => router.history.back()}
+            aria-label="Geri"
+            className="shrink-0 rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <Link to="/" className="flex items-center gap-2 flex-1 min-w-0 active:opacity-70">
           {logo ? (
             <SafeImg src={logo} alt="logo" className="h-7 w-7 rounded-md object-cover" />

@@ -75,6 +75,8 @@ export type Database = {
           payment_amount: number | null
           payment_method: string
           payment_ref: string | null
+          points_earned: number
+          points_used: number
           remaining_amount: number
           reminded_1h: boolean
           reminded_2h: boolean
@@ -98,6 +100,8 @@ export type Database = {
           payment_amount?: number | null
           payment_method?: string
           payment_ref?: string | null
+          points_earned?: number
+          points_used?: number
           remaining_amount?: number
           reminded_1h?: boolean
           reminded_2h?: boolean
@@ -121,6 +125,8 @@ export type Database = {
           payment_amount?: number | null
           payment_method?: string
           payment_ref?: string | null
+          points_earned?: number
+          points_used?: number
           remaining_amount?: number
           reminded_1h?: boolean
           reminded_2h?: boolean
@@ -369,6 +375,7 @@ export type Database = {
           last_ip: string | null
           last_seen_at: string | null
           phone: string | null
+          points: number
           updated_at: string
         }
         Insert: {
@@ -385,6 +392,7 @@ export type Database = {
           last_ip?: string | null
           last_seen_at?: string | null
           phone?: string | null
+          points?: number
           updated_at?: string
         }
         Update: {
@@ -401,6 +409,7 @@ export type Database = {
           last_ip?: string | null
           last_seen_at?: string | null
           phone?: string | null
+          points?: number
           updated_at?: string
         }
         Relationships: []
@@ -629,6 +638,7 @@ export type Database = {
         | "spa_massage"
         | "yoga_pilates"
         | "slimming"
+        | "fitness"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -774,6 +784,7 @@ export const Constants = {
         "spa_massage",
         "yoga_pilates",
         "slimming",
+        "fitness",
       ],
     },
   },

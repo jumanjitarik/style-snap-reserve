@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { CATEGORIES, type ShopCategory } from "@/lib/categories";
+import { DB_CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
 import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
@@ -150,9 +150,19 @@ function ShopsTab() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
 
+  const [search, setSearch] = useState("");
+  const [filterCity, setFilterCity] = useState<string>("ALL");
   const { data: shops } = useQuery({
     queryKey: ["admin-shops"],
-    queryFn: async () => (await supabase.from("barbershops").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("barbershops").select("*").order("name", { ascending: true })).data ?? [],
+  });
+  const cities = Array.from(new Set((shops ?? []).map((s) => (s.city ?? "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "tr"));
+  const norm = (x: string) => x.toLocaleLowerCase("tr-TR");
+  const filteredShops = (shops ?? []).filter((s) => {
+    if (filterCity !== "ALL" && (s.city ?? "") !== filterCity) return false;
+    if (!search.trim()) return true;
+    const q = norm(search);
+    return norm(s.name).includes(q) || norm(s.address ?? "").includes(q) || norm(s.city ?? "").includes(q);
   });
 
   const save = useMutation({
@@ -207,7 +217,7 @@ function ShopsTab() {
         <div><Label>Kategori</Label>
           <Select value={editing.category} onValueChange={(v) => setEditing({ ...editing, category: v as ShopCategory })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+            <SelectContent>{DB_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Açıklama</Label><Textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
@@ -259,7 +269,17 @@ function ShopsTab() {
       <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
-      {(shops ?? []).map((s) => (
+      <div className="flex gap-2">
+        <Input placeholder="Salon / adres ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Select value={filterCity} onValueChange={setFilterCity}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="İl" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Tüm iller</SelectItem>
+            {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {filteredShops.map((s) => (
         <div key={s.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -267,7 +287,7 @@ function ShopsTab() {
                 <p className="font-semibold truncate">{s.name}</p>
                 {s.is_featured && <Star className="h-3.5 w-3.5 fill-primary text-primary shrink-0" />}
               </div>
-              <p className="text-xs text-muted-foreground truncate">{s.address}</p>
+              <p className="text-xs text-muted-foreground truncate">{s.city ? `${s.city} · ` : ""}{s.address}</p>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => toggleFeatured.mutate({ id: s.id, val: !s.is_featured })}
@@ -293,12 +313,13 @@ function ServicesTab() {
   const qc = useQueryClient();
   const [shopId, setShopId] = useState<string>("");
   const [form, setForm] = useState({ name: "", description: "", duration_min: "30", price: "" });
-  const [editPrices, setEditPrices] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, { name: string; duration_min: string; price: string }>>({});
+  const [search, setSearch] = useState("");
 
-  const { data: shops } = useQuery({ queryKey: ["admin-shops-min"], queryFn: async () => (await supabase.from("barbershops").select("id, name")).data ?? [] });
+  const { data: shops } = useQuery({ queryKey: ["admin-shops-min"], queryFn: async () => (await supabase.from("barbershops").select("id, name").order("name")).data ?? [] });
   const { data: services } = useQuery({
     queryKey: ["admin-services", shopId], enabled: !!shopId,
-    queryFn: async () => (await supabase.from("services").select("*").eq("shop_id", shopId)).data ?? [],
+    queryFn: async () => (await supabase.from("services").select("*").eq("shop_id", shopId).order("name")).data ?? [],
   });
 
   const add = useMutation({
@@ -312,18 +333,20 @@ function ServicesTab() {
     onSuccess: () => { setForm({ name: "", description: "", duration_min: "30", price: "" }); qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Eklendi"); },
     onError: (e: Error) => toast.error(e.message),
   });
-  const updatePrice = useMutation({
-    mutationFn: async ({ id, price }: { id: string; price: number }) => {
-      const { error } = await supabase.from("services").update({ price }).eq("id", id);
+  const updateRow = useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: { name?: string; duration_min?: number; price?: number } }) => {
+      const { error } = await supabase.from("services").update(patch).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Fiyat güncellendi"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-services"] }); toast.success("Güncellendi"); },
     onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("services").delete().eq("id", id); if (error) throw error; },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-services"] }),
   });
+
+  const filteredServices = (services ?? []).filter((s) => !search.trim() || s.name.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR")));
 
   return (
     <div className="py-4 space-y-3">
@@ -343,39 +366,32 @@ function ServicesTab() {
             </div>
             <Button onClick={() => add.mutate()} disabled={!form.name || !form.price} className="w-full">Ekle</Button>
           </div>
+          <Input placeholder="Hizmet ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="space-y-2">
-            {(services ?? []).map((s) => {
-              const draft = editPrices[s.id];
+            {filteredServices.map((s) => {
+              const d = drafts[s.id] ?? { name: s.name, duration_min: String(s.duration_min ?? ""), price: String(s.price ?? "") };
+              const dirty = d.name !== s.name || parseFloat(d.price) !== Number(s.price) || parseInt(d.duration_min) !== Number(s.duration_min);
+              const update = (patch: Partial<typeof d>) => setDrafts((m) => ({ ...m, [s.id]: { ...d, ...patch } }));
               return (
-                <div key={s.id} className="rounded-xl border border-border bg-card p-3">
-                  <div className="flex justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">{s.duration_min} dk</p>
-                    </div>
-                    <Button size="icon" variant="ghost" onClick={() => del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
+                <div key={s.id} className="rounded-xl border border-border bg-card p-3 space-y-2">
+                  <Input value={d.name} onChange={(e) => update({ name: e.target.value })} placeholder="Hizmet adı" />
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs !m-0 text-muted-foreground w-12">Süre</Label>
+                    <Input type="number" className="h-9 w-24" value={d.duration_min} onChange={(e) => update({ duration_min: e.target.value })} />
+                    <Label className="text-xs !m-0 text-muted-foreground ml-2">Fiyat</Label>
+                    <Input type="number" className="h-9 w-24" value={d.price} onChange={(e) => update({ price: e.target.value })} />
+                    <span className="text-xs text-muted-foreground">₺</span>
                   </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Label className="text-xs !m-0 text-muted-foreground">Fiyat (₺)</Label>
-                    <Input
-                      type="number" className="h-9 w-24"
-                      value={draft ?? s.price?.toString() ?? ""}
-                      onChange={(e) => setEditPrices({ ...editPrices, [s.id]: e.target.value })}
-                    />
-                    <Button
-                      size="sm"
-                      disabled={!draft || parseFloat(draft) === Number(s.price)}
-                      onClick={() => {
-                        const p = parseFloat(draft ?? "");
-                        if (!isNaN(p)) updatePrice.mutate({ id: s.id, price: p });
-                      }}
-                    >
-                      Güncelle
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1" disabled={!dirty} onClick={() => updateRow.mutate({ id: s.id, patch: { name: d.name.trim(), duration_min: parseInt(d.duration_min) || 30, price: parseFloat(d.price) || 0 } })}>
+                      Kaydet
                     </Button>
+                    <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
               );
             })}
+            {filteredServices.length === 0 && <p className="text-xs text-center text-muted-foreground py-4">Hizmet bulunamadı.</p>}
           </div>
         </>
       )}
@@ -386,12 +402,13 @@ function ServicesTab() {
 function StaffTab() {
   const qc = useQueryClient();
   const [shopId, setShopId] = useState<string>("");
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({ name: "", title: "", photo_url: "" });
 
-  const { data: shops } = useQuery({ queryKey: ["admin-shops-min2"], queryFn: async () => (await supabase.from("barbershops").select("id, name")).data ?? [] });
+  const { data: shops } = useQuery({ queryKey: ["admin-shops-min2"], queryFn: async () => (await supabase.from("barbershops").select("id, name").order("name")).data ?? [] });
   const { data: staff } = useQuery({
     queryKey: ["admin-staff", shopId], enabled: !!shopId,
-    queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId)).data ?? [],
+    queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId).order("name")).data ?? [],
   });
 
   const add = useMutation({
@@ -432,8 +449,9 @@ function StaffTab() {
             </div>
             <Button onClick={() => add.mutate()} disabled={!form.name} className="w-full">Ekle</Button>
           </div>
+          <Input placeholder="Çalışan ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="space-y-2">
-            {(staff ?? []).map((p) => (
+            {(staff ?? []).filter((p) => !search.trim() || p.name.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR"))).map((p) => (
               <div key={p.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0">
                   {p.photo_url && <SafeImg src={p.photo_url} className="h-full w-full object-cover" alt="" />}
@@ -466,7 +484,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at").limit(50);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at").order("full_name", { ascending: true, nullsFirst: false }).limit(200);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -715,7 +733,7 @@ function SettingsTab() {
       return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
     },
   });
-  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500" });
+  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500", search_placeholder: "", gallery_interval_ms: "5000" });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
     setForm({
@@ -725,6 +743,8 @@ function SettingsTab() {
       logo_url: settings.logo_url ?? "",
       splash_url: settings.splash_url ?? "",
       splash_duration_ms: settings.splash_duration_ms ?? "1500",
+      search_placeholder: settings.search_placeholder ?? "Berber, salon, hizmet ara…",
+      gallery_interval_ms: settings.gallery_interval_ms ?? "5000",
     });
     initialized[1](true);
   }
@@ -751,6 +771,8 @@ function SettingsTab() {
         { key: "logo_url", value: form.logo_url },
         { key: "splash_url", value: form.splash_url },
         { key: "splash_duration_ms", value: String(Number(form.splash_duration_ms) || 1500) },
+        { key: "search_placeholder", value: form.search_placeholder },
+        { key: "gallery_interval_ms", value: String(Number(form.gallery_interval_ms) || 5000) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
@@ -800,6 +822,8 @@ function SettingsTab() {
         <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin</p>
         <div><Label>Üst yazı (küçük)</Label><Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} placeholder="Hoş geldin" /></div>
         <div><Label>Ana başlık</Label><Input value={form.welcome_title} onChange={(e) => setForm({ ...form, welcome_title: e.target.value })} placeholder="Bugün nasıl şıklaşıyoruz?" /></div>
+        <div><Label>Arama Kutusu Yazısı</Label><Input value={form.search_placeholder} onChange={(e) => setForm({ ...form, search_placeholder: e.target.value })} placeholder="Berber, salon, hizmet ara…" /></div>
+        <div><Label>Salon Foto Galeri Geçiş Süresi (ms)</Label><Input type="number" min="1000" step="500" value={form.gallery_interval_ms} onChange={(e) => setForm({ ...form, gallery_interval_ms: e.target.value })} placeholder="5000" /></div>
       </div>
       <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
     </div>

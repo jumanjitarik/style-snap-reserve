@@ -8,7 +8,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CATEGORIES, categoryLabel, type ShopCategory } from "@/lib/categories";
+import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { addDays, format, startOfDay } from "date-fns";
@@ -39,7 +39,7 @@ function BookPage() {
 
   const initialIds = initialServices ? initialServices.split(",").filter(Boolean) : (initialService ? [initialService] : []);
   const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialIds.length > 0 ? 4 : 3) : 1);
-  const [category, setCategory] = useState<ShopCategory | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(initialShop ?? null);
   const [serviceIds, setServiceIds] = useState<string[]>(initialIds);
   const [staffId, setStaffId] = useState<string | null>(null);
@@ -48,6 +48,18 @@ function BookPage() {
   const [paymentMethod, setPaymentMethod] = useState<"full" | "deposit">("full");
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
+  const [customerNote, setCustomerNote] = useState("");
+  const [usePoints, setUsePoints] = useState(false);
+
+  // Loyalty: user's current points balance
+  const { data: profilePts } = useQuery({
+    queryKey: ["profile-points", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("points").eq("id", userId!).maybeSingle();
+      return Number(data?.points ?? 0);
+    },
+  });
 
 
   const { data: shops } = useQuery({
@@ -55,7 +67,8 @@ function BookPage() {
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
       let q = supabase.from("barbershops").select("id, name, category, address");
-      if (category) q = q.eq("category", category);
+      const ui = category ? findUiCategory(category) : null;
+      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
       return data ?? [];
     },
@@ -79,7 +92,11 @@ function BookPage() {
     setServiceIds((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   }
 
-  const finalTotal = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+  const balance = profilePts ?? 0;
+  const afterDiscount = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+  // 1 puan = 1₺. Toplamı geçemez.
+  const pointsToUse = usePoints ? Math.min(balance, Math.floor(afterDiscount)) : 0;
+  const finalTotal = Math.max(0, afterDiscount - pointsToUse);
 
   async function applyDiscount() {
     const code = discountCode.trim().toUpperCase();
@@ -122,6 +139,8 @@ function BookPage() {
         payment_method: paymentMethod,
         discount_code: appliedDiscount?.code ?? null,
         discount_amount: appliedDiscount?.amount ?? 0,
+        points_used: pointsToUse,
+        notes: customerNote.trim() || null,
         payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
       });
       if (error) throw error;
@@ -131,9 +150,10 @@ function BookPage() {
         const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
         if (shop?.owner_id) {
           const dt = starts.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
+          const note = customerNote.trim() ? ` · Not: ${customerNote.trim().slice(0, 120)}` : "";
           const body = paymentMethod === "deposit"
-            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.`
-            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).`;
+            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.${note}`
+            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).${note}`;
           await supabase.from("notifications").insert({
             user_id: shop.owner_id,
             title: paymentMethod === "deposit" ? "Yeni randevu (Kapora)" : "Yeni randevu",
@@ -181,7 +201,7 @@ function BookPage() {
             <h2 className="font-display text-xl">Kategori Seç</h2>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => (
-                <button key={c.value} onClick={() => { setCategory(c.value); setStep(2); }}
+                <button key={c.key} onClick={() => { setCategory(c.key); setStep(2); }}
                   className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition">
                   <c.icon className="h-7 w-7 text-primary" />
                   <span className="text-sm text-center">{c.label}</span>
@@ -194,7 +214,7 @@ function BookPage() {
         {step === 2 && (
           <>
             <button onClick={() => setStep(1)} className="text-xs text-primary">← Kategori</button>
-            <h2 className="font-display text-xl">Salon Seç {category && `· ${categoryLabel(category)}`}</h2>
+            <h2 className="font-display text-xl">Salon Seç {category && `· ${findUiCategory(category)?.label ?? ""}`}</h2>
             <div className="space-y-2">
               {(shops ?? []).map((s) => (
                 <button key={s.id} onClick={() => { setShopId(s.id); setStep(3); }}
@@ -301,12 +321,45 @@ function BookPage() {
                   <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
                 )}
               </div>
+              {balance > 0 && (
+                <>
+                  <hr className="border-border" />
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Puanlarım</p>
+                    <button type="button" onClick={() => setUsePoints((v) => !v)}
+                      className={cn("w-full text-left rounded-lg border p-2.5 transition active:scale-[0.99]", usePoints ? "border-primary bg-primary/5" : "border-border")}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">{usePoints ? "✓ Puanı kullan" : "Puanı kullan"} · <span className="text-primary font-semibold">{balance}P</span></span>
+                        {usePoints && <span className="text-primary font-display">-{pointsToUse}₺</span>}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">1 Puan = 1₺ indirim. Toplam ödenebilecek kadarı düşülür.</p>
+                    </button>
+                  </div>
+                </>
+              )}
+              <hr className="border-border" />
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Salona Not (opsiyonel)</p>
+                <textarea
+                  value={customerNote}
+                  onChange={(e) => setCustomerNote(e.target.value.slice(0, 300))}
+                  placeholder="Tercih ettiğiniz model, alerji vb."
+                  rows={2}
+                  className="w-full rounded-md bg-input border border-border p-2 text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground text-right">{customerNote.length}/300</p>
+              </div>
               <hr className="border-border" />
               <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
-              {appliedDiscount && (
-                <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
+              {(appliedDiscount || pointsToUse > 0) && (
+                <>
+                  <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
+                  {appliedDiscount && <p className="flex justify-between text-xs text-primary"><span>Kupon ({appliedDiscount.code}):</span><span>-{appliedDiscount.amount.toFixed(0)}₺</span></p>}
+                  {pointsToUse > 0 && <p className="flex justify-between text-xs text-primary"><span>Puan ({pointsToUse}P):</span><span>-{pointsToUse}₺</span></p>}
+                </>
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
+              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-3 space-y-2">

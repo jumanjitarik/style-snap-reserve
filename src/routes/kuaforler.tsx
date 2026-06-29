@@ -6,7 +6,7 @@ import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
-import { CATEGORIES, categoryLabel, type ShopCategory } from "@/lib/categories";
+import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
 import { MapPin, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/geo";
@@ -57,7 +57,8 @@ function ShopList() {
     queryKey: ["shops-list", cat ?? "all"],
     queryFn: async () => {
       let q = supabase.from("barbershops").select("id, name, category, address, city, cover_image_url, lat, lng");
-      if (cat) q = q.eq("category", cat as ShopCategory);
+      const ui = cat ? findUiCategory(cat) : null;
+      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -169,11 +170,11 @@ function ShopList() {
         </button>
         {CATEGORIES.map((c) => (
           <button
-            key={c.value}
-            onClick={() => navigate({ search: { cat: c.value } })}
+            key={c.key}
+            onClick={() => navigate({ search: { cat: c.key } })}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
             )}
           >
             {c.label}

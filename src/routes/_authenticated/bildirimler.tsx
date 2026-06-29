@@ -66,9 +66,17 @@ function NotifPage() {
     mutationFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
-      await supabase.from("notifications").delete().eq("user_id", u.user.id);
+      const { error } = await supabase.from("notifications").delete().eq("user_id", u.user.id);
+      if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); toast.success("Tüm bildirimler silindi"); },
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["notifications"] });
+      const prev = qc.getQueryData(["notifications"]);
+      qc.setQueryData(["notifications"], []);
+      return { prev };
+    },
+    onError: (e: Error, _v, ctx) => { if (ctx?.prev) qc.setQueryData(["notifications"], ctx.prev); toast.error(e.message); },
+    onSuccess: () => { toast.success("Tüm bildirimler silindi"); qc.invalidateQueries({ queryKey: ["notifications"] }); },
   });
 
   return (
