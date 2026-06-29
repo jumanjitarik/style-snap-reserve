@@ -800,6 +800,8 @@ function SettingsTab() {
         <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin</p>
         <div><Label>Üst yazı (küçük)</Label><Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} placeholder="Hoş geldin" /></div>
         <div><Label>Ana başlık</Label><Input value={form.welcome_title} onChange={(e) => setForm({ ...form, welcome_title: e.target.value })} placeholder="Bugün nasıl şıklaşıyoruz?" /></div>
+        <div><Label>Arama Kutusu Yazısı</Label><Input value={form.search_placeholder} onChange={(e) => setForm({ ...form, search_placeholder: e.target.value })} placeholder="Berber, salon, hizmet ara…" /></div>
+        <div><Label>Salon Foto Galeri Geçiş Süresi (ms)</Label><Input type="number" min="1000" step="500" value={form.gallery_interval_ms} onChange={(e) => setForm({ ...form, gallery_interval_ms: e.target.value })} placeholder="5000" /></div>
       </div>
       <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
     </div>
