@@ -107,11 +107,33 @@ function ShopList() {
     });
   }, [data, reviews, priceMap, coords]);
 
+  const { data: serviceMatchIds } = useQuery({
+    queryKey: ["shops-service-search", search],
+    enabled: search.trim().length >= 2,
+    queryFn: async () => {
+      const q = search.trim();
+      const { data } = await supabase.from("services").select("shop_id").ilike("name", `%${q}%`);
+      return new Set((data ?? []).map((r) => r.shop_id));
+    },
+  });
+
   const filtered = useMemo(() => {
-    if (!onlyMyCity || !myCity) return enriched;
-    const norm = myCity.toLowerCase();
-    return enriched.filter((s) => (s.city ?? s.address ?? "").toLowerCase().includes(norm));
-  }, [enriched, onlyMyCity, myCity]);
+    let arr = enriched;
+    if (onlyMyCity && myCity) {
+      const norm = myCity.toLowerCase();
+      arr = arr.filter((s) => (s.city ?? s.address ?? "").toLowerCase().includes(norm));
+    }
+    const q = search.trim().toLocaleLowerCase("tr");
+    if (q) {
+      arr = arr.filter((s) =>
+        s.name.toLocaleLowerCase("tr").includes(q) ||
+        (s.city ?? "").toLocaleLowerCase("tr").includes(q) ||
+        (s.address ?? "").toLocaleLowerCase("tr").includes(q) ||
+        (serviceMatchIds?.has(s.id) ?? false),
+      );
+    }
+    return arr;
+  }, [enriched, onlyMyCity, myCity, search, serviceMatchIds]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
