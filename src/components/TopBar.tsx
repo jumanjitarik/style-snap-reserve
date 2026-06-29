@@ -5,7 +5,7 @@ import { Heart, Bell, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "./SafeImg";
 import defaultLogo from "@/assets/barber-logo.png.asset.json";
-import { LanguageSwitcher } from "./LanguageSwitcher";
+
 
 export function TopBar() {
   const router = useRouter();
