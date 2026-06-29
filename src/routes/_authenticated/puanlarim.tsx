@@ -28,9 +28,9 @@ function PuanlarimPage() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, points_earned, points_used, service_ids, shop_id, barbershops:shop_id(name)")
+        .select("id, starts_at, created_at, status, payment_amount, points_earned, points_used, service_ids, shop_id, barbershops:shop_id(name)")
         .eq("user_id", u.user.id)
-        .order("starts_at", { ascending: false });
+        .order("created_at", { ascending: false });
       return data ?? [];
     },
   });

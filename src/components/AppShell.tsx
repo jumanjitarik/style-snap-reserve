@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {mounted && <SplashScreen />}
       <TopBar />
       {mounted && <PullToRefresh />}
-      <div key={pathname} className="mx-auto max-w-md page-transition">{children}</div>
+      <div key={pathname} className="mx-auto w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl page-transition">{children}</div>
       <BottomNav />
       {mounted && <AnnouncementPopup />}
     </div>

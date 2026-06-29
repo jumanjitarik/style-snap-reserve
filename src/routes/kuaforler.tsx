@@ -197,7 +197,7 @@ function ShopList() {
           onClick={() => navigate({ search: {} })}
           className={cn(
             "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-            !cat ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+            !cat ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
           )}
         >
           Tümü
@@ -208,7 +208,7 @@ function ShopList() {
             onClick={() => navigate({ search: { cat: c.key } })}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
             {c.label}
