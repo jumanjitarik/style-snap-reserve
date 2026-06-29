@@ -269,7 +269,17 @@ function ShopsTab() {
       <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
-      {(shops ?? []).map((s) => (
+      <div className="flex gap-2">
+        <Input placeholder="Salon / adres ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Select value={filterCity} onValueChange={setFilterCity}>
+          <SelectTrigger className="w-36"><SelectValue placeholder="İl" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Tüm iller</SelectItem>
+            {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {filteredShops.map((s) => (
         <div key={s.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -277,7 +287,7 @@ function ShopsTab() {
                 <p className="font-semibold truncate">{s.name}</p>
                 {s.is_featured && <Star className="h-3.5 w-3.5 fill-primary text-primary shrink-0" />}
               </div>
-              <p className="text-xs text-muted-foreground truncate">{s.address}</p>
+              <p className="text-xs text-muted-foreground truncate">{s.city ? `${s.city} · ` : ""}{s.address}</p>
             </div>
             <div className="flex items-center gap-1">
               <button onClick={() => toggleFeatured.mutate({ id: s.id, val: !s.is_featured })}
