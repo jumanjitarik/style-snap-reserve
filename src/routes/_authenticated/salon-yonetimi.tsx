@@ -59,7 +59,7 @@ function SalonYonetimi() {
     queryFn: async () => {
       let q = supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, payment_method, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, payment_method, service_ids, user_id, shop_id, notes, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
         .order("starts_at", { ascending: false });
       if (shopId === "ALL") q = q.in("shop_id", ownedIds);
       else q = q.eq("shop_id", shopId);
