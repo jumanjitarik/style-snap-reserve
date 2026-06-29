@@ -168,6 +168,16 @@ function ShopList() {
         </div>
       </header>
 
+      <div className="px-4 pb-2 relative">
+        <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Hizmet, salon veya şehir ara…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       {myCity && (
         <div className="px-4 pb-2">
           <button
