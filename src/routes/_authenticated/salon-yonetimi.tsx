@@ -194,6 +194,12 @@ function SalonYonetimi() {
                 <p>🗓 {d.toLocaleDateString("tr-TR")} · {d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</p>
                 <p>✂️ {names || "—"}</p>
                 <p className="text-[11px]">🏪 {r.barbershops?.name ?? "—"}</p>
+                {r.notes && (
+                  <div className="rounded-md border border-primary/30 bg-primary/5 p-2 mt-1">
+                    <p className="text-[10px] uppercase tracking-wider text-primary mb-0.5">Müşteri Notu</p>
+                    <p className="text-[12px] whitespace-pre-wrap">{r.notes}</p>
+                  </div>
+                )}
                 <div className="flex gap-2 pt-1">
                   <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">
                     Sistemden: {Number(r.payment_amount ?? 0).toFixed(0)}₺
