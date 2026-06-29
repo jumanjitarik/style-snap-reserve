@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { CATEGORIES, type ShopCategory } from "@/lib/categories";
+import { DB_CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
 import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
@@ -207,7 +207,7 @@ function ShopsTab() {
         <div><Label>Kategori</Label>
           <Select value={editing.category} onValueChange={(v) => setEditing({ ...editing, category: v as ShopCategory })}>
             <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+            <SelectContent>{DB_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Açıklama</Label><Textarea value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>

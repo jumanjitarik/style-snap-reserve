@@ -8,7 +8,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CATEGORIES, categoryLabel, type ShopCategory } from "@/lib/categories";
+import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { addDays, format, startOfDay } from "date-fns";
@@ -39,7 +39,7 @@ function BookPage() {
 
   const initialIds = initialServices ? initialServices.split(",").filter(Boolean) : (initialService ? [initialService] : []);
   const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialIds.length > 0 ? 4 : 3) : 1);
-  const [category, setCategory] = useState<ShopCategory | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const [shopId, setShopId] = useState<string | null>(initialShop ?? null);
   const [serviceIds, setServiceIds] = useState<string[]>(initialIds);
   const [staffId, setStaffId] = useState<string | null>(null);
@@ -55,7 +55,8 @@ function BookPage() {
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
       let q = supabase.from("barbershops").select("id, name, category, address");
-      if (category) q = q.eq("category", category);
+      const ui = category ? findUiCategory(category) : null;
+      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
       return data ?? [];
     },
@@ -181,7 +182,7 @@ function BookPage() {
             <h2 className="font-display text-xl">Kategori Seç</h2>
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((c) => (
-                <button key={c.value} onClick={() => { setCategory(c.value); setStep(2); }}
+                <button key={c.key} onClick={() => { setCategory(c.key); setStep(2); }}
                   className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition">
                   <c.icon className="h-7 w-7 text-primary" />
                   <span className="text-sm text-center">{c.label}</span>
@@ -194,7 +195,7 @@ function BookPage() {
         {step === 2 && (
           <>
             <button onClick={() => setStep(1)} className="text-xs text-primary">← Kategori</button>
-            <h2 className="font-display text-xl">Salon Seç {category && `· ${categoryLabel(category)}`}</h2>
+            <h2 className="font-display text-xl">Salon Seç {category && `· ${findUiCategory(category)?.label ?? ""}`}</h2>
             <div className="space-y-2">
               {(shops ?? []).map((s) => (
                 <button key={s.id} onClick={() => { setShopId(s.id); setStep(3); }}

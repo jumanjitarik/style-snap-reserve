@@ -176,9 +176,9 @@ function Index() {
           <div className="grid grid-cols-3 gap-2">
             {CATEGORIES.map((c) => (
               <Link
-                key={c.value}
+                key={c.key}
                 to="/kuaforler"
-                search={{ cat: c.value } as never}
+                search={{ cat: c.key } as never}
                 className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-3 hover:border-primary/50 transition active:scale-95"
               >
                 <c.icon className="h-6 w-6 text-primary" />
