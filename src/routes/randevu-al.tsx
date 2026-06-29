@@ -321,12 +321,45 @@ function BookPage() {
                   <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
                 )}
               </div>
+              {balance > 0 && (
+                <>
+                  <hr className="border-border" />
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Puanlarım</p>
+                    <button type="button" onClick={() => setUsePoints((v) => !v)}
+                      className={cn("w-full text-left rounded-lg border p-2.5 transition active:scale-[0.99]", usePoints ? "border-primary bg-primary/5" : "border-border")}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">{usePoints ? "✓ Puanı kullan" : "Puanı kullan"} · <span className="text-primary font-semibold">{balance}P</span></span>
+                        {usePoints && <span className="text-primary font-display">-{pointsToUse}₺</span>}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">1 Puan = 1₺ indirim. Toplam ödenebilecek kadarı düşülür.</p>
+                    </button>
+                  </div>
+                </>
+              )}
+              <hr className="border-border" />
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Salona Not (opsiyonel)</p>
+                <textarea
+                  value={customerNote}
+                  onChange={(e) => setCustomerNote(e.target.value.slice(0, 300))}
+                  placeholder="Tercih ettiğiniz model, alerji vb."
+                  rows={2}
+                  className="w-full rounded-md bg-input border border-border p-2 text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground text-right">{customerNote.length}/300</p>
+              </div>
               <hr className="border-border" />
               <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
-              {appliedDiscount && (
-                <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
+              {(appliedDiscount || pointsToUse > 0) && (
+                <>
+                  <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
+                  {appliedDiscount && <p className="flex justify-between text-xs text-primary"><span>Kupon ({appliedDiscount.code}):</span><span>-{appliedDiscount.amount.toFixed(0)}₺</span></p>}
+                  {pointsToUse > 0 && <p className="flex justify-between text-xs text-primary"><span>Puan ({pointsToUse}P):</span><span>-{pointsToUse}₺</span></p>}
+                </>
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
+              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-3 space-y-2">
