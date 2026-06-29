@@ -132,18 +132,20 @@ function ShopDetail() {
     <AppShell>
       <BackButton />
       <div className="relative">
-        <div className="relative aspect-[16/10] bg-muted">
-          {shop.cover_image_url && <SafeImg src={shop.cover_image_url} alt={shop.name} className="h-full w-full object-cover" />}
-          {userId && (
-            <button
-              onClick={() => toggleFav.mutate()}
-              aria-label={isFav ? "Favorilerden çıkar" : "Favorilere ekle"}
-              className="absolute top-3 right-3 rounded-full bg-background/80 backdrop-blur p-2 active:scale-90 transition"
-            >
-              <Heart className={`h-5 w-5 ${isFav ? "fill-primary text-primary" : ""}`} />
-            </button>
-          )}
-        </div>
+        <CoverCarousel
+          coverUrl={shop.cover_image_url}
+          images={(images ?? []).map((i) => i.url)}
+          alt={shop.name}
+        />
+        {userId && (
+          <button
+            onClick={() => toggleFav.mutate()}
+            aria-label={isFav ? "Favorilerden çıkar" : "Favorilere ekle"}
+            className="absolute top-3 right-3 z-10 rounded-full bg-background/80 backdrop-blur p-2 active:scale-90 transition"
+          >
+            <Heart className={`h-5 w-5 ${isFav ? "fill-primary text-primary" : ""}`} />
+          </button>
+        )}
 
         <div className="px-4 pt-4">
           <p className="text-xs uppercase tracking-widest text-primary">{categoryLabel(shop.category as ShopCategory)}</p>
