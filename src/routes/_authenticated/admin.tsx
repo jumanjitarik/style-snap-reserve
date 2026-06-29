@@ -644,6 +644,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
       <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
       <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+      <p className="text-[11px] text-primary font-semibold">🪙 {profile.points ?? 0} puan</p>
       <p className="text-[10px] text-muted-foreground mt-0.5">
         IP: <span className="font-mono">{profile.last_ip ?? "-"}</span>
         {profile.last_city && ` · ${profile.last_city}`}
