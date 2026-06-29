@@ -27,8 +27,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", data.user.id);
-    const isAdmin = roles?.some((r) => r.role === "admin");
-    if (!isAdmin) throw redirect({ to: "/" });
+    const isAdminOrOwner = roles?.some((r) => r.role === "admin" || r.role === "owner");
+    if (!isAdminOrOwner) throw redirect({ to: "/" });
   },
   component: AdminPanel,
 });

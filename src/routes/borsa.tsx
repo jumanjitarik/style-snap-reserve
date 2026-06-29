@@ -14,17 +14,6 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/borsa")({
   ssr: false,
   component: BorsaPage,
-  head: () => ({
-    meta: [
-      { title: "Borsa — En Ucuz Berber & Salon Hizmetleri" },
-      { name: "description", content: "Yakınındaki berber, kuaför ve güzellik salonlarının en uygun fiyatlı hizmetlerini karşılaştır. Fiyat, mesafe ve kategoriye göre filtrele." },
-      { property: "og:title", content: "Borsa — En Ucuz Berber & Salon Hizmetleri" },
-      { property: "og:description", content: "Yakınındaki salonların en uygun hizmet fiyatlarını tek ekranda karşılaştır." },
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://style-snap-reserve.lovable.app/borsa" },
-    ],
-    links: [{ rel: "canonical", href: "https://style-snap-reserve.lovable.app/borsa" }],
-  }),
 });
 
 type SortKey = "price" | "near" | "name";
