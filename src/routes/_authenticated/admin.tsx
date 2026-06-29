@@ -256,6 +256,7 @@ function ShopsTab() {
             )}
           </div>
         </div>
+        {editing.id && <GalleryEditor shopId={editing.id} />}
         <div className="flex gap-2 pt-2">
           <Button variant="outline" onClick={() => setEditing(null)} className="flex-1">İptal</Button>
           <Button onClick={() => save.mutate()} disabled={save.isPending} className="flex-1">Kaydet</Button>
