@@ -484,7 +484,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at").order("full_name", { ascending: true, nullsFirst: false }).limit(200);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at, points").order("full_name", { ascending: true, nullsFirst: false }).limit(200);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -586,7 +586,7 @@ function UsersTab() {
   );
 }
 
-type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null; last_ip?: string | null; last_city?: string | null; last_country?: string | null; last_seen_at?: string | null };
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null; last_ip?: string | null; last_city?: string | null; last_country?: string | null; last_seen_at?: string | null; points?: number | null };
 
 function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
   const [open, setOpen] = useState(false);
