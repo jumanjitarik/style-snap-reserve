@@ -2,11 +2,25 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+const SafeUrl = z
+  .string()
+  .default("")
+  .refine((v) => {
+    if (!v) return true;
+    if (v.startsWith("/") && !v.startsWith("//")) return true;
+    try {
+      const u = new URL(v);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, { message: "Geçersiz URL (yalnızca http(s) veya / ile başlayan yollar)" });
+
 const InputSchema = z.object({
   title: z.string().min(1),
   body: z.string().default(""),
-  image_url: z.string().default(""),
-  link_url: z.string().default(""),
+  image_url: SafeUrl,
+  link_url: SafeUrl,
   audience: z.enum(["all", "customers", "owners", "staff", "others"]),
 });
 
