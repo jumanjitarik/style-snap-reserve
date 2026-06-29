@@ -48,6 +48,18 @@ function BookPage() {
   const [paymentMethod, setPaymentMethod] = useState<"full" | "deposit">("full");
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number } | null>(null);
+  const [customerNote, setCustomerNote] = useState("");
+  const [usePoints, setUsePoints] = useState(false);
+
+  // Loyalty: user's current points balance
+  const { data: profilePts } = useQuery({
+    queryKey: ["profile-points", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("points").eq("id", userId!).maybeSingle();
+      return Number(data?.points ?? 0);
+    },
+  });
 
 
   const { data: shops } = useQuery({
