@@ -359,9 +359,9 @@ function CoverCarousel({ coverUrl, images, alt }: { coverUrl: string | null; ima
         setTouchX(null);
       }}
     >
-      <div className="flex h-full transition-transform duration-500 ease-out" style={{ transform: `translateX(-${idx * 100}%)`, width: `${all.length * 100}%` }}>
+      <div className="flex h-full transition-transform duration-500 ease-out w-full" style={{ transform: `translateX(-${idx * 100}%)` }}>
         {all.map((u, i) => (
-          <div key={i} className="h-full shrink-0" style={{ width: `${100 / all.length}%` }}>
+          <div key={i} className="h-full w-full shrink-0 bg-muted">
             <SafeImg src={u} alt={alt} className="h-full w-full object-cover" />
           </div>
         ))}
