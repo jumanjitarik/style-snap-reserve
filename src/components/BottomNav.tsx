@@ -3,6 +3,8 @@ import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart } from "lucide
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SafeImg } from "@/components/SafeImg";
+import { useT } from "@/lib/i18n";
 import { useT } from "@/lib/i18n";
 
 type NavItem = { to: string; labelKey: string; icon: typeof Home; fab?: boolean; profile?: boolean };
