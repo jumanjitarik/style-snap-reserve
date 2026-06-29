@@ -86,9 +86,5 @@
 .leaflet-control-attribution { background: rgba(0,0,0,0.5) !important; color: #ccc !important; }
 .leaflet-control-attribution a { color: #ffd479 !important; }
 
-/* Page transition: slide-in from right on route change */
-@keyframes pageSlideIn {
-  from { transform: translateX(24px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-.page-transition { animation: pageSlideIn 280ms cubic-bezier(0.22, 1, 0.36, 1); will-change: transform, opacity; }
+/* Page transitions disabled per request — keep class name as a no-op for compatibility */
+.page-transition { }

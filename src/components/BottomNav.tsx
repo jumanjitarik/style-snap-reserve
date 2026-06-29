@@ -80,51 +80,51 @@ export function BottomNav() {
       )}
       style={{ bottom: `calc(env(safe-area-inset-bottom) + 10px)` }}
     >
-      <nav className="pointer-events-auto w-full max-w-md rounded-[24px] border border-primary/25 bg-card/80 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-        <ul className="flex items-end justify-between px-2 pt-1.5 pb-1">
+      <nav className="pointer-events-auto w-full max-w-md rounded-[28px] border border-primary/25 bg-card/85 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+        <ul className="grid grid-cols-5 items-end px-2 pt-2 pb-1.5">
           {items.map(({ to, label, icon: Icon, fab, profile }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             if (fab) {
               return (
-                <li key={to} className="-mt-5">
+                <li key={to} className="flex justify-center -mt-7">
                   <Link
                     to={to as never}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_6px_18px_rgba(212,175,55,0.5)] ring-[3px] ring-card transition-all duration-150 active:scale-90"
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_6px_22px_rgba(212,175,55,0.55)] ring-[3px] ring-card transition-all duration-150 active:scale-90"
                     aria-label={label}
                   >
-                    <Icon className="h-5 w-5" strokeWidth={2.5} />
+                    <Icon className="h-7 w-7" strokeWidth={2.5} />
                   </Link>
                 </li>
               );
             }
             return (
-              <li key={to} className="flex-1">
+              <li key={to}>
                 <Link
                   to={to as never}
                   className={cn(
-                    "group relative flex flex-col items-center gap-0.5 px-1 py-1 text-[9px] font-medium transition-all duration-150 active:scale-90",
+                    "group relative flex flex-col items-center gap-1 px-1 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-90",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <span className={cn(
-                    "absolute top-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary transition-opacity",
+                    "absolute top-0 left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-primary transition-opacity",
                     active ? "opacity-100" : "opacity-0",
                   )} />
-                  <div className="relative h-5 w-5 flex items-center justify-center">
+                  <div className="relative h-7 w-7 flex items-center justify-center">
                     {profile && avatar ? (
                       <SafeImg
                         src={avatar}
                         alt=""
                         className={cn(
-                          "absolute inset-0 h-5 w-5 rounded-full object-cover ring-2",
+                          "absolute inset-0 h-7 w-7 rounded-full object-cover ring-2",
                           active ? "ring-primary" : "ring-border",
                         )}
                       />
                     ) : (
-                      <Icon className="h-4.5 w-4.5" />
+                      <Icon className="h-6 w-6" />
                     )}
                   </div>
-                  <span className="truncate">{label}</span>
+                  <span className="truncate leading-none">{label}</span>
                 </Link>
               </li>
             );
