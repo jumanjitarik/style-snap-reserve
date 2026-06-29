@@ -749,6 +749,8 @@ function SettingsTab() {
         { key: "logo_url", value: form.logo_url },
         { key: "splash_url", value: form.splash_url },
         { key: "splash_duration_ms", value: String(Number(form.splash_duration_ms) || 1500) },
+        { key: "search_placeholder", value: form.search_placeholder },
+        { key: "gallery_interval_ms", value: String(Number(form.gallery_interval_ms) || 5000) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
