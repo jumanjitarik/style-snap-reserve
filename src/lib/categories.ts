@@ -34,3 +34,17 @@ export const categoryLabel = (c: ShopCategory | string): string => {
 
 // Lookup a UI category entry by its key (used by filter URLs).
 export const findUiCategory = (key: string) => CATEGORIES.find((c) => c.key === key);
+
+// DB-level categories — used by admin forms that must write the exact enum value
+export const DB_CATEGORIES: { value: ShopCategory; label: string }[] = [
+  { value: "male_barber",   label: "Erkek Kuaförü" },
+  { value: "female_barber", label: "Kadın Kuaförü" },
+  { value: "laser",         label: "Lazer Epilasyon" },
+  { value: "nail",          label: "Tırnak Bakımı" },
+  { value: "skin",          label: "Cilt Bakımı" },
+  { value: "aesthetic",     label: "Estetik" },
+  { value: "fitness",       label: "Fitness Salonu" },
+  { value: "spa_massage",   label: "Spa & Masaj" },
+  { value: "yoga_pilates",  label: "Yoga & Pilates" },
+  { value: "slimming",      label: "İncelme" },
+];
