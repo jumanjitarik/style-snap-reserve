@@ -667,6 +667,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
           <div><Label className="text-xs">E-posta</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
           <div><Label className="text-xs">Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
           <div><Label className="text-xs">Yeni Şifre (boş bırak = değişmez)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="en az 4 karakter" /></div>
+          <div><Label className="text-xs">🪙 Puan Bakiyesi</Label><Input type="number" min={0} value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} /></div>
           <Button size="sm" className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>Kaydet</Button>
         </div>
       )}
