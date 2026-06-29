@@ -3,18 +3,18 @@ import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart } from "lucide
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SafeImg } from "@/components/SafeImg";
+import { useT } from "@/lib/i18n";
 
-type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean; profile?: boolean };
+type NavItem = { to: string; labelKey: string; icon: typeof Home; fab?: boolean; profile?: boolean };
 
 const items: NavItem[] = [
-  { to: "/", label: "Ana", icon: Home },
-  { to: "/kuaforler", label: "Salonlar", icon: Store },
-  { to: "/borsa", label: "Borsa", icon: LineChart },
-  { to: "/randevu-al", label: "Randevu Al", icon: Plus, fab: true },
-  { to: "/puanlarim", label: "Puan", icon: Coins },
-  { to: "/randevularim", label: "Randevu", icon: CalendarCheck },
-  { to: "/hesap", label: "Hesap", icon: User, profile: true },
+  { to: "/", labelKey: "nav.home", icon: Home },
+  { to: "/kuaforler", labelKey: "nav.shops", icon: Store },
+  { to: "/borsa", labelKey: "nav.borsa", icon: LineChart },
+  { to: "/randevu-al", labelKey: "nav.book", icon: Plus, fab: true },
+  { to: "/puanlarim", labelKey: "nav.points", icon: Coins },
+  { to: "/randevularim", labelKey: "nav.appointments", icon: CalendarCheck },
+  { to: "/hesap", labelKey: "nav.account", icon: User, profile: true },
 ];
 
 const AVATAR_CACHE_KEY = "nav.avatarUrl";
