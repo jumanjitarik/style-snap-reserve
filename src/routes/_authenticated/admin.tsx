@@ -402,12 +402,13 @@ function ServicesTab() {
 function StaffTab() {
   const qc = useQueryClient();
   const [shopId, setShopId] = useState<string>("");
+  const [search, setSearch] = useState("");
   const [form, setForm] = useState({ name: "", title: "", photo_url: "" });
 
-  const { data: shops } = useQuery({ queryKey: ["admin-shops-min2"], queryFn: async () => (await supabase.from("barbershops").select("id, name")).data ?? [] });
+  const { data: shops } = useQuery({ queryKey: ["admin-shops-min2"], queryFn: async () => (await supabase.from("barbershops").select("id, name").order("name")).data ?? [] });
   const { data: staff } = useQuery({
     queryKey: ["admin-staff", shopId], enabled: !!shopId,
-    queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId)).data ?? [],
+    queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId).order("name")).data ?? [],
   });
 
   const add = useMutation({
