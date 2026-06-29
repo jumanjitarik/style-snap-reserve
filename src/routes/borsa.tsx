@@ -17,7 +17,7 @@ export const Route = createFileRoute("/borsa")({
 });
 
 type SortKey = "price" | "near" | "name";
-const MAX_KM = 40;
+const MAX_KM = 25;
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "price", label: "Fiyat" },
@@ -124,7 +124,7 @@ function BorsaPage() {
           onClick={() => setCat(null)}
           className={cn(
             "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-            !cat ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+            !cat ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
           )}
         >
           Tümü
@@ -135,7 +135,7 @@ function BorsaPage() {
             onClick={() => setCat(c.key)}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
             {c.label}
@@ -158,7 +158,7 @@ function BorsaPage() {
         <div className="space-y-2">
           {rows.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-6">
-              {coords ? "40 km içinde uygun hizmet bulunamadı." : "Hizmet bulunamadı."}
+              {coords ? `${MAX_KM} km içinde uygun hizmet bulunamadı.` : "Hizmet bulunamadı."}
             </p>
           )}
           {rows.map((r) => (
