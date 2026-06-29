@@ -310,6 +310,59 @@ function ShopsTab() {
   );
 }
 
+function GalleryEditor({ shopId }: { shopId: string }) {
+  const qc = useQueryClient();
+  const { data: imgs } = useQuery({
+    queryKey: ["shop-gallery", shopId],
+    queryFn: async () => (await supabase.from("barbershop_images").select("id, url, sort_order").eq("shop_id", shopId).order("sort_order", { ascending: true })).data ?? [],
+  });
+  const [busy, setBusy] = useState(false);
+
+  async function onUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    try {
+      const startOrder = (imgs?.length ?? 0);
+      const uploads = await Promise.all(Array.from(files).map(async (f, i) => {
+        const url = await uploadPhoto(f, "shop-gallery");
+        return { shop_id: shopId, url, sort_order: startOrder + i };
+      }));
+      const { error } = await supabase.from("barbershop_images").insert(uploads);
+      if (error) throw error;
+      toast.success(`${uploads.length} fotoğraf eklendi`);
+      qc.invalidateQueries({ queryKey: ["shop-gallery", shopId] });
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  async function remove(id: string) {
+    const { error } = await supabase.from("barbershop_images").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["shop-gallery", shopId] });
+  }
+
+  return (
+    <div className="rounded-md border border-border p-3 space-y-2">
+      <Label className="text-xs">📸 Galeri Fotoğrafları ({imgs?.length ?? 0})</Label>
+      <p className="text-[10px] text-muted-foreground">Dükkan kapağında otomatik kayar. Birden çok dosya seçebilirsin.</p>
+      <label className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-primary/40 bg-primary/5 p-3 text-xs text-primary ${busy ? "opacity-50" : ""}`}>
+        <Upload className="h-4 w-4" /> {busy ? "Yükleniyor…" : "Çoklu fotoğraf yükle"}
+        <input type="file" accept="image/*" multiple className="hidden" disabled={busy} onChange={(e) => { onUpload(e.target.files); e.target.value = ""; }} />
+      </label>
+      {(imgs?.length ?? 0) > 0 && (
+        <div className="grid grid-cols-4 gap-1.5">
+          {(imgs ?? []).map((g) => (
+            <div key={g.id} className="relative aspect-square overflow-hidden rounded-md bg-muted">
+              <SafeImg src={g.url} className="h-full w-full object-cover" alt="" />
+              <button onClick={() => remove(g.id)} className="absolute top-0.5 right-0.5 rounded-full bg-destructive/90 text-white p-0.5 active:scale-90"><Trash2 className="h-3 w-3" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ServicesTab() {
   const qc = useQueryClient();
   const [shopId, setShopId] = useState<string>("");
