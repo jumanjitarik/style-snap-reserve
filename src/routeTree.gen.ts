@@ -14,12 +14,14 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
 import { Route as HesapRouteImport } from './routes/hesap'
+import { Route as BorsaRouteImport } from './routes/borsa'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as KuaforIdRouteImport } from './routes/kuafor.$id'
 import { Route as AuthenticatedSalonYonetimiRouteImport } from './routes/_authenticated/salon-yonetimi'
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
+import { Route as AuthenticatedPuanlarimRouteImport } from './routes/_authenticated/puanlarim'
 import { Route as AuthenticatedMusterilerRouteImport } from './routes/_authenticated/musteriler'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
 import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
@@ -48,6 +50,11 @@ const KuaforlerRoute = KuaforlerRouteImport.update({
 const HesapRoute = HesapRouteImport.update({
   id: '/hesap',
   path: '/hesap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BorsaRoute = BorsaRouteImport.update({
+  id: '/borsa',
+  path: '/borsa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -81,6 +88,11 @@ const AuthenticatedRandevularimRoute =
     path: '/randevularim',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPuanlarimRoute = AuthenticatedPuanlarimRouteImport.update({
+  id: '/puanlarim',
+  path: '/puanlarim',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMusterilerRoute = AuthenticatedMusterilerRouteImport.update({
   id: '/musteriler',
   path: '/musteriler',
@@ -106,6 +118,7 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/borsa': typeof BorsaRoute
   '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
@@ -115,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
   '/musteriler': typeof AuthenticatedMusterilerRoute
+  '/puanlarim': typeof AuthenticatedPuanlarimRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
@@ -122,6 +136,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/borsa': typeof BorsaRoute
   '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
@@ -131,6 +146,7 @@ export interface FileRoutesByTo {
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
   '/musteriler': typeof AuthenticatedMusterilerRoute
+  '/puanlarim': typeof AuthenticatedPuanlarimRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
@@ -140,6 +156,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/borsa': typeof BorsaRoute
   '/hesap': typeof HesapRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
@@ -149,6 +166,7 @@ export interface FileRoutesById {
   '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
   '/_authenticated/musteriler': typeof AuthenticatedMusterilerRoute
+  '/_authenticated/puanlarim': typeof AuthenticatedPuanlarimRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
   '/_authenticated/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
@@ -158,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/borsa'
     | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
@@ -167,6 +186,7 @@ export interface FileRouteTypes {
     | '/bildirimler'
     | '/favoriler'
     | '/musteriler'
+    | '/puanlarim'
     | '/randevularim'
     | '/salon-yonetimi'
     | '/kuafor/$id'
@@ -174,6 +194,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/borsa'
     | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
@@ -183,6 +204,7 @@ export interface FileRouteTypes {
     | '/bildirimler'
     | '/favoriler'
     | '/musteriler'
+    | '/puanlarim'
     | '/randevularim'
     | '/salon-yonetimi'
     | '/kuafor/$id'
@@ -191,6 +213,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/borsa'
     | '/hesap'
     | '/kuaforler'
     | '/randevu-al'
@@ -200,6 +223,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
     | '/_authenticated/musteriler'
+    | '/_authenticated/puanlarim'
     | '/_authenticated/randevularim'
     | '/_authenticated/salon-yonetimi'
     | '/kuafor/$id'
@@ -209,6 +233,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  BorsaRoute: typeof BorsaRoute
   HesapRoute: typeof HesapRoute
   KuaforlerRoute: typeof KuaforlerRoute
   RandevuAlRoute: typeof RandevuAlRoute
@@ -254,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HesapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/borsa': {
+      id: '/borsa'
+      path: '/borsa'
+      fullPath: '/borsa'
+      preLoaderRoute: typeof BorsaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -296,6 +328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRandevularimRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/puanlarim': {
+      id: '/_authenticated/puanlarim'
+      path: '/puanlarim'
+      fullPath: '/puanlarim'
+      preLoaderRoute: typeof AuthenticatedPuanlarimRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/musteriler': {
       id: '/_authenticated/musteriler'
       path: '/musteriler'
@@ -332,6 +371,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBildirimlerRoute: typeof AuthenticatedBildirimlerRoute
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
   AuthenticatedMusterilerRoute: typeof AuthenticatedMusterilerRoute
+  AuthenticatedPuanlarimRoute: typeof AuthenticatedPuanlarimRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
   AuthenticatedSalonYonetimiRoute: typeof AuthenticatedSalonYonetimiRoute
 }
@@ -341,6 +381,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBildirimlerRoute: AuthenticatedBildirimlerRoute,
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
   AuthenticatedMusterilerRoute: AuthenticatedMusterilerRoute,
+  AuthenticatedPuanlarimRoute: AuthenticatedPuanlarimRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
   AuthenticatedSalonYonetimiRoute: AuthenticatedSalonYonetimiRoute,
 }
@@ -352,6 +393,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  BorsaRoute: BorsaRoute,
   HesapRoute: HesapRoute,
   KuaforlerRoute: KuaforlerRoute,
   RandevuAlRoute: RandevuAlRoute,

@@ -1,7 +1,7 @@
 import { SafeImg } from "@/components/SafeImg";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -484,7 +484,7 @@ function UsersTab() {
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles", search],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at").order("full_name", { ascending: true, nullsFirst: false }).limit(200);
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at, points").order("full_name", { ascending: true, nullsFirst: false }).limit(200);
       if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
       return (await q).data ?? [];
     },
@@ -586,7 +586,7 @@ function UsersTab() {
   );
 }
 
-type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null; last_ip?: string | null; last_city?: string | null; last_country?: string | null; last_seen_at?: string | null };
+type ProfileLite = { id: string; full_name: string | null; email: string | null; phone: string | null; is_blocked?: boolean | null; last_ip?: string | null; last_city?: string | null; last_country?: string | null; last_seen_at?: string | null; points?: number | null };
 
 function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwner: () => void }) {
   const [open, setOpen] = useState(false);
@@ -595,6 +595,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     email: profile.email ?? "",
     phone: profile.phone ?? "",
     password: "",
+    points: String(profile.points ?? 0),
   });
   const updateFn = useServerFn(adminUpdateUser);
   const qc = useQueryClient();
@@ -609,6 +610,11 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
           password: form.password ? form.password : undefined,
         },
       });
+      const newPoints = Math.max(0, parseInt(form.points || "0", 10) || 0);
+      if (newPoints !== (profile.points ?? 0)) {
+        const { error } = await supabase.from("profiles").update({ points: newPoints }).eq("id", profile.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Üye güncellendi");
@@ -638,6 +644,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
       <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
       <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+      <p className="text-[11px] text-primary font-semibold">🪙 {profile.points ?? 0} puan</p>
       <p className="text-[10px] text-muted-foreground mt-0.5">
         IP: <span className="font-mono">{profile.last_ip ?? "-"}</span>
         {profile.last_city && ` · ${profile.last_city}`}
@@ -660,6 +667,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
           <div><Label className="text-xs">E-posta</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
           <div><Label className="text-xs">Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
           <div><Label className="text-xs">Yeni Şifre (boş bırak = değişmez)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="en az 4 karakter" /></div>
+          <div><Label className="text-xs">🪙 Puan Bakiyesi</Label><Input type="number" min={0} value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} /></div>
           <Button size="sm" className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>Kaydet</Button>
         </div>
       )}
@@ -1004,6 +1012,10 @@ function AccountingTab() {
     },
   });
   const [shopId, setShopId] = useState<string>("ALL");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const { data: rows } = useQuery({
     queryKey: ["acct-rows", shopId],
@@ -1011,7 +1023,7 @@ function AccountingTab() {
     queryFn: async () => {
       let q = supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, payment_method, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, payment_method, points_earned, points_used, discount_amount, service_ids, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
         .order("starts_at", { ascending: false });
       if (shopId !== "ALL") q = q.eq("shop_id", shopId);
       const { data, error } = await q;
@@ -1031,14 +1043,30 @@ function AccountingTab() {
     },
   });
 
-  const totalRevenue = (rows ?? []).filter((r: any) => r.status === "confirmed" || r.status === "completed" || r.status === "paid")
-    .reduce((s: number, r: any) => s + Number(r.payment_amount ?? 0), 0);
-  const totalCount = (rows ?? []).length;
+  const filtered = useMemo(() => {
+    let list = [...(rows ?? [])];
+    if (statusFilter !== "ALL") list = list.filter((r: any) => r.status === statusFilter);
+    if (from) list = list.filter((r: any) => new Date(r.starts_at) >= new Date(from));
+    if (to) list = list.filter((r: any) => new Date(r.starts_at) <= new Date(to + "T23:59:59"));
+    if (search.trim()) {
+      const s = search.toLocaleLowerCase("tr");
+      list = list.filter((r: any) => {
+        const name = (r.profiles?.full_name ?? "").toLocaleLowerCase("tr");
+        const phone = (r.profiles?.phone ?? "").toLocaleLowerCase("tr");
+        const shop = (r.barbershops?.name ?? "").toLocaleLowerCase("tr");
+        const services = ((r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "").join(" ")).toLocaleLowerCase("tr");
+        return name.includes(s) || phone.includes(s) || shop.includes(s) || services.includes(s);
+      });
+    }
+    return list;
+  }, [rows, statusFilter, from, to, search, serviceMap]);
 
-  const totalRemaining = (rows ?? []).reduce((s: number, r: any) => s + Number(r.remaining_amount ?? 0), 0);
+  const totalRevenue = filtered.filter((r: any) => r.status !== "cancelled").reduce((s: number, r: any) => s + Number(r.payment_amount ?? 0), 0);
+  const totalRemaining = filtered.reduce((s: number, r: any) => s + Number(r.remaining_amount ?? 0), 0);
+  const totalCount = filtered.length;
 
   const exportXlsx = () => {
-    const data = (rows ?? []).map((r: any) => ({
+    const data = filtered.map((r: any) => ({
       Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
       Müşteri: r.profiles?.full_name ?? "—",
       Telefon: r.profiles?.phone ?? "—",
@@ -1047,6 +1075,9 @@ function AccountingTab() {
       Ödeme_Şekli: r.payment_method === "deposit" ? "%25 Kapora" : "Tamamı",
       Sistemden_Ödenen: Number(r.payment_amount ?? 0),
       Salonda_Ödenecek: Number(r.remaining_amount ?? 0),
+      İndirim: Number(r.discount_amount ?? 0),
+      Puan_Kullanılan: Number(r.points_used ?? 0),
+      Puan_Kazanılan: Number(r.points_earned ?? 0),
       Durum: r.status,
     }));
     const ws = XLSX.utils.json_to_sheet(data);
@@ -1057,14 +1088,39 @@ function AccountingTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Label>Salon Seç</Label>
-      <Select value={shopId} onValueChange={setShopId}>
-        <SelectTrigger><SelectValue placeholder="Salon seç" /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="ALL">🏪 Bütün Salonlar</SelectItem>
-          {(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <div>
+          <Label className="text-xs">Salon</Label>
+          <Select value={shopId} onValueChange={setShopId}>
+            <SelectTrigger><SelectValue placeholder="Salon seç" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">🏪 Bütün Salonlar</SelectItem>
+              {(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Ara (müşteri / telefon / hizmet / salon)</Label>
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Ada, telefona, hizmete veya salona göre ara…" />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <Label className="text-xs">Durum</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tümü</SelectItem>
+                <SelectItem value="confirmed">Onaylı</SelectItem>
+                <SelectItem value="completed">Tamamlandı</SelectItem>
+                <SelectItem value="paid">Ödendi</SelectItem>
+                <SelectItem value="cancelled">İptal</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div><Label className="text-xs">Başlangıç</Label><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div><Label className="text-xs">Bitiş</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl border border-border bg-card p-3">
@@ -1076,17 +1132,17 @@ function AccountingTab() {
           <p className="font-display text-xl">{totalRemaining.toFixed(0)}₺</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] text-muted-foreground">Randevu</p>
+          <p className="text-[10px] text-muted-foreground">İşlem</p>
           <p className="font-display text-xl">{totalCount}</p>
         </div>
       </div>
 
-      <Button onClick={exportXlsx} variant="outline" className="w-full" disabled={!rows || rows.length === 0}>
+      <Button onClick={exportXlsx} variant="outline" className="w-full" disabled={filtered.length === 0}>
         <Download className="h-4 w-4 mr-1" /> Excel olarak indir
       </Button>
 
       <div className="space-y-2">
-        {(rows ?? []).map((r: any) => {
+        {filtered.map((r: any) => {
           const d = new Date(r.starts_at);
           const names = (r.service_ids ?? []).map((id: string) => serviceMap?.get(id)?.name ?? "—").join(", ");
           const total = Number(r.payment_amount ?? 0) + Number(r.remaining_amount ?? 0);
@@ -1105,12 +1161,21 @@ function AccountingTab() {
                 {Number(r.remaining_amount ?? 0) > 0 && (
                   <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[10px] font-bold">Salonda: {Number(r.remaining_amount ?? 0).toFixed(0)}₺</span>
                 )}
+                {Number(r.discount_amount ?? 0) > 0 && (
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">İndirim: {Number(r.discount_amount).toFixed(0)}₺</span>
+                )}
+                {Number(r.points_used ?? 0) > 0 && (
+                  <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 text-[10px] font-bold">−{r.points_used} puan</span>
+                )}
+                {Number(r.points_earned ?? 0) > 0 && (
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">+{r.points_earned} puan</span>
+                )}
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider">{r.status}</span>
               </div>
             </div>
           );
         })}
-        {(rows ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Bu salonda randevu yok.</p>}
+        {filtered.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Eşleşen işlem yok.</p>}
       </div>
     </div>
   );
