@@ -84,7 +84,8 @@ export function BottomNav() {
     >
       <nav className="pointer-events-auto w-full max-w-[460px] rounded-[26px] border border-primary/25 bg-card/85 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
         <ul className="grid grid-cols-7 items-end px-1.5 pt-1.5 pb-1">
-          {items.map(({ to, label, icon: Icon, fab, profile }) => {
+          {items.map(({ to, labelKey, icon: Icon, fab, profile }) => {
+            const label = t(labelKey);
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             if (fab) {
               return (
