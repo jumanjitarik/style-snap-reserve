@@ -45,6 +45,7 @@ function ShopList() {
   const [sort, setSort] = useState<SortKey>("near");
   const [myCity, setMyCity] = useState<string | null>(null);
   const [onlyMyCity, setOnlyMyCity] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
