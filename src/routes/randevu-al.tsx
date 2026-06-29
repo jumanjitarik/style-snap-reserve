@@ -19,6 +19,17 @@ const searchSchema = z.object({ shop: z.string().optional(), service: z.string()
 export const Route = createFileRoute("/randevu-al")({
   validateSearch: (s) => searchSchema.parse(s),
   component: BookPage,
+  head: () => ({
+    meta: [
+      { title: "Randevu Al — Berber, Kuaför & Güzellik Salonu" },
+      { name: "description", content: "Berber, kuaför, lazer, tırnak, cilt bakımı ve daha fazlası için en yakın salondan dakikalar içinde online randevu al." },
+      { property: "og:title", content: "Randevu Al — Berber, Kuaför & Güzellik Salonu" },
+      { property: "og:description", content: "Hizmet, tarih ve saati seç; salondan online randevunu hızlıca oluştur." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://style-snap-reserve.lovable.app/randevu-al" },
+    ],
+    links: [{ rel: "canonical", href: "https://style-snap-reserve.lovable.app/randevu-al" }],
+  }),
 });
 
 const SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00"];
