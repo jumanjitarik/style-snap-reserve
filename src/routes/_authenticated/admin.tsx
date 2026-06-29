@@ -449,8 +449,9 @@ function StaffTab() {
             </div>
             <Button onClick={() => add.mutate()} disabled={!form.name} className="w-full">Ekle</Button>
           </div>
+          <Input placeholder="Çalışan ara..." value={search} onChange={(e) => setSearch(e.target.value)} />
           <div className="space-y-2">
-            {(staff ?? []).map((p) => (
+            {(staff ?? []).filter((p) => !search.trim() || p.name.toLocaleLowerCase("tr-TR").includes(search.toLocaleLowerCase("tr-TR"))).map((p) => (
               <div key={p.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
                 <div className="h-10 w-10 rounded-full bg-muted overflow-hidden shrink-0">
                   {p.photo_url && <SafeImg src={p.photo_url} className="h-full w-full object-cover" alt="" />}
