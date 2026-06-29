@@ -711,7 +711,7 @@ function SettingsTab() {
       return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
     },
   });
-  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500" });
+  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500", search_placeholder: "", gallery_interval_ms: "5000" });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
     setForm({
@@ -721,6 +721,8 @@ function SettingsTab() {
       logo_url: settings.logo_url ?? "",
       splash_url: settings.splash_url ?? "",
       splash_duration_ms: settings.splash_duration_ms ?? "1500",
+      search_placeholder: settings.search_placeholder ?? "Berber, salon, hizmet ara…",
+      gallery_interval_ms: settings.gallery_interval_ms ?? "5000",
     });
     initialized[1](true);
   }
