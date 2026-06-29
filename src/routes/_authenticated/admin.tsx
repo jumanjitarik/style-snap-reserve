@@ -595,6 +595,7 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
     email: profile.email ?? "",
     phone: profile.phone ?? "",
     password: "",
+    points: String(profile.points ?? 0),
   });
   const updateFn = useServerFn(adminUpdateUser);
   const qc = useQueryClient();
@@ -609,6 +610,11 @@ function UserRow({ profile, onAssignOwner }: { profile: ProfileLite; onAssignOwn
           password: form.password ? form.password : undefined,
         },
       });
+      const newPoints = Math.max(0, parseInt(form.points || "0", 10) || 0);
+      if (newPoints !== (profile.points ?? 0)) {
+        const { error } = await supabase.from("profiles").update({ points: newPoints }).eq("id", profile.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       toast.success("Üye güncellendi");
