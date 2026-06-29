@@ -3,31 +3,38 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { Link } from "@tanstack/react-router";
-import { LineChart, MapPin } from "lucide-react";
+import { LineChart, MapPin, ArrowUpDown } from "lucide-react";
+import { CATEGORIES, type ShopCategory } from "@/lib/categories";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/borsa")({
   ssr: false,
   component: BorsaPage,
 });
 
-type SortKey = "price" | "distance" | "name";
+type SortKey = "price" | "near" | "name";
 const MAX_KM = 40;
+
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "price", label: "Fiyat" },
+  { key: "near", label: "Yakın" },
+  { key: "name", label: "Ad" },
+];
 
 function BorsaPage() {
   const { coords, permission, request } = useGeolocation();
   const [sortBy, setSortBy] = useState<SortKey>("price");
   const [search, setSearch] = useState("");
+  const [cat, setCat] = useState<string | null>(null);
 
   const { data: shops } = useQuery({
     queryKey: ["borsa-shops"],
     queryFn: async () => {
-      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng");
+      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng, category");
       return data ?? [];
     },
   });
@@ -42,7 +49,9 @@ function BorsaPage() {
 
   const rows = useMemo(() => {
     if (!shops || !services) return [];
-    const shopMap = new Map(shops.map((s) => [s.id, s]));
+    const ui = cat ? CATEGORIES.find((c) => c.key === cat) : null;
+    const allowed = ui ? new Set(ui.dbValues as ShopCategory[]) : null;
+    const shopMap = new Map(shops.filter((s) => !allowed || allowed.has(s.category as ShopCategory)).map((s) => [s.id, s]));
     const list = services.map((sv) => {
       const shop = shopMap.get(sv.shop_id);
       if (!shop) return null;
@@ -63,7 +72,6 @@ function BorsaPage() {
       };
     }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; city: string | null; address: string | null; km: number | null }>;
 
-    // Filter by distance only when we have coords
     const filtered = list.filter((r) => {
       if (coords) return r.km != null && r.km <= MAX_KM;
       return true;
@@ -80,18 +88,60 @@ function BorsaPage() {
 
     searched.sort((a, b) => {
       if (sortBy === "price") return a.price - b.price;
-      if (sortBy === "distance") return (a.km ?? 9999) - (b.km ?? 9999);
+      if (sortBy === "near") return (a.km ?? 9999) - (b.km ?? 9999);
       return a.serviceName.localeCompare(b.serviceName, "tr");
     });
     return searched.slice(0, 300);
-  }, [shops, services, coords, sortBy, search]);
+  }, [shops, services, coords, sortBy, search, cat]);
 
   return (
     <AppShell>
-      <header className="px-4 pt-4 pb-3">
+      <header className="px-4 pt-4 pb-2 flex items-end justify-between gap-2">
         <h1 className="font-display text-3xl flex items-center gap-2"><LineChart className="h-7 w-7 text-primary" /> Borsa</h1>
-        <p className="text-xs text-muted-foreground">{coords ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
+        <div className="flex items-center gap-1.5 text-xs">
+          <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
+          <div className="flex gap-1">
+            {SORTS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setSortBy(s.key)}
+                className={cn(
+                  "rounded-full border px-2 py-1 text-[10px] uppercase tracking-wide transition active:scale-95",
+                  sortBy === s.key ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
+
+      <p className="px-4 text-xs text-muted-foreground pb-2">{coords ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
+
+      <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
+        <button
+          onClick={() => setCat(null)}
+          className={cn(
+            "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
+            !cat ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+          )}
+        >
+          Tümü
+        </button>
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.key}
+            onClick={() => setCat(c.key)}
+            className={cn(
+              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
+              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground",
+            )}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
 
       <div className="px-4 space-y-3 pb-6">
         {!coords && permission !== "checking" && (
@@ -104,18 +154,6 @@ function BorsaPage() {
         )}
 
         <Input placeholder="Hizmet, salon veya şehir ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
-
-        <div>
-          <Label className="text-xs">Sırala</Label>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="price">En ucuz fiyat</SelectItem>
-              <SelectItem value="distance">En yakın mesafe</SelectItem>
-              <SelectItem value="name">Hizmet adı (A→Z)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
         <div className="space-y-2">
           {rows.length === 0 && (

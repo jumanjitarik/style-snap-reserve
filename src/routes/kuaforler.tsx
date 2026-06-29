@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
-import { MapPin, ArrowUpDown } from "lucide-react";
+import { MapPin, ArrowUpDown, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
@@ -44,6 +45,7 @@ function ShopList() {
   const [sort, setSort] = useState<SortKey>("near");
   const [myCity, setMyCity] = useState<string | null>(null);
   const [onlyMyCity, setOnlyMyCity] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -105,11 +107,33 @@ function ShopList() {
     });
   }, [data, reviews, priceMap, coords]);
 
+  const { data: serviceMatchIds } = useQuery({
+    queryKey: ["shops-service-search", search],
+    enabled: search.trim().length >= 2,
+    queryFn: async () => {
+      const q = search.trim();
+      const { data } = await supabase.from("services").select("shop_id").ilike("name", `%${q}%`);
+      return new Set((data ?? []).map((r) => r.shop_id));
+    },
+  });
+
   const filtered = useMemo(() => {
-    if (!onlyMyCity || !myCity) return enriched;
-    const norm = myCity.toLowerCase();
-    return enriched.filter((s) => (s.city ?? s.address ?? "").toLowerCase().includes(norm));
-  }, [enriched, onlyMyCity, myCity]);
+    let arr = enriched;
+    if (onlyMyCity && myCity) {
+      const norm = myCity.toLowerCase();
+      arr = arr.filter((s) => (s.city ?? s.address ?? "").toLowerCase().includes(norm));
+    }
+    const q = search.trim().toLocaleLowerCase("tr");
+    if (q) {
+      arr = arr.filter((s) =>
+        s.name.toLocaleLowerCase("tr").includes(q) ||
+        (s.city ?? "").toLocaleLowerCase("tr").includes(q) ||
+        (s.address ?? "").toLocaleLowerCase("tr").includes(q) ||
+        (serviceMatchIds?.has(s.id) ?? false),
+      );
+    }
+    return arr;
+  }, [enriched, onlyMyCity, myCity, search, serviceMatchIds]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -143,6 +167,16 @@ function ShopList() {
           </div>
         </div>
       </header>
+
+      <div className="px-4 pb-2 relative">
+        <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          placeholder="Hizmet, salon veya şehir ara…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
 
       {myCity && (
         <div className="px-4 pb-2">
