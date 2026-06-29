@@ -27,7 +27,7 @@ function BorsaPage() {
   const { data: shops } = useQuery({
     queryKey: ["borsa-shops"],
     queryFn: async () => {
-      const { data } = await supabase.from("barbershops").select("id, name, address, city, latitude, longitude").eq("active", true);
+      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng");
       return data ?? [];
     },
   });
@@ -47,8 +47,8 @@ function BorsaPage() {
       const shop = shopMap.get(sv.shop_id);
       if (!shop) return null;
       let km: number | null = null;
-      if (coords && shop.latitude != null && shop.longitude != null) {
-        km = distanceKm(coords.lat, coords.lng, Number(shop.latitude), Number(shop.longitude));
+      if (coords && shop.lat != null && shop.lng != null) {
+        km = distanceKm(coords.lat, coords.lng, Number(shop.lat), Number(shop.lng));
       }
       return {
         serviceId: sv.id,
