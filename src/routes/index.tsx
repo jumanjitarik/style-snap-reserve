@@ -96,19 +96,27 @@ function Index() {
         "welcome_line1_text", "welcome_line1_color",
         "welcome_line2_text", "welcome_line2_color",
         "welcome_line3_text", "welcome_line3_color",
+        "hero_height_px", "gap_top_px", "gap_line12_px", "gap_line23_px", "gap_search_px",
       ];
       const { data } = await supabase.from("app_settings").select("key, value").in("key", keys);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+      const num = (k: string, d: number) => { const n = Number(map[k]); return Number.isFinite(n) ? n : d; };
       return {
         line1: { text: map.welcome_line1_text || map.welcome_subtitle || "HOŞ GELDİN", color: map.welcome_line1_color || "#FFD400" },
         line2: { text: map.welcome_line2_text || (map.welcome_title?.split(" ").slice(0, 2).join(" ")) || "BUGÜN GÜZEL", color: map.welcome_line2_color || "#FFFFFF" },
         line3: { text: map.welcome_line3_text || "VE ŞIKSIN", color: map.welcome_line3_color || "#FFD400" },
         searchPlaceholder: map.search_placeholder || "Berber, salon, hizmet ara...",
         heroUrl: map.hero_url || "",
+        heroHeight: num("hero_height_px", 120),
+        gapTop: num("gap_top_px", 8),
+        gapLine12: num("gap_line12_px", 2),
+        gapLine23: num("gap_line23_px", 0),
+        gapSearch: num("gap_search_px", 8),
       };
     },
     staleTime: 60_000,
   });
+
 
   type Shop = NonNullable<typeof shops>[number] & { dist?: number; rating?: number; reviewCount?: number };
 
