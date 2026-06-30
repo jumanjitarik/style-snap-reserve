@@ -81,7 +81,7 @@ export function BottomNav() {
         "fixed left-0 right-0 z-50 flex justify-center px-2 transition-transform duration-300 ease-out pointer-events-none",
         hidden ? "translate-y-[140%]" : "translate-y-0",
       )}
-      style={{ bottom: `calc(env(safe-area-inset-bottom) + 14px)` }}
+      style={{ bottom: `calc(env(safe-area-inset-bottom) + 22px)` }}
     >
       <nav className="pointer-events-auto w-full max-w-[460px] rounded-[26px] border border-primary/25 bg-card/85 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
         <ul className="grid grid-cols-7 items-end px-1.5 pt-1.5 pb-1">

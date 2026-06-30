@@ -83,6 +83,18 @@ function BookPage() {
     enabled: !!shopId && !!userId,
     queryFn: async () => (await supabase.from("staff").select("*").eq("shop_id", shopId!)).data ?? [],
   });
+  const { data: workingHours } = useQuery({
+    queryKey: ["book-working-hours", shopId],
+    enabled: !!shopId && !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shop_working_hours")
+        .select("weekday, is_open, open_time, close_time")
+        .eq("shop_id", shopId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   const selectedServices = useMemo(() => (services ?? []).filter((s) => serviceIds.includes(s.id)), [services, serviceIds]);
   const totalPrice = useMemo(() => selectedServices.reduce((s, x) => s + Number(x.price ?? 0), 0), [selectedServices]);
@@ -91,6 +103,36 @@ function BookPage() {
   function toggleService(id: string) {
     setServiceIds((arr) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
   }
+
+  const hoursByDay = useMemo(() => {
+    const m = new Map<number, { is_open: boolean; open_time: string; close_time: string }>();
+    (workingHours ?? []).forEach((h: any) => m.set(h.weekday, h));
+    return m;
+  }, [workingHours]);
+  const selectedDayHours = date ? hoursByDay.get(date.getDay()) : null;
+  const isDateDisabled = (d: Date) => {
+    if (d < addDays(startOfDay(new Date()), 1)) return true;
+    const h = hoursByDay.get(d.getDay());
+    if (h) return !h.is_open;
+    return d.getDay() === 0;
+  };
+  const availableSlots = useMemo(() => {
+    if (!date) return [];
+    const h = selectedDayHours;
+    if (h && !h.is_open) return [];
+    const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
+    const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
+    if (!open || !close) return [];
+    return SLOTS.filter((s) => s >= open && s < close);
+  }, [date, selectedDayHours]);
+
+  useEffect(() => {
+    if (date && isDateDisabled(date)) { setDate(undefined); setTime(null); }
+  }, [workingHours]);
+
+  useEffect(() => {
+    if (time && !availableSlots.includes(time)) setTime(null);
+  }, [availableSlots, time]);
 
   const balance = profilePts ?? 0;
   const afterDiscount = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
@@ -277,20 +319,21 @@ function BookPage() {
           <>
             <button onClick={() => setStep(3)} className="text-xs text-primary">← Hizmet</button>
             <h2 className="font-display text-xl">Tarih & Saat</h2>
-            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Pazar günleri kapalı.</p>
+            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır.</p>
             <div className="rounded-xl border border-border bg-card p-2">
               <Calendar mode="single" selected={date} onSelect={setDate} locale={tr}
-                disabled={(d) => d < addDays(startOfDay(new Date()), 1) || d.getDay() === 0}
+                disabled={isDateDisabled}
                 className="pointer-events-auto"
               />
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {SLOTS.map((s) => (
+              {availableSlots.map((s) => (
                 <button key={s} onClick={() => setTime(s)}
                   className={cn("rounded-lg border py-2 text-sm active:scale-95 transition", time === s ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card")}>
                   {s}
                 </button>
               ))}
+              {availableSlots.length === 0 && <p className="col-span-4 text-sm text-muted-foreground text-center py-3">Bu gün için uygun saat yok.</p>}
             </div>
             <Button onClick={() => time && setStep(5)} disabled={!time} className="w-full h-12">Devam Et</Button>
           </>
