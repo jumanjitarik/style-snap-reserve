@@ -824,7 +824,7 @@ function SettingsTab() {
     initialized[1](true);
   }
 
-  async function uploadAsset(file: File, key: "logo_url" | "splash_url") {
+  async function uploadAsset(file: File, key: "logo_url" | "splash_url" | "hero_url") {
     try {
       const { data: u } = await supabase.auth.getUser();
       const ext = file.name.split(".").pop() ?? "png";
