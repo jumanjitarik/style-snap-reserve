@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { SafeImg } from "@/components/SafeImg";
+import categoryMarble from "@/assets/category-marble.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
