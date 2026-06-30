@@ -39,18 +39,18 @@
 :root {
   --radius: 0.75rem;
   /* Dark barbershop theme — charcoal + amber gold + cream */
-  --background: oklch(0.16 0.012 60);
-  --foreground: oklch(0.95 0.02 80);
-  --card: oklch(0.21 0.014 60);
-  --card-foreground: oklch(0.95 0.02 80);
-  --popover: oklch(0.21 0.014 60);
-  --popover-foreground: oklch(0.95 0.02 80);
-  --primary: oklch(0.81 0.135 92);
-  --primary-foreground: oklch(0.18 0.02 60);
-  --secondary: oklch(0.28 0.018 60);
-  --secondary-foreground: oklch(0.95 0.02 80);
-  --muted: oklch(0.26 0.014 60);
-  --muted-foreground: oklch(0.68 0.025 75);
+  --background: oklch(0.13 0.005 60);
+  --foreground: oklch(0.97 0.01 90);
+  --card: oklch(0.18 0.006 60);
+  --card-foreground: oklch(0.97 0.01 90);
+  --popover: oklch(0.18 0.006 60);
+  --popover-foreground: oklch(0.97 0.01 90);
+  --primary: oklch(0.86 0.17 95);
+  --primary-foreground: oklch(0.14 0.01 60);
+  --secondary: oklch(0.24 0.008 60);
+  --secondary-foreground: oklch(0.97 0.01 90);
+  --muted: oklch(0.22 0.006 60);
+  --muted-foreground: oklch(0.72 0.02 80);
   --accent: oklch(0.32 0.04 75);
   --accent-foreground: oklch(0.95 0.02 80);
   --destructive: oklch(0.6 0.22 25);

@@ -795,7 +795,13 @@ function SettingsTab() {
       return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
     },
   });
-  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500", search_placeholder: "", gallery_interval_ms: "5000" });
+  const [form, setForm] = useState({
+    welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", hero_url: "",
+    splash_duration_ms: "1500", search_placeholder: "", gallery_interval_ms: "5000",
+    welcome_line1_text: "HOŞ GELDİN", welcome_line1_color: "#FFD400",
+    welcome_line2_text: "BUGÜN GÜZEL", welcome_line2_color: "#FFFFFF",
+    welcome_line3_text: "VE ŞIKSIN", welcome_line3_color: "#FFD400",
+  });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
     setForm({
@@ -804,14 +810,21 @@ function SettingsTab() {
       app_name: settings.app_name ?? "BarberApp",
       logo_url: settings.logo_url ?? "",
       splash_url: settings.splash_url ?? "",
+      hero_url: settings.hero_url ?? "",
       splash_duration_ms: settings.splash_duration_ms ?? "1500",
       search_placeholder: settings.search_placeholder ?? "Berber, salon, hizmet ara…",
       gallery_interval_ms: settings.gallery_interval_ms ?? "5000",
+      welcome_line1_text: settings.welcome_line1_text ?? "HOŞ GELDİN",
+      welcome_line1_color: settings.welcome_line1_color ?? "#FFD400",
+      welcome_line2_text: settings.welcome_line2_text ?? "BUGÜN GÜZEL",
+      welcome_line2_color: settings.welcome_line2_color ?? "#FFFFFF",
+      welcome_line3_text: settings.welcome_line3_text ?? "VE ŞIKSIN",
+      welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
     });
     initialized[1](true);
   }
 
-  async function uploadAsset(file: File, key: "logo_url" | "splash_url") {
+  async function uploadAsset(file: File, key: "logo_url" | "splash_url" | "hero_url") {
     try {
       const { data: u } = await supabase.auth.getUser();
       const ext = file.name.split(".").pop() ?? "png";
@@ -832,9 +845,16 @@ function SettingsTab() {
         { key: "app_name", value: form.app_name },
         { key: "logo_url", value: form.logo_url },
         { key: "splash_url", value: form.splash_url },
+        { key: "hero_url", value: form.hero_url },
         { key: "splash_duration_ms", value: String(Number(form.splash_duration_ms) || 1500) },
         { key: "search_placeholder", value: form.search_placeholder },
         { key: "gallery_interval_ms", value: String(Number(form.gallery_interval_ms) || 5000) },
+        { key: "welcome_line1_text", value: form.welcome_line1_text },
+        { key: "welcome_line1_color", value: form.welcome_line1_color },
+        { key: "welcome_line2_text", value: form.welcome_line2_text },
+        { key: "welcome_line2_color", value: form.welcome_line2_color },
+        { key: "welcome_line3_text", value: form.welcome_line3_text },
+        { key: "welcome_line3_color", value: form.welcome_line3_color },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
@@ -881,9 +901,34 @@ function SettingsTab() {
         </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
-        <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin</p>
-        <div><Label>Üst yazı (küçük)</Label><Input value={form.welcome_subtitle} onChange={(e) => setForm({ ...form, welcome_subtitle: e.target.value })} placeholder="Hoş geldin" /></div>
-        <div><Label>Ana başlık</Label><Input value={form.welcome_title} onChange={(e) => setForm({ ...form, welcome_title: e.target.value })} placeholder="Bugün nasıl şıklaşıyoruz?" /></div>
+        <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin (3 Satır)</p>
+        {([
+          ["welcome_line1_text", "welcome_line1_color", "1. Satır (üst küçük)"],
+          ["welcome_line2_text", "welcome_line2_color", "2. Satır (büyük)"],
+          ["welcome_line3_text", "welcome_line3_color", "3. Satır (büyük)"],
+        ] as const).map(([tk, ck, label]) => (
+          <div key={tk} className="grid grid-cols-[1fr_64px] gap-2 items-end">
+            <div>
+              <Label className="text-xs">{label}</Label>
+              <Input value={(form as any)[tk]} onChange={(e) => setForm({ ...form, [tk]: e.target.value } as any)} />
+            </div>
+            <div>
+              <Label className="text-xs">Renk</Label>
+              <Input type="color" value={(form as any)[ck]} onChange={(e) => setForm({ ...form, [ck]: e.target.value } as any)} className="h-10 p-1" />
+            </div>
+          </div>
+        ))}
+        <div>
+          <Label>Anasayfa Kapak Fotoğrafı</Label>
+          <div className="flex items-center gap-2">
+            {form.hero_url && <SafeImg src={form.hero_url} alt="hero" className="h-14 w-24 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Kapak yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAsset(f, "hero_url"); }} />
+            </label>
+            {form.hero_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, hero_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
         <div><Label>Arama Kutusu Yazısı</Label><Input value={form.search_placeholder} onChange={(e) => setForm({ ...form, search_placeholder: e.target.value })} placeholder="Berber, salon, hizmet ara…" /></div>
         <div><Label>Salon Foto Galeri Geçiş Süresi (ms)</Label><Input type="number" min="1000" step="500" value={form.gallery_interval_ms} onChange={(e) => setForm({ ...form, gallery_interval_ms: e.target.value })} placeholder="5000" /></div>
       </div>
