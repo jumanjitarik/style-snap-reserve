@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
@@ -11,9 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X } from "lucide-react";
+import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X, Clock, CreditCard } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/salon-yonetimi")({
   ssr: false,
@@ -28,15 +29,24 @@ export const Route = createFileRoute("/_authenticated/salon-yonetimi")({
 });
 
 function SalonYonetimi() {
+  const [tab, setTab] = useState<"appts" | "shop" | "hours" | "services" | "staff" | "pos">(() => {
+    if (typeof window === "undefined") return "appts";
+    const saved = window.localStorage.getItem("salon.mgmt.tab");
+    return ["appts", "shop", "hours", "services", "staff", "pos"].includes(saved ?? "") ? saved as any : "appts";
+  });
   const { data: shops } = useQuery({
     queryKey: ["owner-shops"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
-      const { data } = await supabase
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user!.id);
+      const isAdmin = !!roles?.some((r) => r.role === "admin");
+      let q = supabase
         .from("barbershops")
-        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city")
-        .eq("owner_id", u.user!.id)
+        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city, owner_id")
         .order("name");
+      if (!isAdmin) q = q.eq("owner_id", u.user!.id);
+      const { data, error } = await q;
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -67,12 +77,14 @@ function SalonYonetimi() {
           </div>
         )}
 
-        <Tabs defaultValue="appts" className="w-full">
-          <TabsList className="grid grid-cols-4 w-full">
+        <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); window.localStorage.setItem("salon.mgmt.tab", v); }} className="w-full">
+          <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="appts">Randevular</TabsTrigger>
             <TabsTrigger value="shop">Salon</TabsTrigger>
+            <TabsTrigger value="hours">Saatler</TabsTrigger>
             <TabsTrigger value="services">Hizmet</TabsTrigger>
             <TabsTrigger value="staff">Çalışan</TabsTrigger>
+            <TabsTrigger value="pos">Sanal POS</TabsTrigger>
           </TabsList>
 
           <TabsContent value="appts" className="mt-3">
@@ -81,11 +93,17 @@ function SalonYonetimi() {
           <TabsContent value="shop" className="mt-3">
             {activeShop ? <ShopInfoTab shop={activeShop} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
+          <TabsContent value="hours" className="mt-3">
+            {activeId ? <WorkingHoursTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
+          </TabsContent>
           <TabsContent value="services" className="mt-3">
             {activeId ? <ServicesTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
           <TabsContent value="staff" className="mt-3">
             {activeId ? <StaffTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
+          </TabsContent>
+          <TabsContent value="pos" className="mt-3">
+            {activeId ? <VirtualPosTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
         </Tabs>
       </div>
@@ -186,7 +204,7 @@ function AppointmentsTab({ shops }: { shops: { id: string; name: string }[] }) {
           <Select value={shopFilter} onValueChange={setShopFilter}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL"><Store className="inline h-3.5 w-3.5 mr-1" /> Tüm Salonlarım</SelectItem>
+              <SelectItem value="ALL"><Store className="inline h-3.5 w-3.5 mr-1" /> Tüm Salonlar</SelectItem>
               {shops.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -277,6 +295,84 @@ function AppointmentsTab({ shops }: { shops: { id: string; name: string }[] }) {
   );
 }
 
+/* ============ WORKING HOURS ============ */
+const DAYS = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+
+type HourRow = { id?: string; weekday: number; is_open: boolean; open_time: string; close_time: string };
+
+function defaultHours(): HourRow[] {
+  return DAYS.map((_, weekday) => ({ weekday, is_open: weekday !== 0, open_time: "09:00", close_time: "19:00" }));
+}
+
+function WorkingHoursTab({ shopId }: { shopId: string }) {
+  const qc = useQueryClient();
+  const [rows, setRows] = useState<HourRow[]>(defaultHours());
+
+  const { data } = useQuery({
+    queryKey: ["shop-hours", shopId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shop_working_hours")
+        .select("id, weekday, is_open, open_time, close_time")
+        .eq("shop_id", shopId)
+        .order("weekday");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    const byDay = new Map((data ?? []).map((r: any) => [r.weekday, r]));
+    setRows(defaultHours().map((d) => ({ ...d, ...(byDay.get(d.weekday) ?? {}) })));
+  }, [data, shopId]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = rows.map((r) => ({
+        shop_id: shopId,
+        weekday: r.weekday,
+        is_open: r.is_open,
+        open_time: r.open_time,
+        close_time: r.close_time,
+      }));
+      const { error } = await supabase.from("shop_working_hours").upsert(payload, { onConflict: "shop_id,weekday" });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Çalışma saatleri kaydedildi"); qc.invalidateQueries({ queryKey: ["shop-hours", shopId] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function update(day: number, patch: Partial<HourRow>) {
+    setRows((arr) => arr.map((r) => r.weekday === day ? { ...r, ...patch } : r));
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 space-y-3">
+      <p className="font-display text-sm flex items-center gap-1"><Clock className="h-4 w-4 text-primary" /> Çalışma Günleri ve Saatleri</p>
+      <div className="space-y-2">
+        {rows.map((r) => (
+          <div key={r.weekday} className="rounded-lg border border-border p-2 space-y-2">
+            <label className="flex items-center justify-between gap-2 text-sm font-medium">
+              <span>{DAYS[r.weekday]}</span>
+              <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                Açık
+                <input type="checkbox" checked={r.is_open} onChange={(e) => update(r.weekday, { is_open: e.target.checked })} />
+              </span>
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <Input type="time" value={r.open_time.slice(0, 5)} disabled={!r.is_open} onChange={(e) => update(r.weekday, { open_time: e.target.value })} />
+              <Input type="time" value={r.close_time.slice(0, 5)} disabled={!r.is_open} onChange={(e) => update(r.weekday, { close_time: e.target.value })} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">
+        <Save className="h-4 w-4 mr-1" /> Saatleri Kaydet
+      </Button>
+    </div>
+  );
+}
+
 /* ============ SHOP INFO ============ */
 type ShopRow = {
   id: string; name: string; description: string | null; address: string | null;
@@ -293,6 +389,119 @@ async function uploadImage(file: File, folder: string): Promise<string> {
   if (error) throw error;
   const { data: pub } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
   return pub.publicUrl;
+}
+
+/* ============ VIRTUAL POS ============ */
+function VirtualPosTab({ shopId }: { shopId: string }) {
+  const qc = useQueryClient();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [amount, setAmount] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [description, setDescription] = useState("");
+
+  const { data: services } = useQuery({
+    queryKey: ["pos-services", shopId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("services").select("id, name, price").eq("shop_id", shopId).order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: charges } = useQuery({
+    queryKey: ["pos-charges", shopId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("virtual_pos_charges")
+        .select("id, amount, customer_name, customer_phone, description, status, created_at, service_ids")
+        .eq("shop_id", shopId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const createCharge = useMutation({
+    mutationFn: async () => {
+      const value = Number(amount.replace(",", "."));
+      if (!value || value <= 0) throw new Error("Tutar gir");
+      const { data: u } = await supabase.auth.getUser();
+      const { error } = await supabase.from("virtual_pos_charges").insert({
+        shop_id: shopId,
+        service_ids: selected,
+        amount: value,
+        customer_name: customerName.trim() || null,
+        customer_phone: customerPhone.trim() || null,
+        description: description.trim() || null,
+        status: "paid",
+        created_by: u.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Sanal POS çekimi kaydedildi");
+      setSelected([]); setAmount(""); setCustomerName(""); setCustomerPhone(""); setDescription("");
+      qc.invalidateQueries({ queryKey: ["pos-charges", shopId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function toggle(id: string, price: number) {
+    setSelected((arr) => {
+      const next = arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
+      if (!amount) {
+        const total = (services ?? []).filter((s) => next.includes(s.id)).reduce((sum, s) => sum + Number(s.price ?? 0), 0);
+        if (total > 0) setAmount(String(total));
+      } else if (!arr.includes(id) && Number(amount) === 0) setAmount(String(price));
+      return next;
+    });
+  }
+
+  const serviceNames = new Map((services ?? []).map((s) => [s.id, s.name]));
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-primary/30 bg-card p-3 space-y-3">
+        <p className="font-display text-sm flex items-center gap-1"><CreditCard className="h-4 w-4 text-primary" /> Sanal POS Çekimi</p>
+        <div className="space-y-2">
+          <Label className="text-xs">Hizmet Seç</Label>
+          {(services ?? []).map((s) => (
+            <button key={s.id} type="button" onClick={() => toggle(s.id, Number(s.price ?? 0))}
+              className={cn("w-full rounded-lg border p-2 text-left text-sm flex justify-between gap-2", selected.includes(s.id) ? "border-primary bg-primary/5" : "border-border")}> 
+              <span>{selected.includes(s.id) ? "✓ " : ""}{s.name}</span>
+              <span className="font-semibold text-primary">{Number(s.price ?? 0).toFixed(0)}₺</span>
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label className="text-xs">Müşteri Adı</Label><Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
+          <div><Label className="text-xs">Telefon</Label><Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
+        </div>
+        <div><Label className="text-xs">Manuel Tutar (₺)</Label><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9,.]/g, ""))} /></div>
+        <div><Label className="text-xs">Açıklama</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
+        <Button onClick={() => createCharge.mutate()} disabled={createCharge.isPending} className="w-full">
+          <CreditCard className="h-4 w-4 mr-1" /> Çekimi Kaydet
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {(charges ?? []).map((c: any) => (
+          <div key={c.id} className="rounded-xl border border-border bg-card p-3 text-xs space-y-1">
+            <div className="flex justify-between gap-2">
+              <p className="font-semibold text-sm truncate">{c.customer_name || "Müşteri"}</p>
+              <p className="font-display text-primary text-base">{Number(c.amount ?? 0).toFixed(0)}₺</p>
+            </div>
+            {c.customer_phone && <p className="text-muted-foreground">📞 {c.customer_phone}</p>}
+            <p>{(c.service_ids ?? []).map((id: string) => serviceNames.get(id) ?? "Hizmet").join(", ") || "Manuel çekim"}</p>
+            {c.description && <p className="text-muted-foreground">{c.description}</p>}
+            <p className="text-[10px] text-muted-foreground">{new Date(c.created_at).toLocaleString("tr-TR")} · {c.status}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function ShopInfoTab({ shop }: { shop: ShopRow }) {

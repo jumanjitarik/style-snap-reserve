@@ -26,7 +26,7 @@ const signupSchema = z.object({
   email: z.string().trim().email("Geçerli bir e-posta gir"),
   password: z.string().min(4, "Şifre en az 4 karakter").max(72),
   phone: z.string().trim().regex(/^\d{10}$/, "10 haneli numara (5XXXXXXXXX)"),
-  gender: z.enum(["male", "female", "other"]),
+  gender: z.enum(["male", "female"]),
 });
 
 const EMAIL_DOMAINS = ["@gmail.com", "@hotmail.com", "@yandex.com"];
@@ -39,7 +39,7 @@ function AuthPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [form, setForm] = useState({
-    full_name: "", email: "", password: "", phone: "", gender: "male" as const,
+    full_name: "", email: "", password: "", phone: "", gender: "male" as "male" | "female",
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -144,10 +144,9 @@ function AuthPage() {
               </div>
               <div>
                 <Label>Cinsiyet</Label>
-                <RadioGroup value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v as "male" })} className="flex gap-4 mt-1">
+                <RadioGroup value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v as "male" | "female" })} className="flex gap-4 mt-1">
                   <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="male" /> Erkek</label>
                   <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="female" /> Kadın</label>
-                  <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="other" /> Diğer</label>
                 </RadioGroup>
               </div>
             </>

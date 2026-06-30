@@ -9,7 +9,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, LogIn, Upload, Save, Trash2, BellRing } from "lucide-react";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
@@ -281,9 +281,18 @@ function AccountPage() {
           <Heart className="h-5 w-5 text-primary" /><span>Favoriler</span>
         </Link>
         {isOwner && (
-          <Link to="/salon-yonetimi" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
-            <Shield className="h-5 w-5 text-primary" /><span className="font-semibold">Salon Yönetimi</span>
-          </Link>
+          <>
+            <Link to="/salon-yonetimi" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
+              <Shield className="h-5 w-5 text-primary" /><span className="font-semibold">Salon Yönetimi</span>
+            </Link>
+            <Link
+              to="/salon-yonetimi"
+              onClick={() => window.localStorage.setItem("salon.mgmt.tab", "pos")}
+              className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition"
+            >
+              <CreditCard className="h-5 w-5 text-primary" /><span className="font-semibold">Sanal POS</span>
+            </Link>
+          </>
         )}
         {isAdmin && (
           <Link to="/admin" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
