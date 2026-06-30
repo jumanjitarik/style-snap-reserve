@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.apply_loyalty_points() FROM PUBLIC, anon, authenticated;
