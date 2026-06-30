@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.get_customer_basics(uuid[]) FROM PUBLIC, anon, authenticated;
