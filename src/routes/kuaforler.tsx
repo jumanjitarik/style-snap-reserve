@@ -7,12 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
-import { MapPin, ArrowUpDown, Search } from "lucide-react";
+import { MapPin, ArrowUpDown, Search, Store } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
-import defaultLogo from "@/assets/barber-logo.png.asset.json";
 
 const searchSchema = z.object({ cat: z.string().optional() });
 type SortKey = "near" | "rating" | "reviews" | "price" | "name";
@@ -152,7 +151,7 @@ function ShopList() {
       <BackButton to="/" />
       <header className="px-4 pt-4 pb-2 flex items-end justify-between gap-2">
         <h1 className="text-3xl font-display flex items-center gap-2">
-          <SafeImg src={defaultLogo.url} alt="" className="h-8 w-8 rounded-md object-cover" />
+          <Store className="h-8 w-8 text-primary" />
           Salonlar
         </h1>
         <div className="flex items-center gap-1.5 text-xs">
