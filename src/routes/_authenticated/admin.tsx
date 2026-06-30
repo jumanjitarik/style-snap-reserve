@@ -907,14 +907,42 @@ function SettingsTab() {
         <div><Label>Arama Kutusu Yazısı</Label><Input value={form.search_placeholder} onChange={(e) => setForm({ ...form, search_placeholder: e.target.value })} placeholder="Berber, salon, hizmet ara…" /></div>
         <div><Label>Salon Foto Galeri Geçiş Süresi (ms)</Label><Input type="number" min="1000" step="500" value={form.gallery_interval_ms} onChange={(e) => setForm({ ...form, gallery_interval_ms: e.target.value })} placeholder="5000" /></div>
       </div>
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Hoş Geldin (3 Satır)</p>
+        {([
+          ["welcome_line1_text", "welcome_line1_color", "1. Satır (üst küçük)"],
+          ["welcome_line2_text", "welcome_line2_color", "2. Satır (büyük)"],
+          ["welcome_line3_text", "welcome_line3_color", "3. Satır (büyük)"],
+        ] as const).map(([tk, ck, label]) => (
+          <div key={tk} className="grid grid-cols-[1fr_64px] gap-2 items-end">
+            <div>
+              <Label className="text-xs">{label}</Label>
+              <Input value={(form as any)[tk]} onChange={(e) => setForm({ ...form, [tk]: e.target.value } as any)} />
+            </div>
+            <div>
+              <Label className="text-xs">Renk</Label>
+              <Input type="color" value={(form as any)[ck]} onChange={(e) => setForm({ ...form, [ck]: e.target.value } as any)} className="h-10 p-1" />
+            </div>
+          </div>
+        ))}
+        <div>
+          <Label>Anasayfa Kapak Fotoğrafı</Label>
+          <div className="flex items-center gap-2">
+            {form.hero_url && <SafeImg src={form.hero_url} alt="hero" className="h-14 w-24 rounded object-cover" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> Kapak yükle
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadAsset(f, "hero_url"); }} />
+            </label>
+            {form.hero_url && <Button size="icon" variant="destructive" onClick={() => setForm({ ...form, hero_url: "" })}><Trash2 className="h-4 w-4" /></Button>}
+          </div>
+        </div>
+        <div><Label>Arama Kutusu Yazısı</Label><Input value={form.search_placeholder} onChange={(e) => setForm({ ...form, search_placeholder: e.target.value })} placeholder="Berber, salon, hizmet ara…" /></div>
+        <div><Label>Salon Foto Galeri Geçiş Süresi (ms)</Label><Input type="number" min="1000" step="500" value={form.gallery_interval_ms} onChange={(e) => setForm({ ...form, gallery_interval_ms: e.target.value })} placeholder="5000" /></div>
+      </div>
       <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
     </div>
   );
 }
-
-
-function ActivityTab() {
-  const { data: profiles } = useQuery({
     queryKey: ["admin-profiles-all"],
     queryFn: async () => (await supabase.from("profiles").select("id, full_name, email, phone, gender, created_at, last_seen_at, last_ip, last_city, last_country").order("created_at", { ascending: false }).limit(500)).data ?? [],
   });
