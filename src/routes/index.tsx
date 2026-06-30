@@ -96,19 +96,27 @@ function Index() {
         "welcome_line1_text", "welcome_line1_color",
         "welcome_line2_text", "welcome_line2_color",
         "welcome_line3_text", "welcome_line3_color",
+        "hero_height_px", "gap_top_px", "gap_line12_px", "gap_line23_px", "gap_search_px",
       ];
       const { data } = await supabase.from("app_settings").select("key, value").in("key", keys);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
+      const num = (k: string, d: number) => { const n = Number(map[k]); return Number.isFinite(n) ? n : d; };
       return {
         line1: { text: map.welcome_line1_text || map.welcome_subtitle || "HOŞ GELDİN", color: map.welcome_line1_color || "#FFD400" },
         line2: { text: map.welcome_line2_text || (map.welcome_title?.split(" ").slice(0, 2).join(" ")) || "BUGÜN GÜZEL", color: map.welcome_line2_color || "#FFFFFF" },
         line3: { text: map.welcome_line3_text || "VE ŞIKSIN", color: map.welcome_line3_color || "#FFD400" },
         searchPlaceholder: map.search_placeholder || "Berber, salon, hizmet ara...",
         heroUrl: map.hero_url || "",
+        heroHeight: num("hero_height_px", 120),
+        gapTop: num("gap_top_px", 8),
+        gapLine12: num("gap_line12_px", 2),
+        gapLine23: num("gap_line23_px", 0),
+        gapSearch: num("gap_search_px", 8),
       };
     },
     staleTime: 60_000,
   });
+
 
   type Shop = NonNullable<typeof shops>[number] & { dist?: number; rating?: number; reviewCount?: number };
 
@@ -162,20 +170,20 @@ function Index() {
 
   return (
     <LocationGate><AppShell>
-      <header className="relative overflow-hidden">
+      <header className="relative overflow-hidden" style={{ minHeight: welcome?.heroUrl ? `${welcome?.heroHeight ?? 120}px` : undefined }}>
         {welcome?.heroUrl ? (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0" style={{ height: `${welcome?.heroHeight ?? 120}px` }}>
             <SafeImg src={welcome.heroUrl} alt="" className="h-full w-full object-cover" />
           </div>
         ) : null}
-        <div className="relative px-4 pt-2 pb-3">
+        <div className="relative px-4 pb-3" style={{ paddingTop: `${welcome?.gapTop ?? 8}px` }}>
           <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
-          <h1 className="mt-0.5 text-3xl font-display leading-[0.95]" style={{ color: welcome?.line2.color }}>{welcome?.line2.text}</h1>
-          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line3.color }}>{welcome?.line3.text}</h1>
+          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line2.color, marginTop: `${welcome?.gapLine12 ?? 2}px` }}>{welcome?.line2.text}</h1>
+          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line3.color, marginTop: `${welcome?.gapLine23 ?? 0}px` }}>{welcome?.line3.text}</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-2">
+      <div className="px-4" style={{ paddingTop: `${welcome?.gapSearch ?? 8}px` }}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -187,6 +195,7 @@ function Index() {
           />
         </div>
       </div>
+
 
       {!isSearching && (
         <section className="px-4 pt-6">

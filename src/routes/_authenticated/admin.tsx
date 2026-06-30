@@ -801,6 +801,12 @@ function SettingsTab() {
     welcome_line1_text: "HOŞ GELDİN", welcome_line1_color: "#FFD400",
     welcome_line2_text: "BUGÜN GÜZEL", welcome_line2_color: "#FFFFFF",
     welcome_line3_text: "VE ŞIKSIN", welcome_line3_color: "#FFD400",
+    loyalty_percent: "1",
+    hero_height_px: "120",
+    gap_top_px: "8",
+    gap_line12_px: "2",
+    gap_line23_px: "0",
+    gap_search_px: "8",
   });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
@@ -820,9 +826,16 @@ function SettingsTab() {
       welcome_line2_color: settings.welcome_line2_color ?? "#FFFFFF",
       welcome_line3_text: settings.welcome_line3_text ?? "VE ŞIKSIN",
       welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
+      loyalty_percent: settings.loyalty_percent ?? "1",
+      hero_height_px: settings.hero_height_px ?? "120",
+      gap_top_px: settings.gap_top_px ?? "8",
+      gap_line12_px: settings.gap_line12_px ?? "2",
+      gap_line23_px: settings.gap_line23_px ?? "0",
+      gap_search_px: settings.gap_search_px ?? "8",
     });
     initialized[1](true);
   }
+
 
   async function uploadAsset(file: File, key: "logo_url" | "splash_url" | "hero_url") {
     try {
@@ -855,6 +868,12 @@ function SettingsTab() {
         { key: "welcome_line2_color", value: form.welcome_line2_color },
         { key: "welcome_line3_text", value: form.welcome_line3_text },
         { key: "welcome_line3_color", value: form.welcome_line3_color },
+        { key: "loyalty_percent", value: String(Number(form.loyalty_percent) || 0) },
+        { key: "hero_height_px", value: String(Number(form.hero_height_px) || 120) },
+        { key: "gap_top_px", value: String(Number(form.gap_top_px) || 0) },
+        { key: "gap_line12_px", value: String(Number(form.gap_line12_px) || 0) },
+        { key: "gap_line23_px", value: String(Number(form.gap_line23_px) || 0) },
+        { key: "gap_search_px", value: String(Number(form.gap_search_px) || 0) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
@@ -931,8 +950,24 @@ function SettingsTab() {
         </div>
         <div><Label>Arama Kutusu Yazısı</Label><Input value={form.search_placeholder} onChange={(e) => setForm({ ...form, search_placeholder: e.target.value })} placeholder="Berber, salon, hizmet ara…" /></div>
         <div><Label>Salon Foto Galeri Geçiş Süresi (ms)</Label><Input type="number" min="1000" step="500" value={form.gallery_interval_ms} onChange={(e) => setForm({ ...form, gallery_interval_ms: e.target.value })} placeholder="5000" /></div>
+        <div><Label>Anasayfa Kapak Yüksekliği (px)</Label><Input type="number" min="0" max="400" value={form.hero_height_px} onChange={(e) => setForm({ ...form, hero_height_px: e.target.value })} /></div>
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label className="text-xs">Üst bar ↔ Hoş geldin (px)</Label><Input type="number" min="0" max="100" value={form.gap_top_px} onChange={(e) => setForm({ ...form, gap_top_px: e.target.value })} /></div>
+          <div><Label className="text-xs">1. ↔ 2. satır (px)</Label><Input type="number" min="0" max="60" value={form.gap_line12_px} onChange={(e) => setForm({ ...form, gap_line12_px: e.target.value })} /></div>
+          <div><Label className="text-xs">2. ↔ 3. satır (px)</Label><Input type="number" min="0" max="60" value={form.gap_line23_px} onChange={(e) => setForm({ ...form, gap_line23_px: e.target.value })} /></div>
+          <div><Label className="text-xs">Yazılar ↔ Arama (px)</Label><Input type="number" min="0" max="80" value={form.gap_search_px} onChange={(e) => setForm({ ...form, gap_search_px: e.target.value })} /></div>
+        </div>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Sadakat Puanı</p>
+        <div>
+          <Label>Kart Çekiminden Kazanılacak Puan (%)</Label>
+          <Input type="number" min="0" max="100" step="0.1" value={form.loyalty_percent} onChange={(e) => setForm({ ...form, loyalty_percent: e.target.value })} />
+          <p className="text-[11px] text-muted-foreground mt-1">Örn: %1 → 100₺ ödemeden 1 puan</p>
+        </div>
       </div>
       <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
+
     </div>
   );
 }
