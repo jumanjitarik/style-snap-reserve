@@ -161,9 +161,18 @@ function Index() {
 
   return (
     <LocationGate><AppShell>
-      <header className="px-4 pt-8 pb-4">
-        <p className="text-xs uppercase tracking-widest text-primary">{welcome?.subtitle ?? "Hoş geldin"}</p>
-        <h1 className="mt-1 text-4xl font-display">{welcome?.title ?? "Bugün nasıl şıklaşıyoruz?"}</h1>
+      <header className="relative overflow-hidden">
+        {welcome?.heroUrl ? (
+          <div className="absolute inset-0">
+            <SafeImg src={welcome.heroUrl} alt="" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/20" />
+          </div>
+        ) : null}
+        <div className="relative px-4 pt-6 pb-6 min-h-[220px] flex flex-col justify-end">
+          <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
+          <h1 className="mt-1 text-4xl font-display leading-[0.95]" style={{ color: welcome?.line2.color }}>{welcome?.line2.text}</h1>
+          <h1 className="text-4xl font-display leading-[0.95]" style={{ color: welcome?.line3.color }}>{welcome?.line3.text}</h1>
+        </div>
       </header>
 
       <div className="px-4">
