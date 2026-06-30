@@ -164,7 +164,7 @@ function BookPage() {
     },
 
     onSuccess: () => {
-      toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
+      toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda nakit ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
       navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -375,10 +375,10 @@ function BookPage() {
               <button type="button" onClick={() => setPaymentMethod("deposit")}
                 className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">%25 kapora · kalanı salonda öde</span>
+                  <span className="font-semibold text-sm">%25 kapora · kalanını salonda nakit öde</span>
                   <span className="font-display text-primary">{Math.round(finalTotal * 0.25)}₺</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
               </button>
             </div>
 

@@ -12,15 +12,17 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
+import defaultLogo from "@/assets/barber-logo.png.asset.json";
 
 const searchSchema = z.object({ cat: z.string().optional() });
-type SortKey = "near" | "rating" | "reviews" | "price";
+type SortKey = "near" | "rating" | "reviews" | "price" | "name";
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "near", label: "Yakın" },
   { key: "rating", label: "Puan" },
   { key: "reviews", label: "Yorum" },
   { key: "price", label: "Fiyat" },
+  { key: "name", label: "Ad" },
 ];
 
 export const Route = createFileRoute("/kuaforler")({
@@ -141,6 +143,7 @@ function ShopList() {
     else if (sort === "rating") arr.sort((a, b) => b.rating - a.rating);
     else if (sort === "reviews") arr.sort((a, b) => b.reviewsCount - a.reviewsCount);
     else if (sort === "price") arr.sort((a, b) => a.minPrice - b.minPrice);
+    else if (sort === "name") arr.sort((a, b) => a.name.localeCompare(b.name, "tr"));
     return arr;
   }, [filtered, sort]);
 
@@ -148,7 +151,10 @@ function ShopList() {
     <AppShell>
       <BackButton to="/" />
       <header className="px-4 pt-4 pb-2 flex items-end justify-between gap-2">
-        <h1 className="text-3xl font-display">Salonlar</h1>
+        <h1 className="text-3xl font-display flex items-center gap-2">
+          <SafeImg src={defaultLogo.url} alt="" className="h-8 w-8 rounded-md object-cover" />
+          Salonlar
+        </h1>
         <div className="flex items-center gap-1.5 text-xs">
           <ArrowUpDown className="h-3.5 w-3.5 text-primary" />
           <div className="flex gap-1">
