@@ -795,7 +795,13 @@ function SettingsTab() {
       return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
     },
   });
-  const [form, setForm] = useState({ welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", splash_duration_ms: "1500", search_placeholder: "", gallery_interval_ms: "5000" });
+  const [form, setForm] = useState({
+    welcome_title: "", welcome_subtitle: "", app_name: "", logo_url: "", splash_url: "", hero_url: "",
+    splash_duration_ms: "1500", search_placeholder: "", gallery_interval_ms: "5000",
+    welcome_line1_text: "HOŞ GELDİN", welcome_line1_color: "#FFD400",
+    welcome_line2_text: "BUGÜN GÜZEL", welcome_line2_color: "#FFFFFF",
+    welcome_line3_text: "VE ŞIKSIN", welcome_line3_color: "#FFD400",
+  });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
     setForm({
@@ -804,9 +810,16 @@ function SettingsTab() {
       app_name: settings.app_name ?? "BarberApp",
       logo_url: settings.logo_url ?? "",
       splash_url: settings.splash_url ?? "",
+      hero_url: settings.hero_url ?? "",
       splash_duration_ms: settings.splash_duration_ms ?? "1500",
       search_placeholder: settings.search_placeholder ?? "Berber, salon, hizmet ara…",
       gallery_interval_ms: settings.gallery_interval_ms ?? "5000",
+      welcome_line1_text: settings.welcome_line1_text ?? "HOŞ GELDİN",
+      welcome_line1_color: settings.welcome_line1_color ?? "#FFD400",
+      welcome_line2_text: settings.welcome_line2_text ?? "BUGÜN GÜZEL",
+      welcome_line2_color: settings.welcome_line2_color ?? "#FFFFFF",
+      welcome_line3_text: settings.welcome_line3_text ?? "VE ŞIKSIN",
+      welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
     });
     initialized[1](true);
   }
