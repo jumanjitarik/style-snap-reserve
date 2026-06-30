@@ -801,6 +801,12 @@ function SettingsTab() {
     welcome_line1_text: "HOŞ GELDİN", welcome_line1_color: "#FFD400",
     welcome_line2_text: "BUGÜN GÜZEL", welcome_line2_color: "#FFFFFF",
     welcome_line3_text: "VE ŞIKSIN", welcome_line3_color: "#FFD400",
+    loyalty_percent: "1",
+    hero_height_px: "120",
+    gap_top_px: "8",
+    gap_line12_px: "2",
+    gap_line23_px: "0",
+    gap_search_px: "8",
   });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
@@ -820,9 +826,16 @@ function SettingsTab() {
       welcome_line2_color: settings.welcome_line2_color ?? "#FFFFFF",
       welcome_line3_text: settings.welcome_line3_text ?? "VE ŞIKSIN",
       welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
+      loyalty_percent: settings.loyalty_percent ?? "1",
+      hero_height_px: settings.hero_height_px ?? "120",
+      gap_top_px: settings.gap_top_px ?? "8",
+      gap_line12_px: settings.gap_line12_px ?? "2",
+      gap_line23_px: settings.gap_line23_px ?? "0",
+      gap_search_px: settings.gap_search_px ?? "8",
     });
     initialized[1](true);
   }
+
 
   async function uploadAsset(file: File, key: "logo_url" | "splash_url" | "hero_url") {
     try {
