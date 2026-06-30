@@ -170,20 +170,20 @@ function Index() {
 
   return (
     <LocationGate><AppShell>
-      <header className="relative overflow-hidden">
+      <header className="relative overflow-hidden" style={{ minHeight: welcome?.heroUrl ? `${welcome?.heroHeight ?? 120}px` : undefined }}>
         {welcome?.heroUrl ? (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0" style={{ height: `${welcome?.heroHeight ?? 120}px` }}>
             <SafeImg src={welcome.heroUrl} alt="" className="h-full w-full object-cover" />
           </div>
         ) : null}
-        <div className="relative px-4 pt-2 pb-3">
+        <div className="relative px-4 pb-3" style={{ paddingTop: `${welcome?.gapTop ?? 8}px` }}>
           <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
-          <h1 className="mt-0.5 text-3xl font-display leading-[0.95]" style={{ color: welcome?.line2.color }}>{welcome?.line2.text}</h1>
-          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line3.color }}>{welcome?.line3.text}</h1>
+          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line2.color, marginTop: `${welcome?.gapLine12 ?? 2}px` }}>{welcome?.line2.text}</h1>
+          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line3.color, marginTop: `${welcome?.gapLine23 ?? 0}px` }}>{welcome?.line3.text}</h1>
         </div>
       </header>
 
-      <div className="px-4 pt-2">
+      <div className="px-4" style={{ paddingTop: `${welcome?.gapSearch ?? 8}px` }}>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -195,6 +195,7 @@ function Index() {
           />
         </div>
       </div>
+
 
       {!isSearching && (
         <section className="px-4 pt-6">
