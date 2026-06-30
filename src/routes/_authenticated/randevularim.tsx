@@ -10,6 +10,8 @@ import { tr } from "date-fns/locale";
 import { toast } from "sonner";
 import { Calendar, MapPin, Phone, Calendar as CalIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SafeImg } from "@/components/SafeImg";
+import defaultLogo from "@/assets/barber-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/randevularim")({
   component: MyAppts,
@@ -48,7 +50,10 @@ function MyAppts() {
     <AppShell>
       <BackButton to="/" />
       <header className="px-4 pt-4 pb-3">
-        <h1 className="font-display text-3xl">Randevular</h1>
+        <h1 className="font-display text-3xl flex items-center gap-2">
+          <SafeImg src={defaultLogo.url} alt="" className="h-8 w-8 rounded-md object-cover" />
+          Randevular
+        </h1>
         <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
       </header>
 

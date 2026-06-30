@@ -16,12 +16,14 @@ export const Route = createFileRoute("/borsa")({
   component: BorsaPage,
 });
 
-type SortKey = "price" | "near" | "name";
+type SortKey = "price" | "near" | "name" | "rating" | "reviews";
 const MAX_KM = 25;
 
 const SORTS: { key: SortKey; label: string }[] = [
   { key: "price", label: "Fiyat" },
   { key: "near", label: "Yakın" },
+  { key: "rating", label: "Puan" },
+  { key: "reviews", label: "Yorum" },
   { key: "name", label: "Ad" },
 ];
 
@@ -47,6 +49,24 @@ function BorsaPage() {
     },
   });
 
+  const shopIds = useMemo(() => (shops ?? []).map((s) => s.id), [shops]);
+  const { data: reviewMap } = useQuery({
+    queryKey: ["borsa-reviews", shopIds],
+    enabled: shopIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("reviews").select("shop_id, rating").in("shop_id", shopIds);
+      const map = new Map<string, { rating: number; count: number }>();
+      (data ?? []).forEach((r) => {
+        const cur = map.get(r.shop_id) ?? { rating: 0, count: 0 };
+        cur.rating += Number(r.rating ?? 0);
+        cur.count += 1;
+        map.set(r.shop_id, cur);
+      });
+      map.forEach((v, k) => map.set(k, { rating: v.count ? v.rating / v.count : 0, count: v.count }));
+      return map;
+    },
+  });
+
   const rows = useMemo(() => {
     if (!shops || !services) return [];
     const ui = cat ? CATEGORIES.find((c) => c.key === cat) : null;
@@ -69,8 +89,10 @@ function BorsaPage() {
         city: shop.city,
         address: shop.address,
         km,
+        rating: reviewMap?.get(shop.id)?.rating ?? 0,
+        reviewsCount: reviewMap?.get(shop.id)?.count ?? 0,
       };
-    }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; city: string | null; address: string | null; km: number | null }>;
+    }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
 
     const filtered = list.filter((r) => {
       if (coords) return r.km != null && r.km <= MAX_KM;
@@ -89,10 +111,12 @@ function BorsaPage() {
     searched.sort((a, b) => {
       if (sortBy === "price") return a.price - b.price;
       if (sortBy === "near") return (a.km ?? 9999) - (b.km ?? 9999);
-      return a.serviceName.localeCompare(b.serviceName, "tr");
+      if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
+      return a.shopName.localeCompare(b.shopName, "tr");
     });
     return searched.slice(0, 300);
-  }, [shops, services, coords, sortBy, search, cat]);
+  }, [shops, services, coords, sortBy, search, cat, reviewMap]);
 
   return (
     <AppShell>
@@ -175,6 +199,7 @@ function BorsaPage() {
                   <p className="text-[11px] text-muted-foreground truncate">
                     {r.duration ? `⏱ ${r.duration} dk` : ""}
                     {r.km != null ? ` · 📍 ${formatKm(r.km)}` : ""}
+                    {r.reviewsCount > 0 ? ` · ★ ${r.rating.toFixed(1)} (${r.reviewsCount})` : ""}
                   </p>
                 </div>
                 <p className="font-display text-2xl text-primary whitespace-nowrap">{r.price.toFixed(0)}₺</p>
