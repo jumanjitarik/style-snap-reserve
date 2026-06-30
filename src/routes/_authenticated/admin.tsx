@@ -845,9 +845,16 @@ function SettingsTab() {
         { key: "app_name", value: form.app_name },
         { key: "logo_url", value: form.logo_url },
         { key: "splash_url", value: form.splash_url },
+        { key: "hero_url", value: form.hero_url },
         { key: "splash_duration_ms", value: String(Number(form.splash_duration_ms) || 1500) },
         { key: "search_placeholder", value: form.search_placeholder },
         { key: "gallery_interval_ms", value: String(Number(form.gallery_interval_ms) || 5000) },
+        { key: "welcome_line1_text", value: form.welcome_line1_text },
+        { key: "welcome_line1_color", value: form.welcome_line1_color },
+        { key: "welcome_line2_text", value: form.welcome_line2_text },
+        { key: "welcome_line2_color", value: form.welcome_line2_color },
+        { key: "welcome_line3_text", value: form.welcome_line3_text },
+        { key: "welcome_line3_color", value: form.welcome_line3_color },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
