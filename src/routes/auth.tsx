@@ -39,7 +39,7 @@ function AuthPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [form, setForm] = useState({
-    full_name: "", email: "", password: "", phone: "", gender: "male" as const,
+    full_name: "", email: "", password: "", phone: "", gender: "male" as "male" | "female",
   });
 
   async function handleSubmit(e: React.FormEvent) {
