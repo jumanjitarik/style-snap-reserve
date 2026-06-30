@@ -166,17 +166,16 @@ function Index() {
         {welcome?.heroUrl ? (
           <div className="absolute inset-0">
             <SafeImg src={welcome.heroUrl} alt="" className="h-full w-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/20" />
           </div>
         ) : null}
-        <div className="relative px-4 pt-6 pb-6 min-h-[220px] flex flex-col justify-end">
+        <div className="relative px-4 pt-2 pb-3">
           <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
-          <h1 className="mt-1 text-4xl font-display leading-[0.95]" style={{ color: welcome?.line2.color }}>{welcome?.line2.text}</h1>
-          <h1 className="text-4xl font-display leading-[0.95]" style={{ color: welcome?.line3.color }}>{welcome?.line3.text}</h1>
+          <h1 className="mt-0.5 text-3xl font-display leading-[0.95]" style={{ color: welcome?.line2.color }}>{welcome?.line2.text}</h1>
+          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line3.color }}>{welcome?.line3.text}</h1>
         </div>
       </header>
 
-      <div className="px-4">
+      <div className="px-4 pt-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -198,10 +197,11 @@ function Index() {
                 key={c.key}
                 to="/kuaforler"
                 search={{ cat: c.key } as never}
-                className="flex flex-col items-center gap-2 rounded-xl bg-card border border-border p-3 hover:border-primary/50 transition active:scale-95"
+                className="relative flex flex-col items-center gap-2 overflow-hidden rounded-xl border border-border/60 p-3 hover:border-primary/50 transition active:scale-95"
+                style={{ backgroundImage: `url(${categoryMarble})`, backgroundSize: "cover", backgroundPosition: "center" }}
               >
-                <c.icon className="h-6 w-6 text-primary" />
-                <span className="text-[11px] text-center leading-tight">{c.label}</span>
+                <c.icon className="relative h-6 w-6 text-primary" />
+                <span className="relative text-[11px] text-center leading-tight text-white">{c.label}</span>
               </Link>
             ))}
           </div>
