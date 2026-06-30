@@ -868,6 +868,12 @@ function SettingsTab() {
         { key: "welcome_line2_color", value: form.welcome_line2_color },
         { key: "welcome_line3_text", value: form.welcome_line3_text },
         { key: "welcome_line3_color", value: form.welcome_line3_color },
+        { key: "loyalty_percent", value: String(Number(form.loyalty_percent) || 0) },
+        { key: "hero_height_px", value: String(Number(form.hero_height_px) || 120) },
+        { key: "gap_top_px", value: String(Number(form.gap_top_px) || 0) },
+        { key: "gap_line12_px", value: String(Number(form.gap_line12_px) || 0) },
+        { key: "gap_line23_px", value: String(Number(form.gap_line23_px) || 0) },
+        { key: "gap_search_px", value: String(Number(form.gap_search_px) || 0) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
