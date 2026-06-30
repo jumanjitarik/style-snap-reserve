@@ -90,12 +90,20 @@ function Index() {
   const { data: welcome } = useQuery({
     queryKey: ["welcome-text"],
     queryFn: async () => {
-      const { data } = await supabase.from("app_settings").select("key, value").in("key", ["welcome_title", "welcome_subtitle", "search_placeholder"]);
+      const keys = [
+        "welcome_title", "welcome_subtitle", "search_placeholder", "hero_url",
+        "welcome_line1_text", "welcome_line1_color",
+        "welcome_line2_text", "welcome_line2_color",
+        "welcome_line3_text", "welcome_line3_color",
+      ];
+      const { data } = await supabase.from("app_settings").select("key, value").in("key", keys);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
       return {
-        title: map.welcome_title || "Bugün nasıl şıklaşıyoruz?",
-        subtitle: map.welcome_subtitle || "Hoş geldin",
+        line1: { text: map.welcome_line1_text || map.welcome_subtitle || "HOŞ GELDİN", color: map.welcome_line1_color || "#FFD400" },
+        line2: { text: map.welcome_line2_text || (map.welcome_title?.split(" ").slice(0, 2).join(" ")) || "BUGÜN GÜZEL", color: map.welcome_line2_color || "#FFFFFF" },
+        line3: { text: map.welcome_line3_text || "VE ŞIKSIN", color: map.welcome_line3_color || "#FFD400" },
         searchPlaceholder: map.search_placeholder || "Berber, salon, hizmet ara...",
+        heroUrl: map.hero_url || "",
       };
     },
     staleTime: 60_000,
