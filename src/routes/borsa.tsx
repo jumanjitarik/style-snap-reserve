@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { Link } from "@tanstack/react-router";
-import { LineChart, MapPin, ArrowUpDown } from "lucide-react";
+import { LineChart, MapPin, ArrowUpDown, Store } from "lucide-react";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
+import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/borsa")({
