@@ -186,7 +186,7 @@ function BookPage() {
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
-      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal;
+      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * depositPct / 100) : finalTotal;
       const remaining = Math.max(0, finalTotal - deposit);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
