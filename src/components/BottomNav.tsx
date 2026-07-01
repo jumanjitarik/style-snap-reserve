@@ -55,9 +55,10 @@ export function BottomNav() {
     return () => { active = false; sub.data.subscription.unsubscribe(); };
   }, []);
 
-  // Reset visibility on every route change so navigation never leaves the bar hidden.
+  // Reset visibility + scroll to top on every route change.
   useEffect(() => {
     setHidden(false);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, left: 0 });
   }, [pathname]);
 
   useEffect(() => {
@@ -69,9 +70,9 @@ export function BottomNav() {
       requestAnimationFrame(() => {
         const y = window.scrollY;
         const dy = y - lastY;
-        if (y < 24) setHidden(false);
-        else if (dy > 4) setHidden(true);
-        else if (dy < -8) setHidden(false);
+        if (y < 80) setHidden(false);
+        else if (dy > 24) setHidden(true);
+        else if (dy < -12) setHidden(false);
         lastY = y;
         ticking = false;
       });
