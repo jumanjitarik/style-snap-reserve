@@ -36,7 +36,7 @@ function BorsaPage() {
   const { data: shops } = useQuery({
     queryKey: ["borsa-shops"],
     queryFn: async () => {
-      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng, category");
+      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng, category, cover_image_url");
       return data ?? [];
     },
   });
