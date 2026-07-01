@@ -882,6 +882,7 @@ function SettingsTab() {
         { key: "welcome_line3_text", value: form.welcome_line3_text },
         { key: "welcome_line3_color", value: form.welcome_line3_color },
         { key: "loyalty_percent", value: String(Number(form.loyalty_percent) || 0) },
+        { key: "deposit_percent", value: String(Math.max(1, Math.min(100, Number(form.deposit_percent) || 25))) },
         { key: "hero_height_px", value: String(Number(form.hero_height_px) || 120) },
         { key: "gap_top_px", value: String(Number(form.gap_top_px) || 0) },
         { key: "gap_line12_px", value: String(Number(form.gap_line12_px) || 0) },
