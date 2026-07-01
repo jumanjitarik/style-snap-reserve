@@ -461,9 +461,9 @@ function BookPage() {
                 <input placeholder="CVC" className="w-1/2 rounded-md bg-input border border-border p-2 text-sm" defaultValue="123" />
               </div>
             </div>
-            <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
+            <Button onClick={() => create.mutate()} disabled={create.isPending || (!allowFull && !allowDeposit)} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
               {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
-                ? `Kaporayı Öde · ${Math.round(finalTotal * 0.25)}₺`
+                ? `Kaporayı Öde · ${Math.round(finalTotal * depositPct / 100)}₺`
                 : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
