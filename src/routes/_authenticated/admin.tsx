@@ -980,6 +980,14 @@ function SettingsTab() {
           <p className="text-[11px] text-muted-foreground mt-1">Örn: %1 → 100₺ ödemeden 1 puan</p>
         </div>
       </div>
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Ödeme</p>
+        <div>
+          <Label>Kapora Oranı (%)</Label>
+          <Input type="number" min="1" max="100" step="1" value={form.deposit_percent} onChange={(e) => setForm({ ...form, deposit_percent: e.target.value })} />
+          <p className="text-[11px] text-muted-foreground mt-1">"Kapora + salonda nakit" seçildiğinde toplamın bu yüzdesi tahsil edilir. Salon bazlı açma/kapama: Salonlar sekmesinden düzenlenir.</p>
+        </div>
+      </div>
       <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
 
     </div>
