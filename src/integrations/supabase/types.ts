@@ -197,8 +197,6 @@ export type Database = {
       barbershops: {
         Row: {
           address: string
-          allow_deposit_payment: boolean
-          allow_full_payment: boolean
           category: Database["public"]["Enums"]["shop_category"]
           city: string | null
           cover_image_url: string | null
@@ -216,8 +214,6 @@ export type Database = {
         }
         Insert: {
           address: string
-          allow_deposit_payment?: boolean
-          allow_full_payment?: boolean
           category: Database["public"]["Enums"]["shop_category"]
           city?: string | null
           cover_image_url?: string | null
@@ -235,8 +231,6 @@ export type Database = {
         }
         Update: {
           address?: string
-          allow_deposit_payment?: boolean
-          allow_full_payment?: boolean
           category?: Database["public"]["Enums"]["shop_category"]
           city?: string | null
           cover_image_url?: string | null
