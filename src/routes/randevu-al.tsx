@@ -66,13 +66,38 @@ function BookPage() {
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
-      let q = supabase.from("barbershops").select("id, name, category, address");
+      let q = supabase.from("barbershops").select("id, name, category, address, allow_full_payment, allow_deposit_payment");
       const ui = category ? findUiCategory(category) : null;
       if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
       return data ?? [];
     },
   });
+  const { data: shopPayment } = useQuery({
+    queryKey: ["shop-payment", shopId],
+    enabled: !!shopId && !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment").eq("id", shopId!).maybeSingle();
+      return data ?? { allow_full_payment: true, allow_deposit_payment: true };
+    },
+  });
+  const { data: depositPctSetting } = useQuery({
+    queryKey: ["deposit-percent-setting"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "deposit_percent").maybeSingle();
+      const n = Number(data?.value ?? 25);
+      return Number.isFinite(n) && n > 0 && n <= 100 ? n : 25;
+    },
+    staleTime: 30_000,
+  });
+  const depositPct = depositPctSetting ?? 25;
+  const allowFull = shopPayment?.allow_full_payment ?? true;
+  const allowDeposit = shopPayment?.allow_deposit_payment ?? true;
+  useEffect(() => {
+    if (!allowFull && allowDeposit && paymentMethod !== "deposit") setPaymentMethod("deposit");
+    else if (allowFull && !allowDeposit && paymentMethod !== "full") setPaymentMethod("full");
+  }, [allowFull, allowDeposit]);
+
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
     enabled: !!shopId && !!userId,
@@ -165,7 +190,7 @@ function BookPage() {
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
-      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal;
+      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * depositPct / 100) : finalTotal;
       const remaining = Math.max(0, finalTotal - deposit);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
@@ -402,27 +427,34 @@ function BookPage() {
                 </>
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
-              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
+              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * depositPct / 100) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-3 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Ödeme Şekli</p>
-              <button type="button" onClick={() => setPaymentMethod("full")}
-                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
-                  <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
-              </button>
-              <button type="button" onClick={() => setPaymentMethod("deposit")}
-                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">%25 kapora · kalanını salonda nakit öde</span>
-                  <span className="font-display text-primary">{Math.round(finalTotal * 0.25)}₺</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
-              </button>
+              {allowFull && (
+                <button type="button" onClick={() => setPaymentMethod("full")}
+                  className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
+                    <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
+                </button>
+              )}
+              {allowDeposit && (
+                <button type="button" onClick={() => setPaymentMethod("deposit")}
+                  className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-sm">%{depositPct} kapora · kalanını salonda nakit öde</span>
+                    <span className="font-display text-primary">{Math.round(finalTotal * depositPct / 100)}₺</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * depositPct / 100))}₺ tahsil edilecek.</p>
+                </button>
+              )}
+              {!allowFull && !allowDeposit && (
+                <p className="text-xs text-destructive">Bu salon için ödeme seçeneği aktif değil.</p>
+              )}
             </div>
 
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
@@ -433,9 +465,9 @@ function BookPage() {
                 <input placeholder="CVC" className="w-1/2 rounded-md bg-input border border-border p-2 text-sm" defaultValue="123" />
               </div>
             </div>
-            <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
+            <Button onClick={() => create.mutate()} disabled={create.isPending || (!allowFull && !allowDeposit)} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
               {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
-                ? `Kaporayı Öde · ${Math.round(finalTotal * 0.25)}₺`
+                ? `Kaporayı Öde · ${Math.round(finalTotal * depositPct / 100)}₺`
                 : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>

@@ -64,33 +64,33 @@ export function TopBar() {
       className={`fixed top-0 left-0 right-0 z-40 transition-transform duration-300 ${hidden ? "-translate-y-full" : "translate-y-0"}`}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto max-w-md px-3 py-2 flex items-center gap-2 bg-background/85 backdrop-blur-xl border-b border-primary/15">
+      <div className="mx-auto max-w-md px-3 py-3 flex items-center gap-2 bg-background/85 backdrop-blur-xl border-b border-primary/15">
         {!isHome && (
           <button
             onClick={() => router.history.back()}
             aria-label="Geri"
-            className="shrink-0 rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10"
+            className="shrink-0 rounded-full p-2.5 text-primary active:scale-90 transition hover:bg-primary/10"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-6 w-6" />
           </button>
         )}
-        <Link to="/" className="flex items-center gap-2 flex-1 min-w-0 active:opacity-70">
+        <Link to="/" className="flex items-center gap-2.5 flex-1 min-w-0 active:opacity-70">
           {logo ? (
-            <SafeImg src={logo} alt="logo" className="h-7 w-7 rounded-md object-cover" />
+            <SafeImg src={logo} alt="logo" className="h-9 w-9 rounded-md object-cover" />
           ) : (
-            <div className="h-7 w-7 rounded-md bg-gradient-to-br from-primary to-primary/40" />
+            <div className="h-9 w-9 rounded-md bg-gradient-to-br from-primary to-primary/40" />
           )}
-          <span className="font-display text-lg tracking-wide text-primary truncate">{name}</span>
+          <span className="font-display text-xl tracking-wide text-primary truncate">{name}</span>
         </Link>
         {signedIn && (
           <div className="flex items-center gap-1">
-            <Link to="/favoriler" aria-label="Favoriler" className="rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10">
-              <Heart className="h-5 w-5" />
+            <Link to="/favoriler" aria-label="Favoriler" className="rounded-full p-2.5 text-primary active:scale-90 transition hover:bg-primary/10">
+              <Heart className="h-6 w-6" />
             </Link>
-            <Link to="/bildirimler" aria-label="Bildirimler" className="relative rounded-full p-2 text-primary active:scale-90 transition hover:bg-primary/10">
-              <Bell className="h-5 w-5" />
+            <Link to="/bildirimler" aria-label="Bildirimler" className="relative rounded-full p-2.5 text-primary active:scale-90 transition hover:bg-primary/10">
+              <Bell className="h-6 w-6" />
               {unread > 0 && (
-                <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-background">
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-background">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}

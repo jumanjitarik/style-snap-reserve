@@ -148,7 +148,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean; allow_full_payment: boolean; allow_deposit_payment: boolean } | null>(null);
 
   const [search, setSearch] = useState("");
   const [filterCity, setFilterCity] = useState<string>("ALL");
@@ -182,6 +182,8 @@ function ShopsTab() {
         lng: lng != null && !isNaN(lng) ? lng : null,
         cover_image_url: editing.cover_image_url || null,
         is_featured: editing.is_featured,
+        allow_full_payment: editing.allow_full_payment,
+        allow_deposit_payment: editing.allow_deposit_payment,
       };
       if (editing.id) {
         const { error } = await supabase.from("barbershops").update(payload).eq("id", editing.id);
@@ -237,6 +239,14 @@ function ShopsTab() {
           <Label className="!m-0">⭐ Öne Çıkan</Label>
           <Switch checked={editing.is_featured} onCheckedChange={(v) => setEditing({ ...editing, is_featured: v })} />
         </div>
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <Label className="!m-0 text-sm">💳 Tamamı kartla ödeme aktif</Label>
+          <Switch checked={editing.allow_full_payment} onCheckedChange={(v) => setEditing({ ...editing, allow_full_payment: v })} />
+        </div>
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <Label className="!m-0 text-sm">💵 Kapora + salonda nakit aktif</Label>
+          <Switch checked={editing.allow_deposit_payment} onCheckedChange={(v) => setEditing({ ...editing, allow_deposit_payment: v })} />
+        </div>
         <div>
           <Label>Kapak Fotoğrafı</Label>
           <div className="flex gap-2 items-center">
@@ -267,7 +277,7 @@ function ShopsTab() {
 
   return (
     <div className="py-4 space-y-3">
-      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false })} className="w-full">
+      <Button onClick={() => setEditing({ name: "", category: "male_barber", description: "", address: "", city: "Alanya", phone: "", lat: "", lng: "", cover_image_url: "", is_featured: false, allow_full_payment: true, allow_deposit_payment: true })} className="w-full">
         <Plus className="h-4 w-4 mr-1" /> Yeni Salon
       </Button>
       <div className="flex gap-2">
@@ -300,6 +310,7 @@ function ShopsTab() {
                 address: s.address, city: s.city ?? "", phone: s.phone ?? "",
                 lat: s.lat != null ? String(s.lat) : "", lng: s.lng != null ? String(s.lng) : "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
+                allow_full_payment: (s as any).allow_full_payment ?? true, allow_deposit_payment: (s as any).allow_deposit_payment ?? true,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
             </div>
@@ -802,6 +813,7 @@ function SettingsTab() {
     welcome_line2_text: "BUGÜN GÜZEL", welcome_line2_color: "#FFFFFF",
     welcome_line3_text: "VE ŞIKSIN", welcome_line3_color: "#FFD400",
     loyalty_percent: "1",
+    deposit_percent: "25",
     hero_height_px: "120",
     gap_top_px: "8",
     gap_line12_px: "2",
@@ -827,6 +839,7 @@ function SettingsTab() {
       welcome_line3_text: settings.welcome_line3_text ?? "VE ŞIKSIN",
       welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
       loyalty_percent: settings.loyalty_percent ?? "1",
+      deposit_percent: settings.deposit_percent ?? "25",
       hero_height_px: settings.hero_height_px ?? "120",
       gap_top_px: settings.gap_top_px ?? "8",
       gap_line12_px: settings.gap_line12_px ?? "2",
@@ -869,6 +882,7 @@ function SettingsTab() {
         { key: "welcome_line3_text", value: form.welcome_line3_text },
         { key: "welcome_line3_color", value: form.welcome_line3_color },
         { key: "loyalty_percent", value: String(Number(form.loyalty_percent) || 0) },
+        { key: "deposit_percent", value: String(Math.max(1, Math.min(100, Number(form.deposit_percent) || 25))) },
         { key: "hero_height_px", value: String(Number(form.hero_height_px) || 120) },
         { key: "gap_top_px", value: String(Number(form.gap_top_px) || 0) },
         { key: "gap_line12_px", value: String(Number(form.gap_line12_px) || 0) },
@@ -964,6 +978,14 @@ function SettingsTab() {
           <Label>Kart Çekiminden Kazanılacak Puan (%)</Label>
           <Input type="number" min="0" max="100" step="0.1" value={form.loyalty_percent} onChange={(e) => setForm({ ...form, loyalty_percent: e.target.value })} />
           <p className="text-[11px] text-muted-foreground mt-1">Örn: %1 → 100₺ ödemeden 1 puan</p>
+        </div>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Ödeme</p>
+        <div>
+          <Label>Kapora Oranı (%)</Label>
+          <Input type="number" min="1" max="100" step="1" value={form.deposit_percent} onChange={(e) => setForm({ ...form, deposit_percent: e.target.value })} />
+          <p className="text-[11px] text-muted-foreground mt-1">"Kapora + salonda nakit" seçildiğinde toplamın bu yüzdesi tahsil edilir. Salon bazlı açma/kapama: Salonlar sekmesinden düzenlenir.</p>
         </div>
       </div>
       <Button className="w-full h-12" onClick={() => save.mutate()} disabled={save.isPending}>Tüm Ayarları Kaydet</Button>
