@@ -182,6 +182,8 @@ function ShopsTab() {
         lng: lng != null && !isNaN(lng) ? lng : null,
         cover_image_url: editing.cover_image_url || null,
         is_featured: editing.is_featured,
+        allow_full_payment: editing.allow_full_payment,
+        allow_deposit_payment: editing.allow_deposit_payment,
       };
       if (editing.id) {
         const { error } = await supabase.from("barbershops").update(payload).eq("id", editing.id);
