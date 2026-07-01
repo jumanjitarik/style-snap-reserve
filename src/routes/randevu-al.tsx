@@ -66,13 +66,34 @@ function BookPage() {
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
-      let q = supabase.from("barbershops").select("id, name, category, address");
+      let q = supabase.from("barbershops").select("id, name, category, address, allow_full_payment, allow_deposit_payment");
       const ui = category ? findUiCategory(category) : null;
       if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
       return data ?? [];
     },
   });
+  const { data: shopPayment } = useQuery({
+    queryKey: ["shop-payment", shopId],
+    enabled: !!shopId && !!userId,
+    queryFn: async () => {
+      const { data } = await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment").eq("id", shopId!).maybeSingle();
+      return data ?? { allow_full_payment: true, allow_deposit_payment: true };
+    },
+  });
+  const { data: depositPctSetting } = useQuery({
+    queryKey: ["deposit-percent-setting"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "deposit_percent").maybeSingle();
+      const n = Number(data?.value ?? 25);
+      return Number.isFinite(n) && n > 0 && n <= 100 ? n : 25;
+    },
+    staleTime: 30_000,
+  });
+  const depositPct = depositPctSetting ?? 25;
+  const allowFull = shopPayment?.allow_full_payment ?? true;
+  const allowDeposit = shopPayment?.allow_deposit_payment ?? true;
+
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
     enabled: !!shopId && !!userId,
