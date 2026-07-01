@@ -11,6 +11,19 @@ export const Route = createFileRoute("/_authenticated/puanlarim")({
 });
 
 function PuanlarimPage() {
+  const { data: loyaltyPct } = useQuery({
+    queryKey: ["loyalty-percent"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "loyalty_percent").maybeSingle();
+      const v: any = data?.value;
+      const n = typeof v === "number" ? v : Number(v ?? 1);
+      return Number.isFinite(n) ? n : 1;
+    },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+  });
+  const pct = loyaltyPct ?? 1;
+
   const { data: profile } = useQuery({
     queryKey: ["my-points-profile"],
     queryFn: async () => {
@@ -58,7 +71,7 @@ function PuanlarimPage() {
     <AppShell>
       <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl flex items-center gap-2"><Coins className="h-7 w-7 text-primary" /> Puanlarım</h1>
-        <p className="text-xs text-muted-foreground">Her ödemenin %1'i puan olarak kazanılır. 1 puan = 1₺ indirim.</p>
+        <p className="text-xs text-muted-foreground">Her ödemenin %{pct}'i puan olarak kazanılır. 1 puan = 1₺ indirim.</p>
       </header>
 
       <div className="px-4 space-y-3 pb-6">
@@ -100,7 +113,7 @@ function PuanlarimPage() {
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {earned > 0 && (
                     <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">
-                      +{earned} puan kazanıldı (%1 × {Number(a.payment_amount ?? 0).toFixed(0)}₺)
+                      +{earned} puan kazanıldı (%{Number(a.payment_amount) > 0 ? ((earned / Number(a.payment_amount)) * 100).toFixed(Number.isInteger((earned / Number(a.payment_amount)) * 100) ? 0 : 1) : pct} × {Number(a.payment_amount ?? 0).toFixed(0)}₺)
                     </span>
                   )}
                   {used > 0 && (

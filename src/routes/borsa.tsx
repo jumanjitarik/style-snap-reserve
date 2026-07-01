@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { Link } from "@tanstack/react-router";
-import { LineChart, MapPin, ArrowUpDown } from "lucide-react";
+import { LineChart, MapPin, ArrowUpDown, Store } from "lucide-react";
 import { CATEGORIES, type ShopCategory } from "@/lib/categories";
+import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/borsa")({
@@ -36,7 +37,7 @@ function BorsaPage() {
   const { data: shops } = useQuery({
     queryKey: ["borsa-shops"],
     queryFn: async () => {
-      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng, category");
+      const { data } = await supabase.from("barbershops").select("id, name, address, city, lat, lng, category, cover_image_url");
       return data ?? [];
     },
   });
@@ -86,13 +87,14 @@ function BorsaPage() {
         duration: sv.duration_min,
         shopId: shop.id,
         shopName: shop.name,
+        shopImage: (shop as any).cover_image_url as string | null,
         city: shop.city,
         address: shop.address,
         km,
         rating: reviewMap?.get(shop.id)?.rating ?? 0,
         reviewsCount: reviewMap?.get(shop.id)?.count ?? 0,
       };
-    }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
+    }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; shopImage: string | null; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
 
     const filtered = list.filter((r) => {
       if (coords) return r.km != null && r.km <= MAX_KM;
@@ -190,12 +192,21 @@ function BorsaPage() {
               key={`${r.shopId}-${r.serviceId}`}
               to="/kuafor/$id"
               params={{ id: r.shopId }}
-              className="block rounded-xl border border-border bg-card p-3 active:scale-[0.99] transition-transform"
+              className="flex items-stretch gap-3 rounded-xl border border-border bg-card p-2.5 active:scale-[0.99] transition-transform"
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
+                {r.shopImage ? (
+                  <SafeImg src={r.shopImage} alt={r.shopName} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-primary/60">
+                    <Store className="h-6 w-6" />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-1 items-start justify-between gap-2 min-w-0">
                 <div className="min-w-0">
                   <p className="font-semibold text-sm truncate">{r.serviceName}</p>
-                  <p className="text-xs text-muted-foreground truncate">🏪 {r.shopName}{r.city ? ` · ${r.city}` : ""}</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.shopName}{r.city ? ` · ${r.city}` : ""}</p>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {r.duration ? `⏱ ${r.duration} dk` : ""}
                     {r.km != null ? ` · 📍 ${formatKm(r.km)}` : ""}
