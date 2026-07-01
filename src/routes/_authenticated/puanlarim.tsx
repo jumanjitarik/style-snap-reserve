@@ -11,6 +11,19 @@ export const Route = createFileRoute("/_authenticated/puanlarim")({
 });
 
 function PuanlarimPage() {
+  const { data: loyaltyPct } = useQuery({
+    queryKey: ["loyalty-percent"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "loyalty_percent").maybeSingle();
+      const v: any = data?.value;
+      const n = typeof v === "number" ? v : Number(v ?? 1);
+      return Number.isFinite(n) ? n : 1;
+    },
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+  });
+  const pct = loyaltyPct ?? 1;
+
   const { data: profile } = useQuery({
     queryKey: ["my-points-profile"],
     queryFn: async () => {
