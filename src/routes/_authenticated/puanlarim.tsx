@@ -113,7 +113,7 @@ function PuanlarimPage() {
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {earned > 0 && (
                     <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">
-                      +{earned} puan kazanıldı (%{Number(a.payment_amount) > 0 ? ((earned / Number(a.payment_amount)) * 100).toFixed(Number.isInteger((earned / Number(a.payment_amount)) * 100) ? 0 : 1) : pct} × {Number(a.payment_amount ?? 0).toFixed(0)}₺)
+                      +{earned} puan kazanıldı
                     </span>
                   )}
                   {used > 0 && (
