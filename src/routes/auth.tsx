@@ -185,13 +185,13 @@ function AuthPage() {
 
           <div>
             <div className="flex items-center justify-between">
-              <Label>Şifre <span className="text-[10px] text-muted-foreground">(en az 4 karakter)</span></Label>
+              <Label>Şifre <span className="text-[10px] text-muted-foreground">(en az 6 hane)</span></Label>
               {mode === "login" && (
                 <button type="button" onClick={() => { setForgotEmail(form.email); setForgotOpen(true); }}
                   className="text-[11px] text-primary">Şifremi unuttum</button>
               )}
             </div>
-            <Input type="password" required minLength={4} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            <Input type="password" required minLength={6} placeholder="En az 6 hane" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
