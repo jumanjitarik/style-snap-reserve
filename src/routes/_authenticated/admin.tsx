@@ -310,6 +310,7 @@ function ShopsTab() {
                 address: s.address, city: s.city ?? "", phone: s.phone ?? "",
                 lat: s.lat != null ? String(s.lat) : "", lng: s.lng != null ? String(s.lng) : "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
+                allow_full_payment: (s as any).allow_full_payment ?? true, allow_deposit_payment: (s as any).allow_deposit_payment ?? true,
               })}>Düzenle</Button>
               <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(s.id)}><Trash2 className="h-4 w-4" /></Button>
             </div>
