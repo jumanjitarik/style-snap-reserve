@@ -83,8 +83,27 @@ export function BottomNav() {
       )}
       style={{ bottom: `calc(env(safe-area-inset-bottom) + 22px)` }}
     >
-      <nav className="pointer-events-auto w-full max-w-[500px] rounded-[30px] border border-primary/25 bg-card/85 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-        <ul className="grid grid-cols-7 items-end px-2 pt-2 pb-1.5">
+      <nav
+        className="pointer-events-auto relative w-full max-w-[500px] rounded-[34px] overflow-hidden"
+        style={{
+          background: "linear-gradient(180deg, color-mix(in oklab, var(--card) 55%, transparent) 0%, color-mix(in oklab, var(--card) 72%, transparent) 100%)",
+          backdropFilter: "blur(28px) saturate(180%)",
+          boxShadow:
+            "0 20px 45px -10px rgba(0,0,0,0.55), 0 2px 0 0 color-mix(in oklab, white 6%, transparent) inset, 0 -1px 0 0 color-mix(in oklab, black 30%, transparent) inset, 0 0 0 1px color-mix(in oklab, var(--primary) 22%, transparent)",
+        }}
+      >
+        {/* Liquid glass highlight sheen */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-6 top-0 h-px opacity-70"
+          style={{ background: "linear-gradient(90deg, transparent, color-mix(in oklab, white 55%, transparent), transparent)" }}
+        />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 rounded-[34px]"
+          style={{ background: "radial-gradient(120% 60% at 50% -20%, color-mix(in oklab, white 10%, transparent), transparent 55%)" }}
+        />
+        <ul className="relative grid grid-cols-7 items-end px-2 pt-2 pb-1.5">
           {items.map(({ to, label, icon: Icon, fab, profile }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             if (fab) {
@@ -92,10 +111,15 @@ export function BottomNav() {
                 <li key={to} className="flex justify-center -mt-7">
                   <Link
                     to={to as never}
-                    className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_6px_22px_rgba(212,175,55,0.55)] ring-[3px] ring-card transition-all duration-150 active:scale-90"
+                    className="group relative flex h-14 w-14 items-center justify-center rounded-full text-primary-foreground transition-all duration-300 ease-out active:scale-90 hover:scale-105"
+                    style={{
+                      background: "radial-gradient(circle at 30% 25%, color-mix(in oklab, white 35%, var(--primary)) 0%, var(--primary) 45%, color-mix(in oklab, black 25%, var(--primary)) 100%)",
+                      boxShadow:
+                        "0 10px 30px -6px color-mix(in oklab, var(--primary) 70%, transparent), 0 1px 0 0 color-mix(in oklab, white 55%, transparent) inset, 0 -3px 6px 0 color-mix(in oklab, black 30%, transparent) inset, 0 0 0 3px var(--card)",
+                    }}
                     aria-label={label}
                   >
-                    <Icon className="h-7 w-7" strokeWidth={2.5} />
+                    <Icon className="h-7 w-7 drop-shadow-sm" strokeWidth={2.5} />
                   </Link>
                 </li>
               );
@@ -105,29 +129,37 @@ export function BottomNav() {
                 <Link
                   to={to as never}
                   className={cn(
-                    "group relative flex flex-col items-center gap-1 px-0.5 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-90",
+                    "group relative flex flex-col items-center gap-1 px-0.5 py-1.5 text-[11px] font-medium transition-all duration-200 active:scale-90",
                     active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <span className={cn(
-                    "absolute top-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary transition-opacity",
-                    active ? "opacity-100" : "opacity-0",
-                  )} />
+                  {/* active liquid pill */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute inset-x-1 top-0.5 bottom-0.5 rounded-2xl transition-all duration-300 ease-out",
+                      active ? "opacity-100 scale-100" : "opacity-0 scale-75",
+                    )}
+                    style={{
+                      background: "linear-gradient(180deg, color-mix(in oklab, var(--primary) 22%, transparent), color-mix(in oklab, var(--primary) 10%, transparent))",
+                      boxShadow: "0 1px 0 0 color-mix(in oklab, white 25%, transparent) inset, 0 0 0 1px color-mix(in oklab, var(--primary) 40%, transparent)",
+                    }}
+                  />
                   <div className="relative h-7 w-7 flex items-center justify-center">
                     {profile && avatar ? (
                       <SafeImg
                         src={avatar}
                         alt=""
                         className={cn(
-                          "absolute inset-0 h-7 w-7 rounded-full object-cover ring-2",
+                          "absolute inset-0 h-7 w-7 rounded-full object-cover ring-2 transition-all",
                           active ? "ring-primary" : "ring-border",
                         )}
                       />
                     ) : (
-                      <Icon className="h-6 w-6" />
+                      <Icon className={cn("h-6 w-6 transition-transform duration-300", active && "scale-110 drop-shadow-[0_0_6px_color-mix(in_oklab,var(--primary)_50%,transparent)]")} />
                     )}
                   </div>
-                  <span className="truncate leading-none">{label}</span>
+                  <span className="relative truncate leading-none">{label}</span>
                 </Link>
               </li>
             );
