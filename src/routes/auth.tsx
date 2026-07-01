@@ -238,7 +238,7 @@ function translateAuthError(msg: string): string {
   if (m.includes("invalid login")) return "E-posta veya şifre hatalı";
   if (m.includes("email not confirmed")) return "E-postanı onayla";
   if (m.includes("user already registered") || m.includes("already exists")) return "Bu e-posta zaten kayıtlı";
-  if (m.includes("password should be")) return "Şifre çok kısa (en az 4 karakter)";
+  if (m.includes("password should be")) return "Şifre çok kısa (en az 6 hane)";
   if (m.includes("rate limit")) return "Çok fazla deneme, biraz bekle";
   if (m.includes("network")) return "Ağ hatası, internetini kontrol et";
   return msg;
