@@ -71,7 +71,7 @@ function PuanlarimPage() {
     <AppShell>
       <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl flex items-center gap-2"><Coins className="h-7 w-7 text-primary" /> Puanlarım</h1>
-        <p className="text-xs text-muted-foreground">Her ödemenin %1'i puan olarak kazanılır. 1 puan = 1₺ indirim.</p>
+        <p className="text-xs text-muted-foreground">Her ödemenin %{pct}'i puan olarak kazanılır. 1 puan = 1₺ indirim.</p>
       </header>
 
       <div className="px-4 space-y-3 pb-6">
