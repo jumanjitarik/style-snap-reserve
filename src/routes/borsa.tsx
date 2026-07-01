@@ -191,12 +191,21 @@ function BorsaPage() {
               key={`${r.shopId}-${r.serviceId}`}
               to="/kuafor/$id"
               params={{ id: r.shopId }}
-              className="block rounded-xl border border-border bg-card p-3 active:scale-[0.99] transition-transform"
+              className="flex items-stretch gap-3 rounded-xl border border-border bg-card p-2.5 active:scale-[0.99] transition-transform"
             >
-              <div className="flex items-start justify-between gap-2">
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border">
+                {r.shopImage ? (
+                  <SafeImg src={r.shopImage} alt={r.shopName} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-primary/60">
+                    <Store className="h-6 w-6" />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-1 items-start justify-between gap-2 min-w-0">
                 <div className="min-w-0">
                   <p className="font-semibold text-sm truncate">{r.serviceName}</p>
-                  <p className="text-xs text-muted-foreground truncate">🏪 {r.shopName}{r.city ? ` · ${r.city}` : ""}</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.shopName}{r.city ? ` · ${r.city}` : ""}</p>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {r.duration ? `⏱ ${r.duration} dk` : ""}
                     {r.km != null ? ` · 📍 ${formatKm(r.km)}` : ""}
