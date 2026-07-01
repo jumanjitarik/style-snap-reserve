@@ -93,6 +93,10 @@ function BookPage() {
   const depositPct = depositPctSetting ?? 25;
   const allowFull = shopPayment?.allow_full_payment ?? true;
   const allowDeposit = shopPayment?.allow_deposit_payment ?? true;
+  useEffect(() => {
+    if (!allowFull && allowDeposit && paymentMethod !== "deposit") setPaymentMethod("deposit");
+    else if (allowFull && !allowDeposit && paymentMethod !== "full") setPaymentMethod("full");
+  }, [allowFull, allowDeposit]);
 
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
