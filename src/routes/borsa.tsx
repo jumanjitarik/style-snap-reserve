@@ -86,13 +86,14 @@ function BorsaPage() {
         duration: sv.duration_min,
         shopId: shop.id,
         shopName: shop.name,
+        shopImage: (shop as any).cover_image_url as string | null,
         city: shop.city,
         address: shop.address,
         km,
         rating: reviewMap?.get(shop.id)?.rating ?? 0,
         reviewsCount: reviewMap?.get(shop.id)?.count ?? 0,
       };
-    }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
+    }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; shopImage: string | null; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
 
     const filtered = list.filter((r) => {
       if (coords) return r.km != null && r.km <= MAX_KM;
