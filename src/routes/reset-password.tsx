@@ -48,12 +48,12 @@ function ResetPasswordPage() {
         ) : (
           <form onSubmit={submit} className="mt-6 space-y-3">
             <div>
-              <Label>Yeni Şifre (en az 4 karakter)</Label>
-              <Input type="password" minLength={4} value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Label>Yeni Şifre (en az 6 hane)</Label>
+              <Input type="password" minLength={6} placeholder="En az 6 hane" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <div>
               <Label>Yeni Şifre (tekrar)</Label>
-              <Input type="password" minLength={4} value={password2} onChange={(e) => setPassword2(e.target.value)} required />
+              <Input type="password" minLength={6} placeholder="En az 6 hane" value={password2} onChange={(e) => setPassword2(e.target.value)} required />
             </div>
             <Button type="submit" disabled={loading} className="w-full h-12 font-semibold">
               {loading ? "Kaydediliyor…" : "Şifreyi Belirle"}
