@@ -423,27 +423,34 @@ function BookPage() {
                 </>
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
-              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
+              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * depositPct / 100) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-3 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Ödeme Şekli</p>
-              <button type="button" onClick={() => setPaymentMethod("full")}
-                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
-                  <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
-              </button>
-              <button type="button" onClick={() => setPaymentMethod("deposit")}
-                className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">%25 kapora · kalanını salonda nakit öde</span>
-                  <span className="font-display text-primary">{Math.round(finalTotal * 0.25)}₺</span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
-              </button>
+              {allowFull && (
+                <button type="button" onClick={() => setPaymentMethod("full")}
+                  className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
+                    <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
+                </button>
+              )}
+              {allowDeposit && (
+                <button type="button" onClick={() => setPaymentMethod("deposit")}
+                  className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-sm">%{depositPct} kapora · kalanını salonda nakit öde</span>
+                    <span className="font-display text-primary">{Math.round(finalTotal * depositPct / 100)}₺</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * depositPct / 100))}₺ tahsil edilecek.</p>
+                </button>
+              )}
+              {!allowFull && !allowDeposit && (
+                <p className="text-xs text-destructive">Bu salon için ödeme seçeneği aktif değil.</p>
+              )}
             </div>
 
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
