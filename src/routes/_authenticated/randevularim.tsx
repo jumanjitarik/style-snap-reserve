@@ -368,10 +368,11 @@ function MyMembershipsList() {
   );
 }
 
-function CustomerMembershipsList({ userId }: { userId: string }) {
+function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
   const { data: shopIds } = useQuery({
-    queryKey: ["my-shop-ids", userId],
+    queryKey: ["my-shop-ids-mem", userId, isAdmin],
     queryFn: async () => {
+      if (isAdmin) return null;
       const [owned, asStaff] = await Promise.all([
         supabase.from("barbershops").select("id").eq("owner_id", userId),
         supabase.from("staff").select("shop_id").eq("user_id", userId),
@@ -383,14 +384,15 @@ function CustomerMembershipsList({ userId }: { userId: string }) {
   });
 
   const { data: memberships } = useQuery({
-    queryKey: ["shop-memberships", shopIds],
-    enabled: !!shopIds && shopIds.length > 0,
+    queryKey: ["shop-memberships", isAdmin ? "all" : shopIds],
+    enabled: isAdmin || (!!shopIds && shopIds.length > 0),
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from("memberships")
         .select("id, amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
-        .in("shop_id", shopIds!)
         .order("created_at", { ascending: false });
+      if (!isAdmin) q = q.in("shop_id", shopIds!);
+      const { data } = await q;
       return data ?? [];
     },
   });
@@ -419,18 +421,21 @@ function CustomerMembershipsList({ userId }: { userId: string }) {
     },
   });
 
+  const memShopIds = Array.from(new Set((memberships ?? []).map((m) => m.shop_id).filter(Boolean) as string[]));
   const shopsQ = useQuery({
-    queryKey: ["mem-shops", shopIds],
-    enabled: !!shopIds && shopIds.length > 0,
+    queryKey: ["mem-shops", memShopIds],
+    enabled: memShopIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("barbershops").select("id, name").in("id", shopIds!);
+      const { data } = await supabase.from("barbershops").select("id, name").in("id", memShopIds);
       const m = new Map<string, string>();
       (data ?? []).forEach((s) => m.set(s.id, s.name));
       return m;
     },
   });
 
-  if (!shopIds || shopIds.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
+
   if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
 
   const total = memberships.reduce((s, m) => s + Number(m.amount ?? 0), 0);
