@@ -403,9 +403,28 @@ function BookPage() {
                 </div>
               </>
             )}
-            <Button onClick={() => serviceIds.length > 0 && setStep(4)} disabled={serviceIds.length === 0} className="w-full h-12">
-              Devam · {totalPrice.toFixed(0)}₺ ({totalMin} dk)
+            <Button onClick={() => {
+              if (serviceIds.length === 0) return;
+              if (skipDateTime) {
+                // Fitness / Yoga & Pilates: tarih & saat sormadan direkt ödeme
+                let d = addDays(startOfDay(new Date()), 1);
+                for (let i = 0; i < 14; i++) {
+                  const h = hoursByDay.get(d.getDay());
+                  const open = h ? h.is_open : d.getDay() !== 0;
+                  if (open) break;
+                  d = addDays(d, 1);
+                }
+                const h = hoursByDay.get(d.getDay());
+                setDate(d);
+                setTime((h?.open_time ?? "10:00").slice(0, 5));
+                setStep(5);
+              } else {
+                setStep(4);
+              }
+            }} disabled={serviceIds.length === 0} className="w-full h-12">
+              Devam · {totalPrice.toFixed(0)}₺ {skipDateTime ? "" : `(${totalMin} dk)`}
             </Button>
+
           </>
         )}
 
