@@ -27,6 +27,9 @@ function readCachedAvatar(): string | null {
 
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const [fabOpen, setFabOpen] = useState(false);
+
 
   const [avatar, setAvatar] = useState<string | null>(() => readCachedAvatar());
   const [hidden, setHidden] = useState(false);
