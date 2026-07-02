@@ -65,17 +65,28 @@ function BookPage() {
   });
 
 
+  const { coords } = useGeolocation();
+
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
-      let q = supabase.from("barbershops").select("id, name, category, address, allow_full_payment, allow_deposit_payment");
+      let q = supabase.from("barbershops").select("id, name, category, address, lat, lng, allow_full_payment, allow_deposit_payment");
       const ui = category ? findUiCategory(category) : null;
       if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
       return data ?? [];
     },
   });
+
+  const sortedShops = useMemo(() => {
+    const arr = [...(shops ?? [])];
+    if (!coords) return arr;
+    return arr
+      .map((s) => ({ ...s, _km: (s.lat && s.lng) ? distanceKm(coords.lat, coords.lng, Number(s.lat), Number(s.lng)) : Infinity }))
+      .sort((a, b) => a._km - b._km);
+  }, [shops, coords]);
+
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
     enabled: !!shopId && !!userId,
