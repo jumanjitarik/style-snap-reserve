@@ -28,7 +28,15 @@ const SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","
 
 function BookPage() {
   const navigate = useNavigate();
-  const { shop: initialShop, service: initialService, services: initialServices } = Route.useSearch();
+  const { shop: initialShop, service: initialService, services: initialServices, mode } = Route.useSearch();
+  const isMembershipMode = mode === "membership";
+  const pageTitle = isMembershipMode ? "Üyelik Al" : "Randevu Al";
+  const visibleCategories = useMemo(() => {
+    const membershipKeys = new Set(["fitness", "yoga_pilates"]);
+    return isMembershipMode
+      ? CATEGORIES.filter((c) => membershipKeys.has(c.key))
+      : CATEGORIES.filter((c) => !membershipKeys.has(c.key));
+  }, [isMembershipMode]);
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
