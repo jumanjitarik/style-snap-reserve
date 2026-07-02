@@ -70,7 +70,7 @@ function MyAppts() {
       <header className="px-4 pt-4 pb-3">
         <h1 className="font-display text-3xl flex items-center gap-2">
           <CalIcon className="h-8 w-8 text-primary" />
-          Randevular
+          Alınan
         </h1>
         <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
       </header>

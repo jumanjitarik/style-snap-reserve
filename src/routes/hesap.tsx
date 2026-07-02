@@ -9,7 +9,9 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard, MessageCircle, Phone, Receipt } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard, MessageCircle, Phone, Receipt, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
@@ -21,6 +23,23 @@ function AccountPage() {
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
+
+  async function sendFeedback() {
+    const msg = feedbackMsg.trim();
+    if (msg.length < 3) { toast.error("Lütfen görüşünü yaz"); return; }
+    if (!userId) { toast.error("Giriş gerekli"); return; }
+    setFeedbackSending(true);
+    const { error } = await (supabase.from as unknown as (t: string) => { insert: (row: Record<string, unknown>) => Promise<{ error: { message: string } | null }> })("feedback").insert({ user_id: userId, message: msg });
+    setFeedbackSending(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Başarıyla gönderilmiştir");
+    setFeedbackMsg("");
+    setFeedbackOpen(false);
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
@@ -335,8 +354,32 @@ function AccountPage() {
           </div>
         )}
 
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-card p-4 active:scale-[0.98] transition text-left"
+        >
+          <MessageSquare className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Geri Bildirim</span>
+        </button>
 
-
+        <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Geri Bildirim</DialogTitle>
+              <DialogDescription>Görüş ve önerini bize ilet.</DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={feedbackMsg}
+              onChange={(e) => setFeedbackMsg(e.target.value)}
+              placeholder="Görüş / öneri..."
+              rows={5}
+              maxLength={2000}
+            />
+            <Button onClick={sendFeedback} disabled={feedbackSending}>
+              {feedbackSending ? "Gönderiliyor..." : "Gönder"}
+            </Button>
+          </DialogContent>
+        </Dialog>
 
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap

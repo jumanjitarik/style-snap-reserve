@@ -14,7 +14,7 @@ const items: NavItem[] = [
   { to: "/borsa", label: "Borsa", icon: LineChart },
   { to: "/randevu-al", label: "Randevu Al", icon: Plus, fab: true },
   { to: "/puanlarim", label: "Puan", icon: Coins },
-  { to: "/randevularim", label: "Randevu", icon: CalendarCheck },
+  { to: "/randevularim", label: "Alınan", icon: CalendarCheck },
   { to: "/hesap", label: "Hesap", icon: User, profile: true },
 ];
 
