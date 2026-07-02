@@ -148,7 +148,7 @@ async function uploadPhoto(file: File, prefix: string): Promise<string> {
 
 function ShopsTab() {
   const qc = useQueryClient();
-  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean } | null>(null);
+  const [editing, setEditing] = useState<{ id?: string; name: string; category: ShopCategory; description: string; address: string; city: string; phone: string; lat: string; lng: string; cover_image_url: string; is_featured: boolean; allow_full_payment: boolean; allow_deposit_payment: boolean } | null>(null);
 
   const [search, setSearch] = useState("");
   const [filterCity, setFilterCity] = useState<string>("ALL");
