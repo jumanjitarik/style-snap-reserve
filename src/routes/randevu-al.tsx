@@ -79,13 +79,12 @@ function BookPage() {
     },
   });
 
-  const sortedShops = useMemo(() => {
-    const arr = [...(shops ?? [])];
-    if (!coords) return arr;
-    return arr
-      .map((s) => ({ ...s, _km: (s.lat && s.lng) ? distanceKm(coords.lat, coords.lng, Number(s.lat), Number(s.lng)) : Infinity }))
-      .sort((a, b) => a._km - b._km);
+  const sortedShops = useMemo((): Array<{ id: string; name: string; address: string | null; lat: number | null; lng: number | null; _km: number }> => {
+    const arr = (shops ?? []).map((s) => ({ ...s, _km: (coords && s.lat && s.lng) ? distanceKm(coords.lat, coords.lng, Number(s.lat), Number(s.lng)) : Infinity }));
+    arr.sort((a, b) => a._km - b._km);
+    return arr as never;
   }, [shops, coords]);
+
 
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
