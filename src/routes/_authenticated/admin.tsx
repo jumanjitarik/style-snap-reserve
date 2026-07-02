@@ -240,6 +240,15 @@ function ShopsTab() {
           <Label className="!m-0">⭐ Öne Çıkan</Label>
           <Switch checked={editing.is_featured} onCheckedChange={(v) => setEditing({ ...editing, is_featured: v })} />
         </div>
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <Label className="!m-0">💳 Tamamı kart ile ödeme</Label>
+          <Switch checked={editing.allow_full_payment} onCheckedChange={(v) => setEditing({ ...editing, allow_full_payment: v })} />
+        </div>
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <Label className="!m-0">💵 Kapora + salonda nakit</Label>
+          <Switch checked={editing.allow_deposit_payment} onCheckedChange={(v) => setEditing({ ...editing, allow_deposit_payment: v })} />
+        </div>
+
         <div>
           <Label>Kapak Fotoğrafı</Label>
           <div className="flex gap-2 items-center">
