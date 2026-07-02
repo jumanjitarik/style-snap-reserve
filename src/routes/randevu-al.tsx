@@ -352,7 +352,7 @@ function BookPage() {
       <AppShell>
         <BackButton to="/" />
         <header className="px-4 pt-4 pb-3">
-          <h1 className="font-display text-3xl">Randevu Al</h1>
+          <h1 className="font-display text-3xl">{pageTitle}</h1>
           <p className="text-sm text-muted-foreground mt-1">Giriş sayfasına yönlendiriliyorsun…</p>
         </header>
       </AppShell>
