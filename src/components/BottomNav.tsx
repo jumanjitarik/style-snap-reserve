@@ -100,13 +100,14 @@ export function BottomNav() {
             if (fab) {
               return (
                 <li key={to} className="flex justify-center -mt-7">
-                  <Link
-                    to={to as never}
+                  <button
+                    type="button"
+                    onClick={() => setFabOpen(true)}
                     className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-[0_6px_22px_rgba(212,175,55,0.55)] ring-[3px] ring-card transition-all duration-150 active:scale-90"
                     aria-label={label}
                   >
                     <Icon className="h-7 w-7" strokeWidth={2.5} />
-                  </Link>
+                  </button>
                 </li>
               );
             }
