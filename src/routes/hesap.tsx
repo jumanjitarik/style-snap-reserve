@@ -188,7 +188,7 @@ function AccountPage() {
             <div className="mt-3 flex gap-1 flex-wrap">
               {roles.map((r) => (
                 <span key={r.role} className="rounded-full bg-primary/20 text-primary text-[10px] uppercase tracking-wider px-2 py-0.5 font-bold">
-                  {r.role}
+                  {roleLabelMap[r.role] ?? r.role}
                 </span>
               ))}
             </div>
