@@ -391,6 +391,66 @@ export type Database = {
           },
         ]
       }
+      memberships: {
+        Row: {
+          amount: number
+          created_at: string
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          notes: string | null
+          payment_ref: string | null
+          service_id: string | null
+          service_ids: string[]
+          shop_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          guest_name?: string | null
+          guest_phone?: string | null
+          id?: string
+          notes?: string | null
+          payment_ref?: string | null
+          service_id?: string | null
+          service_ids?: string[]
+          shop_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          guest_name?: string | null
+          guest_phone?: string | null
+          id?: string
+          notes?: string | null
+          payment_ref?: string | null
+          service_id?: string | null
+          service_ids?: string[]
+          shop_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           appointment_id: string | null

@@ -248,7 +248,34 @@ function BookPage() {
   const create = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Giriş yap");
-      if (!shopId || serviceIds.length === 0 || !date || !time) throw new Error("Eksik bilgi");
+      if (!shopId || serviceIds.length === 0) throw new Error("Eksik bilgi");
+
+      // Fitness / Yoga & Pilates → üyelik satışı (tarih/saat yok)
+      if (skipDateTime) {
+        const { error } = await supabase.from("memberships").insert({
+          user_id: userId,
+          shop_id: shopId,
+          service_id: serviceIds[0],
+          service_ids: serviceIds,
+          amount: finalTotal,
+          notes: customerNote.trim() || null,
+          payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
+        });
+        if (error) throw error;
+        try {
+          const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
+          if (shop?.owner_id) {
+            await supabase.from("notifications").insert({
+              user_id: shop.owner_id,
+              title: "Yeni üyelik satışı",
+              body: `${shop.name} · ${finalTotal.toFixed(0)}₺ üyelik satın alındı.`,
+            });
+          }
+        } catch { /* sessiz */ }
+        return "membership" as const;
+      }
+
+      if (!date || !time) throw new Error("Tarih ve saat seç");
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
@@ -274,7 +301,6 @@ function BookPage() {
       });
       if (error) throw error;
 
-      // Salon sahibine bilgi bildirimi gönder
       try {
         const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
         if (shop?.owner_id) {
@@ -290,10 +316,15 @@ function BookPage() {
           });
         }
       } catch { /* sessiz */ }
+      return "appointment" as const;
     },
 
-    onSuccess: () => {
-      toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda nakit ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
+    onSuccess: (kind) => {
+      if (kind === "membership") {
+        toast.success("Üyelik satın alındı!");
+      } else {
+        toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı!" : "Ödeme alındı, randevu onaylandı!");
+      }
       navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -405,22 +436,7 @@ function BookPage() {
             )}
             <Button onClick={() => {
               if (serviceIds.length === 0) return;
-              if (skipDateTime) {
-                // Fitness / Yoga & Pilates: tarih & saat sormadan direkt ödeme
-                let d = addDays(startOfDay(new Date()), 1);
-                for (let i = 0; i < 14; i++) {
-                  const h = hoursByDay.get(d.getDay());
-                  const open = h ? h.is_open : d.getDay() !== 0;
-                  if (open) break;
-                  d = addDays(d, 1);
-                }
-                const h = hoursByDay.get(d.getDay());
-                setDate(d);
-                setTime((h?.open_time ?? "10:00").slice(0, 5));
-                setStep(5);
-              } else {
-                setStep(4);
-              }
+              setStep(skipDateTime ? 5 : 4);
             }} disabled={serviceIds.length === 0} className="w-full h-12">
               Devam · {totalPrice.toFixed(0)}₺ {skipDateTime ? "" : `(${totalMin} dk)`}
             </Button>
@@ -519,30 +535,33 @@ function BookPage() {
               <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * depPct / 100) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Ödeme Şekli</p>
-              {allowFull && (
-                <button type="button" onClick={() => setPaymentMethod("full")}
-                  className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
-                    <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
-                </button>
-              )}
-              {allowDeposit && (
-                <button type="button" onClick={() => setPaymentMethod("deposit")}
-                  className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-sm">%{depPct} kapora · kalanını salonda nakit öde</span>
-                    <span className="font-display text-primary">{Math.round(finalTotal * depPct / 100)}₺</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * depPct / 100))}₺ tahsil edilecek.</p>
-                </button>
-              )}
+            {!skipDateTime && (
+              <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Ödeme Şekli</p>
+                {allowFull && (
+                  <button type="button" onClick={() => setPaymentMethod("full")}
+                    className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "full" ? "border-primary bg-primary/5" : "border-border")}>
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-sm">Tamamını şimdi kart ile öde</span>
+                      <span className="font-display text-primary">{finalTotal.toFixed(0)}₺</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Hızlı ve sorunsuz, salonda ek ödeme yok.</p>
+                  </button>
+                )}
+                {allowDeposit && (
+                  <button type="button" onClick={() => setPaymentMethod("deposit")}
+                    className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-sm">%{depPct} kapora · kalanını salonda nakit öde</span>
+                      <span className="font-display text-primary">{Math.round(finalTotal * depPct / 100)}₺</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * depPct / 100))}₺ tahsil edilecek.</p>
+                  </button>
+                )}
+              </div>
+            )}
 
-            </div>
+
 
             <div className="rounded-xl border border-border bg-card p-4 space-y-2">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
@@ -553,9 +572,11 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
-                ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
-                : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
+              {create.isPending ? "İşleniyor..." : skipDateTime
+                ? `Üyeliği Satın Al · ${finalTotal.toFixed(0)}₺`
+                : paymentMethod === "deposit"
+                  ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
+                  : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
 
