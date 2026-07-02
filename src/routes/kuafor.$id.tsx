@@ -28,7 +28,7 @@ export const Route = createFileRoute("/kuafor/$id")({
   },
   head: ({ params, loaderData }) => {
     const shop = loaderData?.shop;
-    const title = shop ? `${shop.name} — BarberApp` : "Salon — BarberApp";
+    const title = shop ? `${shop.name} — KuaförApp` : "Salon — KuaförApp";
     const desc = shop
       ? `${shop.name}${shop.address ? `, ${shop.address}` : ""}. ${shop.description ?? "Online randevu al."}`.slice(0, 158)
       : "Salon detayları ve online randevu.";

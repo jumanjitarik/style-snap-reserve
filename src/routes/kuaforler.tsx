@@ -28,9 +28,9 @@ export const Route = createFileRoute("/kuaforler")({
   validateSearch: (s) => searchSchema.parse(s),
   head: () => ({
     meta: [
-      { title: "Salonlar — BarberApp" },
+      { title: "Salonlar — KuaförApp" },
       { name: "description", content: "Berber, kuaför, lazer, tırnak, cilt ve estetik salonlarını yakınlık, puan ve fiyata göre keşfet." },
-      { property: "og:title", content: "Salonlar — BarberApp" },
+      { property: "og:title", content: "Salonlar — KuaförApp" },
       { property: "og:description", content: "Berber, kuaför, lazer, tırnak, cilt ve estetik salonlarını yakınlık, puan ve fiyata göre keşfet." },
       { property: "og:url", content: "https://style-snap-reserve.lovable.app/kuaforler" },
     ],

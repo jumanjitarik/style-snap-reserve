@@ -9,7 +9,7 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard } from "lucide-react";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard, MessageCircle, Phone, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
@@ -42,6 +42,11 @@ function AccountPage() {
 
   const isAdmin = roles?.some((r) => r.role === "admin");
   const isOwner = roles?.some((r) => r.role === "owner" || r.role === "admin");
+  const isOwnerOnly = roles?.some((r) => r.role === "owner");
+  const isStaff = roles?.some((r) => r.role === "staff");
+  const showSupport = isOwner || isStaff;
+  const SUPPORT_PHONE = "+905536764855";
+  const roleLabelMap: Record<string, string> = { admin: "Yönetici", owner: "Salon Sahibi", staff: "Personel", customer: "Müşteri" };
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", avatar_url: "" });
@@ -183,7 +188,7 @@ function AccountPage() {
             <div className="mt-3 flex gap-1 flex-wrap">
               {roles.map((r) => (
                 <span key={r.role} className="rounded-full bg-primary/20 text-primary text-[10px] uppercase tracking-wider px-2 py-0.5 font-bold">
-                  {r.role}
+                  {roleLabelMap[r.role] ?? r.role}
                 </span>
               ))}
             </div>
@@ -292,6 +297,11 @@ function AccountPage() {
             >
               <CreditCard className="h-5 w-5 text-primary" /><span className="font-semibold">Sanal POS</span>
             </Link>
+            {isOwnerOnly && (
+              <Link to="/muhasebe" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
+                <Receipt className="h-5 w-5 text-primary" /><span className="font-semibold">Muhasebe</span>
+              </Link>
+            )}
           </>
         )}
         {isAdmin && (
@@ -299,6 +309,32 @@ function AccountPage() {
             <Shield className="h-5 w-5 text-primary" /><span className="font-semibold">Yönetici Paneli</span>
           </Link>
         )}
+
+        {showSupport && (
+          <div className="rounded-xl border border-primary/30 bg-card p-3 space-y-2">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Destek</p>
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href={`https://wa.me/${SUPPORT_PHONE.replace("+", "")}`}
+                target="_blank" rel="noreferrer"
+                className="flex flex-col items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-emerald-400 active:scale-95 transition"
+              >
+                <MessageCircle className="h-5 w-5" />
+                <span className="text-xs font-semibold">WhatsApp Destek</span>
+                <span className="text-[10px] text-muted-foreground">{SUPPORT_PHONE}</span>
+              </a>
+              <a
+                href={`tel:${SUPPORT_PHONE}`}
+                className="flex flex-col items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 p-3 text-primary active:scale-95 transition"
+              >
+                <Phone className="h-5 w-5" />
+                <span className="text-xs font-semibold">Müşteri Hizmetleri</span>
+                <span className="text-[10px] text-muted-foreground">{SUPPORT_PHONE}</span>
+              </a>
+            </div>
+          </div>
+        )}
+
 
 
 

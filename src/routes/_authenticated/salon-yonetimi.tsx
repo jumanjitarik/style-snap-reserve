@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X, Clock, CreditCard } from "lucide-react";
+import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X, Clock, CreditCard, CalendarClock } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -29,10 +29,10 @@ export const Route = createFileRoute("/_authenticated/salon-yonetimi")({
 });
 
 function SalonYonetimi() {
-  const [tab, setTab] = useState<"appts" | "shop" | "hours" | "services" | "staff" | "pos">(() => {
-    if (typeof window === "undefined") return "appts";
+  const [tab, setTab] = useState<"shop" | "hours" | "plan" | "services" | "staff" | "pos">(() => {
+    if (typeof window === "undefined") return "shop";
     const saved = window.localStorage.getItem("salon.mgmt.tab");
-    return ["appts", "shop", "hours", "services", "staff", "pos"].includes(saved ?? "") ? saved as any : "appts";
+    return ["shop", "hours", "plan", "services", "staff", "pos"].includes(saved ?? "") ? saved as any : "shop";
   });
   const { data: shops } = useQuery({
     queryKey: ["owner-shops"],
@@ -79,22 +79,22 @@ function SalonYonetimi() {
 
         <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); window.localStorage.setItem("salon.mgmt.tab", v); }} className="w-full">
           <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="appts">Randevular</TabsTrigger>
             <TabsTrigger value="shop">Salon</TabsTrigger>
             <TabsTrigger value="hours">Saatler</TabsTrigger>
+            <TabsTrigger value="plan">Rezervasyon Planı</TabsTrigger>
             <TabsTrigger value="services">Hizmet</TabsTrigger>
             <TabsTrigger value="staff">Çalışan</TabsTrigger>
             <TabsTrigger value="pos">Sanal POS</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="appts" className="mt-3">
-            <AppointmentsTab shops={shops ?? []} />
-          </TabsContent>
           <TabsContent value="shop" className="mt-3">
             {activeShop ? <ShopInfoTab shop={activeShop} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
           <TabsContent value="hours" className="mt-3">
             {activeId ? <WorkingHoursTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
+          </TabsContent>
+          <TabsContent value="plan" className="mt-3">
+            {activeId ? <ReservationPlanTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
           <TabsContent value="services" className="mt-3">
             {activeId ? <ServicesTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
@@ -777,3 +777,78 @@ function StaffRow({ initial, onSave, onDelete }: { initial: any; onSave: (d: Sta
     </div>
   );
 }
+
+const PLAN_SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00"];
+
+function ReservationPlanTab({ shopId }: { shopId: string }) {
+  const qc = useQueryClient();
+  const today = new Date();
+  const [date, setDate] = useState<string>(() => {
+    const d = new Date(today); d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+
+  const { data: overrides } = useQuery({
+    queryKey: ["slot-overrides", shopId, date],
+    queryFn: async () => {
+      const { data } = await supabase.from("slot_overrides" as never)
+        .select("slot_time, is_active")
+        .eq("shop_id", shopId)
+        .eq("date", date);
+      return (data as { slot_time: string; is_active: boolean }[] | null) ?? [];
+    },
+  });
+
+  const map = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (overrides ?? []).forEach((o) => m.set(o.slot_time.slice(0, 5), o.is_active));
+    return m;
+  }, [overrides]);
+
+  const toggle = useMutation({
+    mutationFn: async (slot: string) => {
+      const current = map.has(slot) ? map.get(slot)! : true;
+      const next = !current;
+      const { error } = await supabase.from("slot_overrides" as never).upsert({
+        shop_id: shopId, date, slot_time: slot + ":00", is_active: next,
+      } as never, { onConflict: "shop_id,date,slot_time" });
+      if (error) throw error;
+      return next;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["slot-overrides", shopId, date] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <CalendarClock className="h-5 w-5 text-primary" />
+        <Label className="text-xs mb-0">Tarih</Label>
+        <Input type="date" className="flex-1" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Seçili tarihte saatlere tıklayarak açık/kapalı yapabilirsin. Kapalı saatler müşterilere seçim ekranında gizlenir.
+      </p>
+      <div className="grid grid-cols-4 gap-2">
+        {PLAN_SLOTS.map((s) => {
+          const isActive = map.has(s) ? map.get(s)! : true;
+          return (
+            <button
+              key={s}
+              onClick={() => toggle.mutate(s)}
+              className={cn(
+                "rounded-lg border py-2.5 text-sm font-medium active:scale-95 transition",
+                isActive
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-muted-foreground line-through opacity-70",
+              )}
+            >
+              {s}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

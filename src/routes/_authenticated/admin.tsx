@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { DB_CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket, Store, Phone, CheckCircle2 } from "lucide-react";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
@@ -54,10 +54,11 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-3 w-full mt-2">
+        <TabsList className="grid grid-cols-4 w-full mt-2">
           <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push</TabsTrigger>
           <TabsTrigger value="acct"><Receipt className="h-3.5 w-3.5 mr-1" /> Muhasebe</TabsTrigger>
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
+          <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -70,6 +71,7 @@ function AdminPanel() {
         <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
         <TabsContent value="acct"><AccountingTab /></TabsContent>
         <TabsContent value="discounts"><DiscountsTab /></TabsContent>
+        <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -829,7 +831,7 @@ function SettingsTab() {
     setForm({
       welcome_title: settings.welcome_title ?? "",
       welcome_subtitle: settings.welcome_subtitle ?? "",
-      app_name: settings.app_name ?? "BarberApp",
+      app_name: settings.app_name ?? "KuaförApp",
       logo_url: settings.logo_url ?? "",
       splash_url: settings.splash_url ?? "",
       hero_url: settings.hero_url ?? "",
@@ -911,7 +913,7 @@ function SettingsTab() {
     <div className="py-4 space-y-3">
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Uygulama Markası</p>
-        <div><Label>Uygulama Adı (üst bar)</Label><Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} placeholder="BarberApp" /></div>
+        <div><Label>Uygulama Adı (üst bar)</Label><Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} placeholder="KuaförApp" /></div>
         <div>
           <Label>Logo</Label>
           <div className="flex items-center gap-2">
@@ -1459,6 +1461,69 @@ function DiscountsTab() {
         ))}
         {(codes ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Henüz kupon yok.</p>}
       </div>
+    </div>
+  );
+}
+
+function BusinessRequestsTab() {
+  const qc = useQueryClient();
+  const { data: rows } = useQuery({
+    queryKey: ["admin-business-requests"],
+    queryFn: async () => {
+      const { data } = await supabase.from("business_requests" as never)
+        .select("id, created_at, business_name, address, services, subject, phone, status")
+        .order("created_at", { ascending: false });
+      return (data as Array<{ id: string; created_at: string; business_name: string; address: string; services: string; subject: string; phone: string; status: string }> | null) ?? [];
+    },
+  });
+
+  const mark = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const { error } = await supabase.from("business_requests" as never).update({ status } as never).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-business-requests"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("business_requests" as never).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-business-requests"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-2 py-2">
+      <p className="text-xs text-muted-foreground">İş yeri ekleme talepleri</p>
+      {(rows ?? []).length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Talep yok.</p>}
+      {(rows ?? []).map((r) => (
+        <div key={r.id} className="rounded-xl border border-border bg-card p-3 space-y-1">
+          <div className="flex justify-between items-start gap-2">
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{r.business_name}</p>
+              <p className="text-xs text-muted-foreground truncate">{r.address}</p>
+            </div>
+            <span className={`text-[10px] uppercase tracking-wider rounded-full px-2 py-0.5 ${r.status === "done" ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>{r.status ?? "pending"}</span>
+          </div>
+          <p className="text-xs"><span className="text-muted-foreground">Hizmetler:</span> {r.services}</p>
+          <p className="text-xs"><span className="text-muted-foreground">Konu:</span> {r.subject}</p>
+          <div className="flex items-center gap-2 pt-1">
+            <a href={`tel:${r.phone}`} className="inline-flex items-center gap-1 text-xs text-primary"><Phone className="h-3.5 w-3.5" />{r.phone}</a>
+            <span className="text-[10px] text-muted-foreground ml-auto">{new Date(r.created_at).toLocaleString("tr-TR")}</span>
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button size="sm" variant="outline" className="flex-1" onClick={() => mark.mutate({ id: r.id, status: r.status === "done" ? "pending" : "done" })}>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> {r.status === "done" ? "Beklemeye al" : "Tamamlandı"}
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => confirm("Talebi silmek istiyor musun?") && remove.mutate(r.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { addDays, format, startOfDay } from "date-fns";
 import { tr } from "date-fns/locale";
+import { useGeolocation } from "@/lib/geo";
+import { distanceKm, formatKm } from "@/lib/distance";
+import { MapPin } from "lucide-react";
 
 const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional() });
 
@@ -62,17 +65,27 @@ function BookPage() {
   });
 
 
+  const { coords } = useGeolocation();
+
   const { data: shops } = useQuery({
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
-      let q = supabase.from("barbershops").select("id, name, category, address, allow_full_payment, allow_deposit_payment");
+      let q = supabase.from("barbershops").select("id, name, category, address, lat, lng, allow_full_payment, allow_deposit_payment");
       const ui = category ? findUiCategory(category) : null;
       if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
       return data ?? [];
     },
   });
+
+  const sortedShops = useMemo((): Array<{ id: string; name: string; address: string | null; lat: number | null; lng: number | null; _km: number }> => {
+    const arr = (shops ?? []).map((s) => ({ ...s, _km: (coords && s.lat && s.lng) ? distanceKm(coords.lat, coords.lng, Number(s.lat), Number(s.lng)) : Infinity }));
+    arr.sort((a, b) => a._km - b._km);
+    return arr as never;
+  }, [shops, coords]);
+
+
   const { data: services } = useQuery({
     queryKey: ["book-services", shopId],
     enabled: !!shopId && !!userId,
@@ -138,6 +151,24 @@ function BookPage() {
     if (h) return !h.is_open;
     return d.getDay() === 0;
   };
+  const dateStr = date ? format(date, "yyyy-MM-dd") : null;
+  const { data: overrides } = useQuery({
+    queryKey: ["slot-overrides-book", shopId, dateStr],
+    enabled: !!shopId && !!dateStr,
+    queryFn: async () => {
+      const { data } = await supabase.from("slot_overrides" as never)
+        .select("slot_time, is_active")
+        .eq("shop_id", shopId!)
+        .eq("date", dateStr!);
+      return (data as { slot_time: string; is_active: boolean }[] | null) ?? [];
+    },
+  });
+  const overrideMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (overrides ?? []).forEach((o) => m.set(o.slot_time.slice(0, 5), o.is_active));
+    return m;
+  }, [overrides]);
+
   const availableSlots = useMemo(() => {
     if (!date) return [];
     const h = selectedDayHours;
@@ -145,8 +176,8 @@ function BookPage() {
     const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
     const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
     if (!open || !close) return [];
-    return SLOTS.filter((s) => s >= open && s < close);
-  }, [date, selectedDayHours]);
+    return SLOTS.filter((s) => s >= open && s < close).filter((s) => overrideMap.get(s) !== false);
+  }, [date, selectedDayHours, overrideMap]);
 
   useEffect(() => {
     if (date && isDateDisabled(date)) { setDate(undefined); setTime(null); }
@@ -279,18 +310,25 @@ function BookPage() {
           <>
             <button onClick={() => setStep(1)} className="text-xs text-primary">← Kategori</button>
             <h2 className="font-display text-xl">Salon Seç {category && `· ${findUiCategory(category)?.label ?? ""}`}</h2>
+            {coords && sortedShops.length > 0 && sortedShops[0]._km !== Infinity && (
+              <p className="text-xs text-muted-foreground">En yakın: <span className="text-primary font-semibold">{sortedShops[0].name}</span> · {formatKm(sortedShops[0]._km)}</p>
+            )}
             <div className="space-y-2">
-              {(shops ?? []).map((s) => (
+              {sortedShops.map((s, i) => (
                 <button key={s.id} onClick={() => { setShopId(s.id); setStep(3); }}
-                  className={cn("w-full text-left rounded-xl border p-3 active:scale-[0.98] transition", shopId === s.id ? "border-primary" : "border-border bg-card")}>
-                  <p className="font-medium">{s.name}</p>
+                  className={cn("w-full text-left rounded-xl border p-3 active:scale-[0.98] transition", shopId === s.id ? "border-primary" : (i === 0 && coords && s._km !== Infinity ? "border-primary/60 bg-primary/5" : "border-border bg-card"))}>
+                  <div className="flex justify-between gap-2">
+                    <p className="font-medium">{s.name}{i === 0 && coords && s._km !== Infinity && <span className="ml-2 text-[10px] rounded-full bg-primary/20 text-primary px-2 py-0.5">En yakın</span>}</p>
+                    {s._km !== Infinity && <span className="text-xs text-primary shrink-0 flex items-center gap-0.5"><MapPin className="h-3 w-3" />{formatKm(s._km)}</span>}
+                  </div>
                   <p className="text-xs text-muted-foreground">{s.address}</p>
                 </button>
               ))}
-              {(shops ?? []).length === 0 && <p className="text-sm text-muted-foreground">Salon yok.</p>}
+              {sortedShops.length === 0 && <p className="text-sm text-muted-foreground">Salon yok.</p>}
             </div>
           </>
         )}
+
 
         {step === 3 && (
           <>

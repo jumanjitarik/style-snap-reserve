@@ -15,9 +15,9 @@ import categoryMarble from "@/assets/category-marble.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "BarberApp — Berber & Güzellik Randevusu" },
+      { title: "KuaförApp — Berber & Güzellik Randevusu" },
       { name: "description", content: "Yakınındaki en iyi berberleri keşfet, online randevu al." },
-      { property: "og:title", content: "BarberApp — Berber & Güzellik Randevusu" },
+      { property: "og:title", content: "KuaförApp — Berber & Güzellik Randevusu" },
       { property: "og:description", content: "Yakınındaki en iyi berberleri keşfet, online randevu al." },
       { property: "og:url", content: "https://style-snap-reserve.lovable.app/" },
     ],

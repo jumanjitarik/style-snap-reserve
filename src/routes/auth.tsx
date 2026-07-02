@@ -17,7 +17,7 @@ import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Giriş / Kayıt — BarberApp" }] }),
+  head: () => ({ meta: [{ title: "Giriş / Kayıt — KuaförApp" }] }),
   component: AuthPage,
 });
 
