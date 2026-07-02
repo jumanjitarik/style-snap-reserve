@@ -17,7 +17,7 @@ import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 
-const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional() });
+const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional(), mode: z.enum(["appointment", "membership"]).optional() });
 
 export const Route = createFileRoute("/randevu-al")({
   validateSearch: (s) => searchSchema.parse(s),
