@@ -143,7 +143,7 @@ function BorsaPage() {
         </div>
       </header>
 
-      <p className="px-4 text-xs text-muted-foreground pb-2">{coords ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
+      
 
       <div className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
         <button
@@ -180,6 +180,9 @@ function BorsaPage() {
         )}
 
         <Input placeholder="Hizmet, salon veya şehir ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
+
+        <p className="text-xs text-muted-foreground">{coords ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
+
 
         <div className="space-y-2">
           {rows.length === 0 && (
