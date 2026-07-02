@@ -12,8 +12,12 @@ import { Calendar, MapPin, Phone, Calendar as CalIcon, BadgeCheck } from "lucide
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/randevularim")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    tab: (s.tab as Tab | undefined),
+  }),
   component: MyAppts,
 });
+
 
 type Tab = "customers" | "mine" | "customer_memberships" | "memberships";
 
