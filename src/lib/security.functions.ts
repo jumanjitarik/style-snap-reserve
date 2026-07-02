@@ -115,10 +115,6 @@ export const recordLoginSuccess = createServerFn({ method: "POST" })
 
 // --------- Admin ---------
 
-async function ensureAdmin(supabase: NonNullable<Parameters<typeof requireSupabaseAuth>[0]> extends never ? never : never, userId: string) {
-  void supabase; void userId;
-}
-
 export const adminSecurityOverview = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
