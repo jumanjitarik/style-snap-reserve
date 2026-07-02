@@ -94,7 +94,7 @@ function BookPage() {
   const { data: shopPay } = useQuery({
     queryKey: ["book-shop-pay", shopId],
     enabled: !!shopId,
-    queryFn: async () => (await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment").eq("id", shopId!).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment, category, slot_capacity").eq("id", shopId!).maybeSingle()).data,
   });
   const { data: depositPct } = useQuery({
     queryKey: ["deposit-percent"],
@@ -108,10 +108,14 @@ function BookPage() {
   const allowFull = shopPay?.allow_full_payment ?? true;
   const allowDeposit = shopPay?.allow_deposit_payment ?? true;
   const depPct = depositPct ?? 25;
+  const shopCategory = (shopPay as any)?.category as string | undefined;
+  const slotCapacity = Math.max(1, Number((shopPay as any)?.slot_capacity ?? 1));
+  const skipDateTime = shopCategory === "fitness" || shopCategory === "yoga_pilates";
   useEffect(() => {
     if (!allowFull && paymentMethod === "full") setPaymentMethod("deposit");
     if (!allowDeposit && paymentMethod === "deposit") setPaymentMethod("full");
   }, [allowFull, allowDeposit]);
+
 
   const { data: staff } = useQuery({
     queryKey: ["book-staff", shopId],
