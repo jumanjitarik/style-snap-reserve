@@ -42,7 +42,7 @@ function SalonYonetimi() {
       const isAdmin = !!roles?.some((r) => r.role === "admin");
       let q = supabase
         .from("barbershops")
-        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city, owner_id")
+        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city, owner_id, slot_capacity")
         .order("name");
       if (!isAdmin) q = q.eq("owner_id", u.user!.id);
       const { data, error } = await q;
