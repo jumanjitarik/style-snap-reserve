@@ -32,7 +32,7 @@ function AccountPage() {
     if (msg.length < 3) { toast.error("Lütfen görüşünü yaz"); return; }
     if (!userId) { toast.error("Giriş gerekli"); return; }
     setFeedbackSending(true);
-    const { error } = await (supabase.from as (t: string) => { insert: (row: Record<string, unknown>) => Promise<{ error: { message: string } | null }> })("feedback").insert({ user_id: userId, message: msg });
+    const { error } = await (supabase.from as unknown as (t: string) => { insert: (row: Record<string, unknown>) => Promise<{ error: { message: string } | null }> })("feedback").insert({ user_id: userId, message: msg });
     setFeedbackSending(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Başarıyla gönderilmiştir");
