@@ -777,3 +777,78 @@ function StaffRow({ initial, onSave, onDelete }: { initial: any; onSave: (d: Sta
     </div>
   );
 }
+
+const PLAN_SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00"];
+
+function ReservationPlanTab({ shopId }: { shopId: string }) {
+  const qc = useQueryClient();
+  const today = new Date();
+  const [date, setDate] = useState<string>(() => {
+    const d = new Date(today); d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  });
+
+  const { data: overrides } = useQuery({
+    queryKey: ["slot-overrides", shopId, date],
+    queryFn: async () => {
+      const { data } = await supabase.from("slot_overrides" as never)
+        .select("slot_time, is_active")
+        .eq("shop_id", shopId)
+        .eq("date", date);
+      return (data as { slot_time: string; is_active: boolean }[] | null) ?? [];
+    },
+  });
+
+  const map = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (overrides ?? []).forEach((o) => m.set(o.slot_time.slice(0, 5), o.is_active));
+    return m;
+  }, [overrides]);
+
+  const toggle = useMutation({
+    mutationFn: async (slot: string) => {
+      const current = map.has(slot) ? map.get(slot)! : true;
+      const next = !current;
+      const { error } = await supabase.from("slot_overrides" as never).upsert({
+        shop_id: shopId, date, slot_time: slot + ":00", is_active: next,
+      } as never, { onConflict: "shop_id,date,slot_time" });
+      if (error) throw error;
+      return next;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["slot-overrides", shopId, date] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <CalendarClock className="h-5 w-5 text-primary" />
+        <Label className="text-xs mb-0">Tarih</Label>
+        <Input type="date" className="flex-1" value={date} onChange={(e) => setDate(e.target.value)} />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Seçili tarihte saatlere tıklayarak açık/kapalı yapabilirsin. Kapalı saatler müşterilere seçim ekranında gizlenir.
+      </p>
+      <div className="grid grid-cols-4 gap-2">
+        {PLAN_SLOTS.map((s) => {
+          const isActive = map.has(s) ? map.get(s)! : true;
+          return (
+            <button
+              key={s}
+              onClick={() => toggle.mutate(s)}
+              className={cn(
+                "rounded-lg border py-2.5 text-sm font-medium active:scale-95 transition",
+                isActive
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-muted-foreground line-through opacity-70",
+              )}
+            >
+              {s}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
