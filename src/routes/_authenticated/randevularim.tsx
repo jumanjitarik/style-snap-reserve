@@ -34,9 +34,10 @@ function toneClass(tone: StatusLabel["tone"]) {
 }
 
 function MyAppts() {
+  const { tab: initialTab } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
   const [isStaffOrOwner, setIsStaffOrOwner] = useState(false);
-  const [tab, setTab] = useState<Tab>("mine");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "mine");
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -46,9 +47,10 @@ function MyAppts() {
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
       const so = !!roles?.some((r) => r.role === "owner" || r.role === "staff" || r.role === "admin");
       setIsStaffOrOwner(so);
-      if (so) setTab("customers");
+      if (!initialTab && so) setTab("customers");
     });
-  }, []);
+  }, [initialTab]);
+
 
   const TabBtn = ({ id, label }: { id: Tab; label: string }) => (
     <button
