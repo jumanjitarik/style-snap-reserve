@@ -572,9 +572,11 @@ function BookPage() {
               </div>
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
-                ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
-                : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
+              {create.isPending ? "İşleniyor..." : skipDateTime
+                ? `Üyeliği Satın Al · ${finalTotal.toFixed(0)}₺`
+                : paymentMethod === "deposit"
+                  ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
+                  : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
 
