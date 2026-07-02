@@ -82,7 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "KuaförApp — Güzellik Bakım Randevu" },
       { name: "description", content: "Erkek ve Kadın kuaförü, lazer, tırnak, cilt ve estetik için online randevu." },
       { name: "theme-color", content: "#1a1410" },
-      { property: "og:site_name", content: "BarberApp" },
+      { property: "og:site_name", content: "KuaförApp" },
       { property: "og:type", content: "website" },
       { property: "og:title", content: "KuaförApp — Güzellik Bakım Randevu" },
       { property: "og:description", content: "Erkek ve Kadın kuaförü, lazer, tırnak, cilt ve estetik için online randevu." },

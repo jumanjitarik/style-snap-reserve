@@ -829,7 +829,7 @@ function SettingsTab() {
     setForm({
       welcome_title: settings.welcome_title ?? "",
       welcome_subtitle: settings.welcome_subtitle ?? "",
-      app_name: settings.app_name ?? "BarberApp",
+      app_name: settings.app_name ?? "KuaförApp",
       logo_url: settings.logo_url ?? "",
       splash_url: settings.splash_url ?? "",
       hero_url: settings.hero_url ?? "",
@@ -911,7 +911,7 @@ function SettingsTab() {
     <div className="py-4 space-y-3">
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Uygulama Markası</p>
-        <div><Label>Uygulama Adı (üst bar)</Label><Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} placeholder="BarberApp" /></div>
+        <div><Label>Uygulama Adı (üst bar)</Label><Input value={form.app_name} onChange={(e) => setForm({ ...form, app_name: e.target.value })} placeholder="KuaförApp" /></div>
         <div>
           <Label>Logo</Label>
           <div className="flex items-center gap-2">

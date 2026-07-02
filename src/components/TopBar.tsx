@@ -55,7 +55,7 @@ export function TopBar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const name = branding?.app_name?.trim() || "BarberApp";
+  const name = branding?.app_name?.trim() || "KuaförApp";
   const logo = branding?.logo_url?.trim() || defaultLogo.url;
   const isHome = pathname === "/";
 
