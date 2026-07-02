@@ -354,8 +354,32 @@ function AccountPage() {
           </div>
         )}
 
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-card p-4 active:scale-[0.98] transition text-left"
+        >
+          <MessageSquare className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Geri Bildirim</span>
+        </button>
 
-
+        <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Geri Bildirim</DialogTitle>
+              <DialogDescription>Görüş ve önerini bize ilet.</DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={feedbackMsg}
+              onChange={(e) => setFeedbackMsg(e.target.value)}
+              placeholder="Görüş / öneri..."
+              rows={5}
+              maxLength={2000}
+            />
+            <Button onClick={sendFeedback} disabled={feedbackSending}>
+              {feedbackSending ? "Gönderiliyor..." : "Gönder"}
+            </Button>
+          </DialogContent>
+        </Dialog>
 
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
