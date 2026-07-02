@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X, Clock, CreditCard } from "lucide-react";
+import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X, Clock, CreditCard, CalendarClock } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
