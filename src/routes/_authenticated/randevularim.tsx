@@ -196,10 +196,11 @@ function MyOwnList() {
   );
 }
 
-function CustomerList({ userId }: { userId: string }) {
+function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
   const { data: shopIds } = useQuery({
-    queryKey: ["my-shop-ids", userId],
+    queryKey: ["my-shop-ids", userId, isAdmin],
     queryFn: async () => {
+      if (isAdmin) return null; // admin sees all
       const [owned, asStaff] = await Promise.all([
         supabase.from("barbershops").select("id").eq("owner_id", userId),
         supabase.from("staff").select("shop_id").eq("user_id", userId),
@@ -211,17 +212,19 @@ function CustomerList({ userId }: { userId: string }) {
   });
 
   const { data: appts } = useQuery({
-    queryKey: ["staff-appts", shopIds],
-    enabled: !!shopIds && shopIds.length > 0,
+    queryKey: ["staff-appts", isAdmin ? "all" : shopIds],
+    enabled: isAdmin || (!!shopIds && shopIds.length > 0),
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from("appointments")
         .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, user_id, guest_name, guest_phone, shop_id, service_id, notes")
-        .in("shop_id", shopIds!)
         .order("starts_at", { ascending: true });
+      if (!isAdmin) q = q.in("shop_id", shopIds!);
+      const { data } = await q;
       return data ?? [];
     },
   });
+
 
   const userIds = Array.from(new Set((appts ?? []).map((a) => a.user_id).filter(Boolean) as string[]));
   const { data: profiles } = useQuery({
