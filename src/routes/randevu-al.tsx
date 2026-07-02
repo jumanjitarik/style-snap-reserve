@@ -66,7 +66,7 @@ function BookPage() {
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
-      let q = supabase.from("barbershops").select("id, name, category, address");
+      let q = supabase.from("barbershops").select("id, name, category, address, allow_full_payment, allow_deposit_payment");
       const ui = category ? findUiCategory(category) : null;
       if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
       const { data } = await q;
