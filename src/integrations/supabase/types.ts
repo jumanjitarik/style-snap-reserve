@@ -254,6 +254,45 @@ export type Database = {
         }
         Relationships: []
       }
+      business_requests: {
+        Row: {
+          address: string
+          business_name: string
+          created_at: string
+          created_by: string | null
+          id: string
+          phone: string
+          services: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          business_name: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          phone: string
+          services: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          business_name?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          phone?: string
+          services?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content_translations: {
         Row: {
           created_at: string
@@ -554,6 +593,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "shop_working_hours_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      slot_overrides: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_active: boolean
+          shop_id: string
+          slot_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_active?: boolean
+          shop_id: string
+          slot_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_active?: boolean
+          shop_id?: string
+          slot_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slot_overrides_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "barbershops"
