@@ -328,12 +328,14 @@ function BookPage() {
     onSuccess: (kind) => {
       if (kind === "membership") {
         toast.success("Üyelik satın alındı!");
+        navigate({ to: "/randevularim", search: { tab: "memberships" } as never });
       } else {
         toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı!" : "Ödeme alındı, randevu onaylandı!");
+        navigate({ to: "/randevularim", search: { tab: "mine" } as never });
       }
-      navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
+
   });
 
 
