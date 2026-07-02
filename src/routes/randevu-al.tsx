@@ -94,7 +94,7 @@ function BookPage() {
   const { data: shopPay } = useQuery({
     queryKey: ["book-shop-pay", shopId],
     enabled: !!shopId,
-    queryFn: async () => (await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment").eq("id", shopId!).maybeSingle()).data,
+    queryFn: async () => (await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment, category, slot_capacity").eq("id", shopId!).maybeSingle()).data,
   });
   const { data: depositPct } = useQuery({
     queryKey: ["deposit-percent"],
@@ -108,10 +108,14 @@ function BookPage() {
   const allowFull = shopPay?.allow_full_payment ?? true;
   const allowDeposit = shopPay?.allow_deposit_payment ?? true;
   const depPct = depositPct ?? 25;
+  const shopCategory = (shopPay as any)?.category as string | undefined;
+  const slotCapacity = Math.max(1, Number((shopPay as any)?.slot_capacity ?? 1));
+  const skipDateTime = shopCategory === "fitness" || shopCategory === "yoga_pilates";
   useEffect(() => {
     if (!allowFull && paymentMethod === "full") setPaymentMethod("deposit");
     if (!allowDeposit && paymentMethod === "deposit") setPaymentMethod("full");
   }, [allowFull, allowDeposit]);
+
 
   const { data: staff } = useQuery({
     queryKey: ["book-staff", shopId],
@@ -169,6 +173,32 @@ function BookPage() {
     return m;
   }, [overrides]);
 
+  // Aynı gün için mevcut randevuları çekip saat başına doluluk sayısını çıkar
+  const { data: dayAppts } = useQuery({
+    queryKey: ["slot-usage", shopId, dateStr],
+    enabled: !!shopId && !!dateStr,
+    queryFn: async () => {
+      const start = new Date(dateStr! + "T00:00:00").toISOString();
+      const end = new Date(dateStr! + "T23:59:59").toISOString();
+      const { data } = await supabase.from("appointments")
+        .select("starts_at, status")
+        .eq("shop_id", shopId!)
+        .neq("status", "cancelled")
+        .gte("starts_at", start)
+        .lte("starts_at", end);
+      return data ?? [];
+    },
+  });
+  const slotUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    (dayAppts ?? []).forEach((a: any) => {
+      const d = new Date(a.starts_at);
+      const key = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      m.set(key, (m.get(key) ?? 0) + 1);
+    });
+    return m;
+  }, [dayAppts]);
+
   const availableSlots = useMemo(() => {
     if (!date) return [];
     const h = selectedDayHours;
@@ -176,8 +206,12 @@ function BookPage() {
     const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
     const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
     if (!open || !close) return [];
-    return SLOTS.filter((s) => s >= open && s < close).filter((s) => overrideMap.get(s) !== false);
-  }, [date, selectedDayHours, overrideMap]);
+    return SLOTS
+      .filter((s) => s >= open && s < close)
+      .filter((s) => overrideMap.get(s) !== false)
+      .filter((s) => (slotUsage.get(s) ?? 0) < slotCapacity);
+  }, [date, selectedDayHours, overrideMap, slotUsage, slotCapacity]);
+
 
   useEffect(() => {
     if (date && isDateDisabled(date)) { setDate(undefined); setTime(null); }
@@ -369,17 +403,36 @@ function BookPage() {
                 </div>
               </>
             )}
-            <Button onClick={() => serviceIds.length > 0 && setStep(4)} disabled={serviceIds.length === 0} className="w-full h-12">
-              Devam · {totalPrice.toFixed(0)}₺ ({totalMin} dk)
+            <Button onClick={() => {
+              if (serviceIds.length === 0) return;
+              if (skipDateTime) {
+                // Fitness / Yoga & Pilates: tarih & saat sormadan direkt ödeme
+                let d = addDays(startOfDay(new Date()), 1);
+                for (let i = 0; i < 14; i++) {
+                  const h = hoursByDay.get(d.getDay());
+                  const open = h ? h.is_open : d.getDay() !== 0;
+                  if (open) break;
+                  d = addDays(d, 1);
+                }
+                const h = hoursByDay.get(d.getDay());
+                setDate(d);
+                setTime((h?.open_time ?? "10:00").slice(0, 5));
+                setStep(5);
+              } else {
+                setStep(4);
+              }
+            }} disabled={serviceIds.length === 0} className="w-full h-12">
+              Devam · {totalPrice.toFixed(0)}₺ {skipDateTime ? "" : `(${totalMin} dk)`}
             </Button>
+
           </>
         )}
 
-        {step === 4 && (
+        {step === 4 && !skipDateTime && (
           <>
             <button onClick={() => setStep(3)} className="text-xs text-primary">← Hizmet</button>
             <h2 className="font-display text-xl">Tarih & Saat</h2>
-            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır.</p>
+            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır. Dolan saatler pasif gözükür.</p>
             <div className="rounded-xl border border-border bg-card p-2">
               <Calendar mode="single" selected={date} onSelect={setDate} locale={tr}
                 disabled={isDateDisabled}
@@ -401,8 +454,9 @@ function BookPage() {
 
         {step === 5 && (
           <>
-            <button onClick={() => setStep(4)} className="text-xs text-primary">← Tarih</button>
+            <button onClick={() => setStep(skipDateTime ? 3 : 4)} className="text-xs text-primary">← {skipDateTime ? "Hizmet" : "Tarih"}</button>
             <h2 className="font-display text-xl">Ödeme & Onay</h2>
+
             <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
               <p className="text-muted-foreground text-xs uppercase tracking-wider">Hizmetler</p>
               {selectedServices.map((s) => (
@@ -453,7 +507,7 @@ function BookPage() {
                 <p className="text-[10px] text-muted-foreground text-right">{customerNote.length}/300</p>
               </div>
               <hr className="border-border" />
-              <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
+              {!skipDateTime && <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>}
               {(appliedDiscount || pointsToUse > 0) && (
                 <>
                   <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>

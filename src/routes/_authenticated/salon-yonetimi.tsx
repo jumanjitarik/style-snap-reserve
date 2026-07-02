@@ -42,7 +42,7 @@ function SalonYonetimi() {
       const isAdmin = !!roles?.some((r) => r.role === "admin");
       let q = supabase
         .from("barbershops")
-        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city, owner_id")
+        .select("id, name, description, address, phone, lat, lng, category, cover_image_url, city, owner_id, slot_capacity")
         .order("name");
       if (!isAdmin) q = q.eq("owner_id", u.user!.id);
       const { data, error } = await q;
@@ -378,8 +378,9 @@ type ShopRow = {
   id: string; name: string; description: string | null; address: string | null;
   phone: string | null; lat: number | null; lng: number | null;
   category: string | null; cover_image_url: string | null;
-  city: string | null;
+  city: string | null; slot_capacity?: number | null;
 };
+
 
 async function uploadImage(file: File, folder: string): Promise<string> {
   const { data: u } = await supabase.auth.getUser();
@@ -510,6 +511,7 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
     name: shop.name, description: shop.description ?? "", address: shop.address ?? "",
     phone: shop.phone ?? "", lat: shop.lat ?? "" as number | string, lng: shop.lng ?? "" as number | string,
     city: shop.city ?? "", cover_image_url: shop.cover_image_url ?? "",
+    slot_capacity: shop.slot_capacity ?? 1,
   });
 
   const save = useMutation({
@@ -521,6 +523,7 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
         lng: form.lng === "" ? null : Number(form.lng),
         city: form.city || null,
         cover_image_url: form.cover_image_url || null,
+        slot_capacity: Math.max(1, Number(form.slot_capacity) || 1),
       }).eq("id", shop.id);
       if (error) throw error;
     },
@@ -559,6 +562,11 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
           <div><Label className="text-xs">Enlem</Label><Input value={String(form.lat)} onChange={(e) => setForm({ ...form, lat: e.target.value })} /></div>
           <div><Label className="text-xs">Boylam</Label><Input value={String(form.lng)} onChange={(e) => setForm({ ...form, lng: e.target.value })} /></div>
         </div>
+        <div>
+          <Label className="text-xs">Aynı Saat Diliminde Maks. Randevu Sayısı</Label>
+          <Input type="number" min={1} value={String(form.slot_capacity)} onChange={(e) => setForm({ ...form, slot_capacity: Number(e.target.value) || 1 })} />
+          <p className="text-[10px] text-muted-foreground mt-1">Örn. "1" yazarsan aynı saate sadece 1 müşteri randevu alabilir; dolduğunda o saat pasif gözükür.</p>
+        </div>
         <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">
           <Save className="h-4 w-4 mr-1" /> Kaydet
         </Button>
@@ -566,6 +574,7 @@ function ShopInfoTab({ shop }: { shop: ShopRow }) {
     </div>
   );
 }
+
 
 /* ============ SERVICES ============ */
 type ServiceForm = { id?: string; name: string; description: string; duration_min: number; price: number };
