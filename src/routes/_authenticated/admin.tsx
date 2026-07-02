@@ -991,6 +991,11 @@ function SettingsTab() {
           <Input type="number" min="0" max="100" step="0.1" value={form.loyalty_percent} onChange={(e) => setForm({ ...form, loyalty_percent: e.target.value })} />
           <p className="text-[11px] text-muted-foreground mt-1">Örn: %1 → 100₺ ödemeden 1 puan</p>
         </div>
+        <div>
+          <Label>Hoş Geldin Puanı (yeni üyelere)</Label>
+          <Input type="number" min="0" step="1" value={form.welcome_points} onChange={(e) => setForm({ ...form, welcome_points: e.target.value })} />
+          <p className="text-[11px] text-muted-foreground mt-1">Her yeni üyeliğe otomatik olarak eklenir. Örn: 50 → yeni üyede 50 puan.</p>
+        </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Kapora / Ödeme</p>
