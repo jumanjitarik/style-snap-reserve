@@ -819,6 +819,7 @@ function SettingsTab() {
     welcome_line3_text: "VE ŞIKSIN", welcome_line3_color: "#FFD400",
     loyalty_percent: "1",
     deposit_percent: "25",
+    welcome_points: "0",
     hero_height_px: "120",
     gap_top_px: "8",
     gap_line12_px: "2",
@@ -846,6 +847,7 @@ function SettingsTab() {
       welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
       loyalty_percent: settings.loyalty_percent ?? "1",
       deposit_percent: settings.deposit_percent ?? "25",
+      welcome_points: settings.welcome_points ?? "0",
 
       hero_height_px: settings.hero_height_px ?? "120",
       gap_top_px: settings.gap_top_px ?? "8",
@@ -890,6 +892,8 @@ function SettingsTab() {
         { key: "welcome_line3_color", value: form.welcome_line3_color },
         { key: "loyalty_percent", value: String(Number(form.loyalty_percent) || 0) },
         { key: "deposit_percent", value: String(Math.max(1, Math.min(100, Number(form.deposit_percent) || 25))) },
+        { key: "welcome_points", value: String(Math.max(0, Math.floor(Number(form.welcome_points) || 0))) },
+
 
         { key: "hero_height_px", value: String(Number(form.hero_height_px) || 120) },
         { key: "gap_top_px", value: String(Number(form.gap_top_px) || 0) },
@@ -986,6 +990,11 @@ function SettingsTab() {
           <Label>Kart Çekiminden Kazanılacak Puan (%)</Label>
           <Input type="number" min="0" max="100" step="0.1" value={form.loyalty_percent} onChange={(e) => setForm({ ...form, loyalty_percent: e.target.value })} />
           <p className="text-[11px] text-muted-foreground mt-1">Örn: %1 → 100₺ ödemeden 1 puan</p>
+        </div>
+        <div>
+          <Label>Hoş Geldin Puanı (yeni üyelere)</Label>
+          <Input type="number" min="0" step="1" value={form.welcome_points} onChange={(e) => setForm({ ...form, welcome_points: e.target.value })} />
+          <p className="text-[11px] text-muted-foreground mt-1">Her yeni üyeliğe otomatik olarak eklenir. Örn: 50 → yeni üyede 50 puan.</p>
         </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">

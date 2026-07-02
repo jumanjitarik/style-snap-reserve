@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart, CalendarPlus, Megaphone } from "lucide-react";
+import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart, CalendarPlus, Megaphone, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -160,6 +160,16 @@ export function BottomNav() {
               <div>
                 <p className="font-semibold text-foreground">Randevu Al</p>
                 <p className="text-xs text-muted-foreground">Yakınındaki salonlardan hemen rezervasyon</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setFabOpen(false); navigate({ to: "/randevu-al", search: { mode: "membership" } as never }); }}
+              className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4 text-left transition active:scale-95"
+            >
+              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary"><Ticket className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-foreground">Üyelik Al</p>
+                <p className="text-xs text-muted-foreground">Fitness, Yoga &amp; Pilates üyelikleri</p>
               </div>
             </button>
             <button

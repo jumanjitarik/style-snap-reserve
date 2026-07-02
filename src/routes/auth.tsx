@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -12,7 +12,7 @@ import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 
 import { toast } from "sonner";
-import { Scissors, Apple } from "lucide-react";
+import { Apple } from "lucide-react";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 
@@ -116,12 +116,7 @@ function AuthPage() {
     <AppShell>
       <BackButton to="/" />
       <div className="flex flex-col px-6 pt-4 pb-32 max-w-md mx-auto">
-        <Link to="/" className="mb-6 flex items-center gap-2 text-primary">
-          <Scissors className="h-6 w-6" />
-          <span className="font-display text-2xl tracking-wider">BARBERAPP</span>
-        </Link>
-
-        <h1 className="font-display text-4xl">{mode === "login" ? "Tekrar Hoş Geldin" : "Aramıza Katıl"}</h1>
+        <h1 className="font-display text-4xl mt-2">{mode === "login" ? "Hoş Geldin" : "Aramıza Katıl"}</h1>
         <p className="text-sm text-muted-foreground mt-1">{mode === "login" ? "Hesabına giriş yap" : "Yeni bir hesap oluştur"}</p>
 
         {mode === "login" && (

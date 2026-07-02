@@ -17,7 +17,7 @@ import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { MapPin } from "lucide-react";
 
-const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional() });
+const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional(), mode: z.enum(["appointment", "membership"]).optional() });
 
 export const Route = createFileRoute("/randevu-al")({
   validateSearch: (s) => searchSchema.parse(s),
@@ -28,7 +28,15 @@ const SLOTS = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","
 
 function BookPage() {
   const navigate = useNavigate();
-  const { shop: initialShop, service: initialService, services: initialServices } = Route.useSearch();
+  const { shop: initialShop, service: initialService, services: initialServices, mode } = Route.useSearch();
+  const isMembershipMode = mode === "membership";
+  const pageTitle = isMembershipMode ? "Üyelik Al" : "Randevu Al";
+  const visibleCategories = useMemo(() => {
+    const membershipKeys = new Set(["fitness", "yoga_pilates"]);
+    return isMembershipMode
+      ? CATEGORIES.filter((c) => membershipKeys.has(c.key))
+      : CATEGORIES.filter((c) => !membershipKeys.has(c.key));
+  }, [isMembershipMode]);
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -344,7 +352,7 @@ function BookPage() {
       <AppShell>
         <BackButton to="/" />
         <header className="px-4 pt-4 pb-3">
-          <h1 className="font-display text-3xl">Randevu Al</h1>
+          <h1 className="font-display text-3xl">{pageTitle}</h1>
           <p className="text-sm text-muted-foreground mt-1">Giriş sayfasına yönlendiriliyorsun…</p>
         </header>
       </AppShell>
@@ -355,7 +363,7 @@ function BookPage() {
     <AppShell>
       <BackButton to="/" />
       <header className="px-4 pt-4 pb-3">
-        <h1 className="font-display text-3xl">Randevu Al</h1>
+        <h1 className="font-display text-3xl">{pageTitle}</h1>
         <div className="mt-3 flex gap-1">
           {[1,2,3,4,5].map((n) => (
             <div key={n} className={cn("h-1 flex-1 rounded-full", n <= step ? "bg-primary" : "bg-muted")} />
@@ -368,7 +376,7 @@ function BookPage() {
           <>
             <h2 className="font-display text-xl">Kategori Seç</h2>
             <div className="grid grid-cols-2 gap-2">
-              {CATEGORIES.map((c) => (
+              {visibleCategories.map((c) => (
                 <button key={c.key} onClick={() => { setCategory(c.key); setStep(2); }}
                   className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition">
                   <c.icon className="h-7 w-7 text-primary" />
