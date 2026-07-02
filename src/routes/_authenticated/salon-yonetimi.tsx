@@ -79,22 +79,22 @@ function SalonYonetimi() {
 
         <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); window.localStorage.setItem("salon.mgmt.tab", v); }} className="w-full">
           <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="appts">Randevular</TabsTrigger>
             <TabsTrigger value="shop">Salon</TabsTrigger>
             <TabsTrigger value="hours">Saatler</TabsTrigger>
+            <TabsTrigger value="plan">Rezervasyon Planı</TabsTrigger>
             <TabsTrigger value="services">Hizmet</TabsTrigger>
             <TabsTrigger value="staff">Çalışan</TabsTrigger>
             <TabsTrigger value="pos">Sanal POS</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="appts" className="mt-3">
-            <AppointmentsTab shops={shops ?? []} />
-          </TabsContent>
           <TabsContent value="shop" className="mt-3">
             {activeShop ? <ShopInfoTab shop={activeShop} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
           <TabsContent value="hours" className="mt-3">
             {activeId ? <WorkingHoursTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
+          </TabsContent>
+          <TabsContent value="plan" className="mt-3">
+            {activeId ? <ReservationPlanTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
           </TabsContent>
           <TabsContent value="services" className="mt-3">
             {activeId ? <ServicesTab shopId={activeId} /> : <p className="text-sm text-muted-foreground">Salon yok.</p>}
