@@ -12,7 +12,7 @@ import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 
 import { toast } from "sonner";
-import { Scissors, Apple } from "lucide-react";
+import { Apple } from "lucide-react";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 
