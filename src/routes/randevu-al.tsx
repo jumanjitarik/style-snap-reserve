@@ -78,6 +78,28 @@ function BookPage() {
     enabled: !!shopId && !!userId,
     queryFn: async () => (await supabase.from("services").select("*").eq("shop_id", shopId!)).data ?? [],
   });
+  const { data: shopPay } = useQuery({
+    queryKey: ["book-shop-pay", shopId],
+    enabled: !!shopId,
+    queryFn: async () => (await supabase.from("barbershops").select("allow_full_payment, allow_deposit_payment").eq("id", shopId!).maybeSingle()).data,
+  });
+  const { data: depositPct } = useQuery({
+    queryKey: ["deposit-percent"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "deposit_percent").maybeSingle();
+      const n = Number(data?.value ?? 25);
+      return isNaN(n) ? 25 : Math.max(1, Math.min(100, n));
+    },
+    staleTime: 60_000,
+  });
+  const allowFull = shopPay?.allow_full_payment ?? true;
+  const allowDeposit = shopPay?.allow_deposit_payment ?? true;
+  const depPct = depositPct ?? 25;
+  useEffect(() => {
+    if (!allowFull && paymentMethod === "full") setPaymentMethod("deposit");
+    if (!allowDeposit && paymentMethod === "deposit") setPaymentMethod("full");
+  }, [allowFull, allowDeposit]);
+
   const { data: staff } = useQuery({
     queryKey: ["book-staff", shopId],
     enabled: !!shopId && !!userId,
