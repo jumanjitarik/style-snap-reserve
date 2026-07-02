@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart, CalendarPlus, Megaphone } from "lucide-react";
+import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart, CalendarPlus, Megaphone, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
