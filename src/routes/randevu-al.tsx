@@ -173,6 +173,32 @@ function BookPage() {
     return m;
   }, [overrides]);
 
+  // Aynı gün için mevcut randevuları çekip saat başına doluluk sayısını çıkar
+  const { data: dayAppts } = useQuery({
+    queryKey: ["slot-usage", shopId, dateStr],
+    enabled: !!shopId && !!dateStr,
+    queryFn: async () => {
+      const start = new Date(dateStr! + "T00:00:00").toISOString();
+      const end = new Date(dateStr! + "T23:59:59").toISOString();
+      const { data } = await supabase.from("appointments")
+        .select("starts_at, status")
+        .eq("shop_id", shopId!)
+        .neq("status", "cancelled")
+        .gte("starts_at", start)
+        .lte("starts_at", end);
+      return data ?? [];
+    },
+  });
+  const slotUsage = useMemo(() => {
+    const m = new Map<string, number>();
+    (dayAppts ?? []).forEach((a: any) => {
+      const d = new Date(a.starts_at);
+      const key = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      m.set(key, (m.get(key) ?? 0) + 1);
+    });
+    return m;
+  }, [dayAppts]);
+
   const availableSlots = useMemo(() => {
     if (!date) return [];
     const h = selectedDayHours;
@@ -180,8 +206,12 @@ function BookPage() {
     const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
     const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
     if (!open || !close) return [];
-    return SLOTS.filter((s) => s >= open && s < close).filter((s) => overrideMap.get(s) !== false);
-  }, [date, selectedDayHours, overrideMap]);
+    return SLOTS
+      .filter((s) => s >= open && s < close)
+      .filter((s) => overrideMap.get(s) !== false)
+      .filter((s) => (slotUsage.get(s) ?? 0) < slotCapacity);
+  }, [date, selectedDayHours, overrideMap, slotUsage, slotCapacity]);
+
 
   useEffect(() => {
     if (date && isDateDisabled(date)) { setDate(undefined); setTime(null); }
