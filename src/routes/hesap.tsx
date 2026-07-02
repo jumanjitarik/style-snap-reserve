@@ -63,7 +63,8 @@ function AccountPage() {
   const isOwner = roles?.some((r) => r.role === "owner" || r.role === "admin");
   const isOwnerOnly = roles?.some((r) => r.role === "owner");
   const isStaff = roles?.some((r) => r.role === "staff");
-  const showSupport = isOwner || isStaff;
+  const showSupport = true;
+  void isStaff;
   const SUPPORT_PHONE = "+905536764855";
   const roleLabelMap: Record<string, string> = { admin: "Yönetici", owner: "Salon Sahibi", staff: "Personel", customer: "Müşteri" };
 
