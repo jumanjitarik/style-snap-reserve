@@ -412,6 +412,33 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          ip: string | null
+          reason: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          ip?: string | null
+          reason?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       memberships: {
         Row: {
           amount: number
@@ -604,6 +631,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_blocks: {
+        Row: {
+          block_type: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          reason: string | null
+          unblocked_at: string | null
+          value: string
+        }
+        Insert: {
+          block_type: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          unblocked_at?: string | null
+          value: string
+        }
+        Update: {
+          block_type?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string | null
+          unblocked_at?: string | null
+          value?: string
+        }
+        Relationships: []
       }
       services: {
         Row: {
