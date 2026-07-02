@@ -42,6 +42,34 @@ function AuthPage() {
     full_name: "", email: "", password: "", phone: "", gender: "male" as "male" | "female",
   });
 
+  async function fetchIp(): Promise<string | null> {
+    try {
+      const ac = new AbortController();
+      const t = setTimeout(() => ac.abort(), 1500);
+      const r = await fetch("https://api.ipify.org?format=json", { signal: ac.signal });
+      clearTimeout(t);
+      const j = await r.json();
+      return typeof j.ip === "string" ? j.ip : null;
+    } catch { return null; }
+  }
+
+  function localAttemptCheck(email: string): number {
+    try {
+      const raw = localStorage.getItem("_la_" + email);
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      const cutoff = Date.now() - 5 * 60 * 1000;
+      return arr.filter((t) => t > cutoff).length;
+    } catch { return 0; }
+  }
+  function pushLocalAttempt(email: string) {
+    try {
+      const raw = localStorage.getItem("_la_" + email);
+      const arr: number[] = raw ? JSON.parse(raw) : [];
+      arr.push(Date.now());
+      localStorage.setItem("_la_" + email, JSON.stringify(arr.slice(-20)));
+    } catch { /* noop */ }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -66,16 +94,47 @@ function AuthPage() {
         logActivity("signup");
         navigate({ to: "/" });
       } else {
+        // Resolve target email
+        let email = form.email.trim().toLowerCase();
         if (loginMethod === "phone") {
           if (!/^\d{10}$/.test(form.phone)) { toast.error("Telefon: 5XXXXXXXXX"); return; }
           const { data } = await supabase.from("profiles").select("email").eq("phone", "+90" + form.phone).maybeSingle();
           if (!data?.email) { toast.error("Bu telefonla kayıtlı kullanıcı yok"); return; }
-          const { error } = await supabase.auth.signInWithPassword({ email: data.email, password: form.password });
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password });
-          if (error) throw error;
+          email = String(data.email).toLowerCase();
         }
+
+        // Local short-window guard (fast, offline)
+        if (localAttemptCheck(email) >= 3) {
+          toast.error("Çok fazla hatalı deneme. 5 dakika sonra tekrar dene.");
+          return;
+        }
+
+        const ip = await fetchIp();
+        // Server-side block check
+        try {
+          const { preLoginCheck } = await import("@/lib/security.functions");
+          const chk = await preLoginCheck({ data: { email, ip } });
+          if (chk.blocked) {
+            const mins = chk.waitSeconds ? Math.ceil(chk.waitSeconds / 60) : 0;
+            toast.error(`Erişim engellendi: ${chk.reason}${mins ? ` (~${mins} dk)` : ""}`);
+            return;
+          }
+        } catch { /* fail-open on network */ }
+
+        const { error } = await supabase.auth.signInWithPassword({ email, password: form.password });
+        if (error) {
+          pushLocalAttempt(email);
+          try {
+            const { recordLoginFailure } = await import("@/lib/security.functions");
+            await recordLoginFailure({ data: { email, ip, reason: error.message } });
+          } catch { /* noop */ }
+          throw error;
+        }
+        try { localStorage.removeItem("_la_" + email); } catch { /* noop */ }
+        try {
+          const { recordLoginSuccess } = await import("@/lib/security.functions");
+          await recordLoginSuccess({ data: { email, ip } });
+        } catch { /* noop */ }
         toast.success("Giriş yapıldı");
         logActivity("login");
         navigate({ to: "/" });
@@ -86,6 +145,7 @@ function AuthPage() {
       setLoading(false);
     }
   }
+
 
   async function handleGoogle() {
     const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });

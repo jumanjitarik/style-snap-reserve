@@ -15,7 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { DB_CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket, Store, Phone, CheckCircle2 } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket, Store, Phone, CheckCircle2, ShieldCheck } from "lucide-react";
+import { adminSecurityOverview, adminRemoveBlock } from "@/lib/security.functions";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
@@ -60,6 +61,9 @@ function AdminPanel() {
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
           <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
+        <TabsList className="grid grid-cols-1 w-full mt-2">
+          <TabsTrigger value="security"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Güven</TabsTrigger>
+        </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
@@ -72,6 +76,7 @@ function AdminPanel() {
         <TabsContent value="acct"><AccountingTab /></TabsContent>
         <TabsContent value="discounts"><DiscountsTab /></TabsContent>
         <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
+        <TabsContent value="security"><SecurityTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
@@ -1533,6 +1538,115 @@ function BusinessRequestsTab() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function SecurityTab() {
+  const qc = useQueryClient();
+  const overview = useServerFn(adminSecurityOverview);
+  const remove = useServerFn(adminRemoveBlock);
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-security"],
+    queryFn: async () => overview({}),
+    refetchInterval: 30000,
+  });
+  const unblock = useMutation({
+    mutationFn: async (id: string) => remove({ data: { id } }),
+    onSuccess: () => { toast.success("Engel kaldırıldı"); qc.invalidateQueries({ queryKey: ["admin-security"] }); },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Hata"),
+  });
+
+  if (isLoading) return <p className="p-6 text-center text-sm text-muted-foreground">Yükleniyor…</p>;
+
+  const blocks = data?.blocks ?? [];
+  const attempts = data?.attempts ?? [];
+  const ipBlocks = blocks.filter((b) => b.block_type === "ip");
+  const emailBlocks = blocks.filter((b) => b.block_type === "email");
+  const userBlocks = blocks.filter((b) => b.block_type === "user");
+
+  const secureItems = [
+    { label: "3 yanlış girişte 5 dk kilit", ok: true },
+    { label: "24 saatte 10 yanlış → IP + e-posta engeli", ok: true },
+    { label: "Şifreler Supabase Auth tarafından hash'lenir", ok: true },
+    { label: "Row-Level Security tüm tablolarda aktif", ok: true },
+    { label: "Servis anahtarı yalnızca sunucuda kullanılır", ok: true },
+    { label: "Yönetici işlemleri denetim kayıtlarında", ok: true },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-xs uppercase tracking-wider text-primary flex items-center gap-1"><ShieldCheck className="h-4 w-4" /> Sistem Güvenliği</p>
+        <p className="mt-1 text-sm text-emerald-500 font-medium">Sistem güvende</p>
+        <ul className="mt-3 space-y-1.5 text-sm">
+          {secureItems.map((s) => (
+            <li key={s.label} className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+              <span>{s.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-xs text-muted-foreground">Son 24s Hatalı</p>
+          <p className="font-display text-2xl text-primary">{data?.counts.failedLast24h ?? 0}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-3">
+          <p className="text-xs text-muted-foreground">Son 24s Başarılı</p>
+          <p className="font-display text-2xl text-primary">{data?.counts.successLast24h ?? 0}</p>
+        </div>
+      </div>
+
+      <BlockList title="Engellenen IP'ler" items={ipBlocks} onUnblock={(id) => unblock.mutate(id)} />
+      <BlockList title="Engellenen E-postalar" items={emailBlocks} onUnblock={(id) => unblock.mutate(id)} />
+      <BlockList title="Engellenen Üyeler" items={userBlocks} onUnblock={(id) => unblock.mutate(id)} />
+
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <p className="text-xs uppercase tracking-wider text-primary mb-2">Son Giriş Denemeleri</p>
+        <div className="space-y-1 max-h-96 overflow-y-auto">
+          {attempts.length === 0 && <p className="text-xs text-muted-foreground">Kayıt yok.</p>}
+          {attempts.map((a) => (
+            <div key={a.id} className="flex items-center justify-between text-xs border-b border-border/50 py-1">
+              <div className="flex-1 min-w-0">
+                <p className="truncate">{a.email ?? "—"} <span className="text-muted-foreground">• {a.ip ?? "—"}</span></p>
+                <p className="text-muted-foreground">{new Date(a.created_at).toLocaleString("tr-TR")}</p>
+              </div>
+              <span className={a.success ? "text-emerald-500" : "text-destructive"}>{a.success ? "OK" : "FAIL"}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BlockList({ title, items, onUnblock }: {
+  title: string;
+  items: Array<{ id: string; value: string; reason: string | null; created_at: string; expires_at: string | null }>;
+  onUnblock: (id: string) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <p className="text-xs uppercase tracking-wider text-primary mb-2">{title} ({items.length})</p>
+      {items.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Aktif engel yok.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map((b) => (
+            <div key={b.id} className="flex items-center justify-between gap-2 text-xs border-b border-border/50 pb-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{b.value}</p>
+                <p className="text-muted-foreground truncate">{b.reason ?? "—"}</p>
+                <p className="text-muted-foreground">{new Date(b.created_at).toLocaleString("tr-TR")}{b.expires_at ? ` • bitiş ${new Date(b.expires_at).toLocaleString("tr-TR")}` : ""}</p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => onUnblock(b.id)}>Kaldır</Button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -37,6 +37,7 @@ function MyAppts() {
   const { tab: initialTab } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
   const [isStaffOrOwner, setIsStaffOrOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [tab, setTab] = useState<Tab>(initialTab ?? "mine");
 
   useEffect(() => {
@@ -45,7 +46,9 @@ function MyAppts() {
       setUserId(uid);
       if (!uid) return;
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-      const so = !!roles?.some((r) => r.role === "owner" || r.role === "staff" || r.role === "admin");
+      const admin = !!roles?.some((r) => r.role === "admin");
+      const so = admin || !!roles?.some((r) => r.role === "owner" || r.role === "staff");
+      setIsAdmin(admin);
       setIsStaffOrOwner(so);
       if (!initialTab && so) setTab("customers");
     });
@@ -97,9 +100,9 @@ function MyAppts() {
 
       <div className="px-4 pb-6">
         {tab === "mine" && <MyOwnList />}
-        {tab === "customers" && userId && isStaffOrOwner && <CustomerList userId={userId} />}
+        {tab === "customers" && userId && isStaffOrOwner && <CustomerList userId={userId} isAdmin={isAdmin} />}
         {tab === "memberships" && <MyMembershipsList />}
-        {tab === "customer_memberships" && userId && isStaffOrOwner && <CustomerMembershipsList userId={userId} />}
+        {tab === "customer_memberships" && userId && isStaffOrOwner && <CustomerMembershipsList userId={userId} isAdmin={isAdmin} />}
       </div>
     </AppShell>
   );
@@ -193,10 +196,11 @@ function MyOwnList() {
   );
 }
 
-function CustomerList({ userId }: { userId: string }) {
+function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
   const { data: shopIds } = useQuery({
-    queryKey: ["my-shop-ids", userId],
+    queryKey: ["my-shop-ids", userId, isAdmin],
     queryFn: async () => {
+      if (isAdmin) return null; // admin sees all
       const [owned, asStaff] = await Promise.all([
         supabase.from("barbershops").select("id").eq("owner_id", userId),
         supabase.from("staff").select("shop_id").eq("user_id", userId),
@@ -208,17 +212,19 @@ function CustomerList({ userId }: { userId: string }) {
   });
 
   const { data: appts } = useQuery({
-    queryKey: ["staff-appts", shopIds],
-    enabled: !!shopIds && shopIds.length > 0,
+    queryKey: ["staff-appts", isAdmin ? "all" : shopIds],
+    enabled: isAdmin || (!!shopIds && shopIds.length > 0),
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from("appointments")
         .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, user_id, guest_name, guest_phone, shop_id, service_id, notes")
-        .in("shop_id", shopIds!)
         .order("starts_at", { ascending: true });
+      if (!isAdmin) q = q.in("shop_id", shopIds!);
+      const { data } = await q;
       return data ?? [];
     },
   });
+
 
   const userIds = Array.from(new Set((appts ?? []).map((a) => a.user_id).filter(Boolean) as string[]));
   const { data: profiles } = useQuery({
@@ -244,7 +250,7 @@ function CustomerList({ userId }: { userId: string }) {
     },
   });
 
-  if (!shopIds || shopIds.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
   if (!appts || appts.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz müşteri randevusu yok.</div>;
 
   const now = Date.now();
@@ -362,10 +368,11 @@ function MyMembershipsList() {
   );
 }
 
-function CustomerMembershipsList({ userId }: { userId: string }) {
+function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
   const { data: shopIds } = useQuery({
-    queryKey: ["my-shop-ids", userId],
+    queryKey: ["my-shop-ids-mem", userId, isAdmin],
     queryFn: async () => {
+      if (isAdmin) return null;
       const [owned, asStaff] = await Promise.all([
         supabase.from("barbershops").select("id").eq("owner_id", userId),
         supabase.from("staff").select("shop_id").eq("user_id", userId),
@@ -377,14 +384,15 @@ function CustomerMembershipsList({ userId }: { userId: string }) {
   });
 
   const { data: memberships } = useQuery({
-    queryKey: ["shop-memberships", shopIds],
-    enabled: !!shopIds && shopIds.length > 0,
+    queryKey: ["shop-memberships", isAdmin ? "all" : shopIds],
+    enabled: isAdmin || (!!shopIds && shopIds.length > 0),
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from("memberships")
         .select("id, amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
-        .in("shop_id", shopIds!)
         .order("created_at", { ascending: false });
+      if (!isAdmin) q = q.in("shop_id", shopIds!);
+      const { data } = await q;
       return data ?? [];
     },
   });
@@ -413,18 +421,21 @@ function CustomerMembershipsList({ userId }: { userId: string }) {
     },
   });
 
+  const memShopIds = Array.from(new Set((memberships ?? []).map((m) => m.shop_id).filter(Boolean) as string[]));
   const shopsQ = useQuery({
-    queryKey: ["mem-shops", shopIds],
-    enabled: !!shopIds && shopIds.length > 0,
+    queryKey: ["mem-shops", memShopIds],
+    enabled: memShopIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase.from("barbershops").select("id, name").in("id", shopIds!);
+      const { data } = await supabase.from("barbershops").select("id, name").in("id", memShopIds);
       const m = new Map<string, string>();
       (data ?? []).forEach((s) => m.set(s.id, s.name));
       return m;
     },
   });
 
-  if (!shopIds || shopIds.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
+
   if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
 
   const total = memberships.reduce((s, m) => s + Number(m.amount ?? 0), 0);
