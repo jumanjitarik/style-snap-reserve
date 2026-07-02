@@ -37,6 +37,7 @@ function MyAppts() {
   const { tab: initialTab } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
   const [isStaffOrOwner, setIsStaffOrOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [tab, setTab] = useState<Tab>(initialTab ?? "mine");
 
   useEffect(() => {
@@ -45,7 +46,9 @@ function MyAppts() {
       setUserId(uid);
       if (!uid) return;
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
-      const so = !!roles?.some((r) => r.role === "owner" || r.role === "staff" || r.role === "admin");
+      const admin = !!roles?.some((r) => r.role === "admin");
+      const so = admin || !!roles?.some((r) => r.role === "owner" || r.role === "staff");
+      setIsAdmin(admin);
       setIsStaffOrOwner(so);
       if (!initialTab && so) setTab("customers");
     });
