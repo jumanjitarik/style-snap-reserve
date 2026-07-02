@@ -384,14 +384,14 @@ function AccountPage() {
           </DialogContent>
         </Dialog>
 
-        <Button variant="outline" onClick={signOut} className="w-full h-12 mt-4">
-          <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
-        </Button>
         {!isAdmin && (
           <Button variant="destructive" onClick={deleteAccount} className="w-full h-12">
             <Trash2 className="h-4 w-4 mr-2" /> Hesabımı Sil
           </Button>
         )}
+        <Button variant="outline" onClick={signOut} className="w-full h-12 mt-2">
+          <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
+        </Button>
 
       </div>
     </AppShell>
