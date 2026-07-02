@@ -145,6 +145,46 @@ export function BottomNav() {
           })}
         </ul>
       </nav>
+
+      <Sheet open={fabOpen} onOpenChange={setFabOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl border-primary/25 pointer-events-auto">
+          <SheetHeader>
+            <SheetTitle className="text-center font-display">Ne yapmak istiyorsun?</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-1 gap-2 py-3">
+            <button
+              onClick={() => { setFabOpen(false); navigate({ to: "/randevu-al" }); }}
+              className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4 text-left transition active:scale-95"
+            >
+              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center text-primary"><CalendarPlus className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-foreground">Randevu Al</p>
+                <p className="text-xs text-muted-foreground">Yakınındaki salonlardan hemen rezervasyon</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { setFabOpen(false); navigate({ to: "/isyeri-ekle" }); }}
+              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition active:scale-95"
+            >
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-primary"><Store className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-foreground">İş Yerini Ekle</p>
+                <p className="text-xs text-muted-foreground">Salonunu KuaförApp'e ekle</p>
+              </div>
+            </button>
+            <button
+              disabled
+              className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-4 text-left opacity-60"
+            >
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground"><Megaphone className="h-5 w-5" /></div>
+              <div>
+                <p className="font-semibold text-foreground">Reklam Ver</p>
+                <p className="text-xs text-muted-foreground">Yakında</p>
+              </div>
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
