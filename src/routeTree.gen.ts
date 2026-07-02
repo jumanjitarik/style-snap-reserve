@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RandevuAlRouteImport } from './routes/randevu-al'
 import { Route as KuaforlerRouteImport } from './routes/kuaforler'
+import { Route as IsyeriEkleRouteImport } from './routes/isyeri-ekle'
 import { Route as HesapRouteImport } from './routes/hesap'
 import { Route as BorsaRouteImport } from './routes/borsa'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -23,6 +24,7 @@ import { Route as AuthenticatedSalonYonetimiRouteImport } from './routes/_authen
 import { Route as AuthenticatedRandevularimRouteImport } from './routes/_authenticated/randevularim'
 import { Route as AuthenticatedPuanlarimRouteImport } from './routes/_authenticated/puanlarim'
 import { Route as AuthenticatedMusterilerRouteImport } from './routes/_authenticated/musteriler'
+import { Route as AuthenticatedMuhasebeRouteImport } from './routes/_authenticated/muhasebe'
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
 import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -45,6 +47,11 @@ const RandevuAlRoute = RandevuAlRouteImport.update({
 const KuaforlerRoute = KuaforlerRouteImport.update({
   id: '/kuaforler',
   path: '/kuaforler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IsyeriEkleRoute = IsyeriEkleRouteImport.update({
+  id: '/isyeri-ekle',
+  path: '/isyeri-ekle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HesapRoute = HesapRouteImport.update({
@@ -98,6 +105,11 @@ const AuthenticatedMusterilerRoute = AuthenticatedMusterilerRouteImport.update({
   path: '/musteriler',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMuhasebeRoute = AuthenticatedMuhasebeRouteImport.update({
+  id: '/muhasebe',
+  path: '/muhasebe',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFavorilerRoute = AuthenticatedFavorilerRouteImport.update({
   id: '/favoriler',
   path: '/favoriler',
@@ -120,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/borsa': typeof BorsaRoute
   '/hesap': typeof HesapRoute
+  '/isyeri-ekle': typeof IsyeriEkleRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -127,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
+  '/muhasebe': typeof AuthenticatedMuhasebeRoute
   '/musteriler': typeof AuthenticatedMusterilerRoute
   '/puanlarim': typeof AuthenticatedPuanlarimRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
@@ -138,6 +152,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/borsa': typeof BorsaRoute
   '/hesap': typeof HesapRoute
+  '/isyeri-ekle': typeof IsyeriEkleRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -145,6 +160,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/favoriler': typeof AuthenticatedFavorilerRoute
+  '/muhasebe': typeof AuthenticatedMuhasebeRoute
   '/musteriler': typeof AuthenticatedMusterilerRoute
   '/puanlarim': typeof AuthenticatedPuanlarimRoute
   '/randevularim': typeof AuthenticatedRandevularimRoute
@@ -158,6 +174,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/borsa': typeof BorsaRoute
   '/hesap': typeof HesapRoute
+  '/isyeri-ekle': typeof IsyeriEkleRoute
   '/kuaforler': typeof KuaforlerRoute
   '/randevu-al': typeof RandevuAlRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -165,6 +182,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bildirimler': typeof AuthenticatedBildirimlerRoute
   '/_authenticated/favoriler': typeof AuthenticatedFavorilerRoute
+  '/_authenticated/muhasebe': typeof AuthenticatedMuhasebeRoute
   '/_authenticated/musteriler': typeof AuthenticatedMusterilerRoute
   '/_authenticated/puanlarim': typeof AuthenticatedPuanlarimRoute
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
@@ -178,6 +196,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/borsa'
     | '/hesap'
+    | '/isyeri-ekle'
     | '/kuaforler'
     | '/randevu-al'
     | '/reset-password'
@@ -185,6 +204,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
+    | '/muhasebe'
     | '/musteriler'
     | '/puanlarim'
     | '/randevularim'
@@ -196,6 +216,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/borsa'
     | '/hesap'
+    | '/isyeri-ekle'
     | '/kuaforler'
     | '/randevu-al'
     | '/reset-password'
@@ -203,6 +224,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/bildirimler'
     | '/favoriler'
+    | '/muhasebe'
     | '/musteriler'
     | '/puanlarim'
     | '/randevularim'
@@ -215,6 +237,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/borsa'
     | '/hesap'
+    | '/isyeri-ekle'
     | '/kuaforler'
     | '/randevu-al'
     | '/reset-password'
@@ -222,6 +245,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/bildirimler'
     | '/_authenticated/favoriler'
+    | '/_authenticated/muhasebe'
     | '/_authenticated/musteriler'
     | '/_authenticated/puanlarim'
     | '/_authenticated/randevularim'
@@ -235,6 +259,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BorsaRoute: typeof BorsaRoute
   HesapRoute: typeof HesapRoute
+  IsyeriEkleRoute: typeof IsyeriEkleRoute
   KuaforlerRoute: typeof KuaforlerRoute
   RandevuAlRoute: typeof RandevuAlRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -270,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/kuaforler'
       fullPath: '/kuaforler'
       preLoaderRoute: typeof KuaforlerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/isyeri-ekle': {
+      id: '/isyeri-ekle'
+      path: '/isyeri-ekle'
+      fullPath: '/isyeri-ekle'
+      preLoaderRoute: typeof IsyeriEkleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hesap': {
@@ -342,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMusterilerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/muhasebe': {
+      id: '/_authenticated/muhasebe'
+      path: '/muhasebe'
+      fullPath: '/muhasebe'
+      preLoaderRoute: typeof AuthenticatedMuhasebeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/favoriler': {
       id: '/_authenticated/favoriler'
       path: '/favoriler'
@@ -370,6 +409,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedBildirimlerRoute: typeof AuthenticatedBildirimlerRoute
   AuthenticatedFavorilerRoute: typeof AuthenticatedFavorilerRoute
+  AuthenticatedMuhasebeRoute: typeof AuthenticatedMuhasebeRoute
   AuthenticatedMusterilerRoute: typeof AuthenticatedMusterilerRoute
   AuthenticatedPuanlarimRoute: typeof AuthenticatedPuanlarimRoute
   AuthenticatedRandevularimRoute: typeof AuthenticatedRandevularimRoute
@@ -380,6 +420,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedBildirimlerRoute: AuthenticatedBildirimlerRoute,
   AuthenticatedFavorilerRoute: AuthenticatedFavorilerRoute,
+  AuthenticatedMuhasebeRoute: AuthenticatedMuhasebeRoute,
   AuthenticatedMusterilerRoute: AuthenticatedMusterilerRoute,
   AuthenticatedPuanlarimRoute: AuthenticatedPuanlarimRoute,
   AuthenticatedRandevularimRoute: AuthenticatedRandevularimRoute,
@@ -395,6 +436,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BorsaRoute: BorsaRoute,
   HesapRoute: HesapRoute,
+  IsyeriEkleRoute: IsyeriEkleRoute,
   KuaforlerRoute: KuaforlerRoute,
   RandevuAlRoute: RandevuAlRoute,
   ResetPasswordRoute: ResetPasswordRoute,

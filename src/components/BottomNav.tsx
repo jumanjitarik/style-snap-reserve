@@ -1,9 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Home, Store, Plus, User, CalendarCheck, Coins, LineChart, CalendarPlus, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SafeImg } from "@/components/SafeImg";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 type NavItem = { to: string; label: string; icon: typeof Home; fab?: boolean; profile?: boolean };
 
