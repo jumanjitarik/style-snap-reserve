@@ -187,7 +187,7 @@ function BookPage() {
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
-      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal;
+      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * depPct / 100) : finalTotal;
       const remaining = Math.max(0, finalTotal - deposit);
       const { error } = await supabase.from("appointments").insert({
         user_id: userId,
@@ -424,7 +424,7 @@ function BookPage() {
                 </>
               )}
               <p className="flex justify-between items-center"><span className="text-muted-foreground">Toplam:</span> <span className="font-display text-2xl text-primary">{finalTotal.toFixed(0)}₺</span></p>
-              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * 0.25) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
+              <p className="text-[10px] text-muted-foreground">Bu randevudan <span className="text-primary font-semibold">+{Math.floor((paymentMethod === "deposit" ? Math.round(finalTotal * depPct / 100) : finalTotal) * 0.01)}P</span> kazanacaksın (sistemden çekilen tutarın %1'i).</p>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-3 space-y-2">
@@ -440,10 +440,10 @@ function BookPage() {
               <button type="button" onClick={() => setPaymentMethod("deposit")}
                 className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">%25 kapora · kalanını salonda nakit öde</span>
-                  <span className="font-display text-primary">{Math.round(finalTotal * 0.25)}₺</span>
+                  <span className="font-semibold text-sm">%${depPct} kapora · kalanını salonda nakit öde</span>
+                  <span className="font-display text-primary">{Math.round(finalTotal * depPct / 100)}₺</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * 0.25))}₺ tahsil edilecek.</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * depPct / 100))}₺ tahsil edilecek.</p>
               </button>
             </div>
 
@@ -457,7 +457,7 @@ function BookPage() {
             </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
               {create.isPending ? "İşleniyor..." : paymentMethod === "deposit"
-                ? `Kaporayı Öde · ${Math.round(finalTotal * 0.25)}₺`
+                ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
                 : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
