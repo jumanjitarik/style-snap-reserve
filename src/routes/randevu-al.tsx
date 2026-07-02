@@ -440,7 +440,7 @@ function BookPage() {
               <button type="button" onClick={() => setPaymentMethod("deposit")}
                 className={cn("w-full text-left rounded-lg border p-3 active:scale-[0.99] transition", paymentMethod === "deposit" ? "border-primary bg-primary/5" : "border-border")}>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-sm">%${depPct} kapora · kalanını salonda nakit öde</span>
+                  <span className="font-semibold text-sm">%{depPct} kapora · kalanını salonda nakit öde</span>
                   <span className="font-display text-primary">{Math.round(finalTotal * depPct / 100)}₺</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">Salonda nakit kalan {Math.max(0, finalTotal - Math.round(finalTotal * depPct / 100))}₺ tahsil edilecek.</p>
