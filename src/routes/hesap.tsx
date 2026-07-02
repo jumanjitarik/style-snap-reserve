@@ -42,6 +42,11 @@ function AccountPage() {
 
   const isAdmin = roles?.some((r) => r.role === "admin");
   const isOwner = roles?.some((r) => r.role === "owner" || r.role === "admin");
+  const isOwnerOnly = roles?.some((r) => r.role === "owner");
+  const isStaff = roles?.some((r) => r.role === "staff");
+  const showSupport = isOwner || isStaff;
+  const SUPPORT_PHONE = "+905536764855";
+  const roleLabelMap: Record<string, string> = { admin: "Yönetici", owner: "Salon Sahibi", staff: "Personel", customer: "Müşteri" };
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", phone: "", avatar_url: "" });
