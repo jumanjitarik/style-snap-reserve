@@ -116,6 +116,12 @@ function BookPage() {
     if (!allowDeposit && paymentMethod === "deposit") setPaymentMethod("full");
   }, [allowFull, allowDeposit]);
 
+  // Fitness/yoga salonlarında tarih & saat adımını atla
+  useEffect(() => {
+    if (skipDateTime && step === 4) setStep(5);
+  }, [skipDateTime, step]);
+
+
 
   const { data: staff } = useQuery({
     queryKey: ["book-staff", shopId],
