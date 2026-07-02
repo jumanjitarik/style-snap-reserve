@@ -54,10 +54,11 @@ function AdminPanel() {
           <TabsTrigger value="settings"><Settings className="h-3.5 w-3.5" /></TabsTrigger>
           <TabsTrigger value="activity"><Activity className="h-3.5 w-3.5" /></TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-3 w-full mt-2">
+        <TabsList className="grid grid-cols-4 w-full mt-2">
           <TabsTrigger value="broadcast"><Send className="h-3.5 w-3.5 mr-1" /> Push</TabsTrigger>
           <TabsTrigger value="acct"><Receipt className="h-3.5 w-3.5 mr-1" /> Muhasebe</TabsTrigger>
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
+          <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -70,6 +71,7 @@ function AdminPanel() {
         <TabsContent value="broadcast"><BroadcastTab /></TabsContent>
         <TabsContent value="acct"><AccountingTab /></TabsContent>
         <TabsContent value="discounts"><DiscountsTab /></TabsContent>
+        <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
       </Tabs>
     </AppShell>
   );
