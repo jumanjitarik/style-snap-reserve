@@ -293,18 +293,25 @@ function BookPage() {
           <>
             <button onClick={() => setStep(1)} className="text-xs text-primary">← Kategori</button>
             <h2 className="font-display text-xl">Salon Seç {category && `· ${findUiCategory(category)?.label ?? ""}`}</h2>
+            {coords && sortedShops.length > 0 && sortedShops[0]._km !== Infinity && (
+              <p className="text-xs text-muted-foreground">En yakın: <span className="text-primary font-semibold">{sortedShops[0].name}</span> · {formatKm(sortedShops[0]._km)}</p>
+            )}
             <div className="space-y-2">
-              {(shops ?? []).map((s) => (
+              {sortedShops.map((s, i) => (
                 <button key={s.id} onClick={() => { setShopId(s.id); setStep(3); }}
-                  className={cn("w-full text-left rounded-xl border p-3 active:scale-[0.98] transition", shopId === s.id ? "border-primary" : "border-border bg-card")}>
-                  <p className="font-medium">{s.name}</p>
+                  className={cn("w-full text-left rounded-xl border p-3 active:scale-[0.98] transition", shopId === s.id ? "border-primary" : (i === 0 && coords && s._km !== Infinity ? "border-primary/60 bg-primary/5" : "border-border bg-card"))}>
+                  <div className="flex justify-between gap-2">
+                    <p className="font-medium">{s.name}{i === 0 && coords && s._km !== Infinity && <span className="ml-2 text-[10px] rounded-full bg-primary/20 text-primary px-2 py-0.5">En yakın</span>}</p>
+                    {s._km !== Infinity && <span className="text-xs text-primary shrink-0 flex items-center gap-0.5"><MapPin className="h-3 w-3" />{formatKm(s._km)}</span>}
+                  </div>
                   <p className="text-xs text-muted-foreground">{s.address}</p>
                 </button>
               ))}
-              {(shops ?? []).length === 0 && <p className="text-sm text-muted-foreground">Salon yok.</p>}
+              {sortedShops.length === 0 && <p className="text-sm text-muted-foreground">Salon yok.</p>}
             </div>
           </>
         )}
+
 
         {step === 3 && (
           <>
