@@ -428,11 +428,11 @@ function BookPage() {
           </>
         )}
 
-        {step === 4 && (
+        {step === 4 && !skipDateTime && (
           <>
             <button onClick={() => setStep(3)} className="text-xs text-primary">← Hizmet</button>
             <h2 className="font-display text-xl">Tarih & Saat</h2>
-            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır.</p>
+            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır. Dolan saatler pasif gözükür.</p>
             <div className="rounded-xl border border-border bg-card p-2">
               <Calendar mode="single" selected={date} onSelect={setDate} locale={tr}
                 disabled={isDateDisabled}
@@ -454,8 +454,9 @@ function BookPage() {
 
         {step === 5 && (
           <>
-            <button onClick={() => setStep(4)} className="text-xs text-primary">← Tarih</button>
+            <button onClick={() => setStep(skipDateTime ? 3 : 4)} className="text-xs text-primary">← {skipDateTime ? "Hizmet" : "Tarih"}</button>
             <h2 className="font-display text-xl">Ödeme & Onay</h2>
+
             <div className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
               <p className="text-muted-foreground text-xs uppercase tracking-wider">Hizmetler</p>
               {selectedServices.map((s) => (
