@@ -116,12 +116,7 @@ function AuthPage() {
     <AppShell>
       <BackButton to="/" />
       <div className="flex flex-col px-6 pt-4 pb-32 max-w-md mx-auto">
-        <Link to="/" className="mb-6 flex items-center gap-2 text-primary">
-          <Scissors className="h-6 w-6" />
-          <span className="font-display text-2xl tracking-wider">BARBERAPP</span>
-        </Link>
-
-        <h1 className="font-display text-4xl">{mode === "login" ? "Tekrar Hoş Geldin" : "Aramıza Katıl"}</h1>
+        <h1 className="font-display text-4xl mt-2">{mode === "login" ? "Hoş Geldin" : "Aramıza Katıl"}</h1>
         <p className="text-sm text-muted-foreground mt-1">{mode === "login" ? "Hesabına giriş yap" : "Yeni bir hesap oluştur"}</p>
 
         {mode === "login" && (
