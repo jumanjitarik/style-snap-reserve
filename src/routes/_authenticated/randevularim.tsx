@@ -76,16 +76,23 @@ function MyAppts() {
       </header>
 
       <div className="px-4 pb-3 space-y-2">
-        {isStaffOrOwner && (
+        {isStaffOrOwner ? (
+          <>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
+              <TabBtn id="customers" label="Müşteri Randevuları" />
+              <TabBtn id="customer_memberships" label="Müşteri Üyelikleri" />
+            </div>
+            <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
+              <TabBtn id="mine" label="Randevularım" />
+              <TabBtn id="memberships" label="Üyeliklerim" />
+            </div>
+          </>
+        ) : (
           <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
-            <TabBtn id="customers" label="Müşteri Randevuları" />
             <TabBtn id="mine" label="Randevularım" />
+            <TabBtn id="memberships" label="Üyeliklerim" />
           </div>
         )}
-        <div className={cn("grid gap-1 rounded-xl border border-border bg-card p-1", isStaffOrOwner ? "grid-cols-2" : "grid-cols-1")}>
-          {isStaffOrOwner && <TabBtn id="customer_memberships" label="Müşteri Üyelikleri" />}
-          <TabBtn id="memberships" label="Üyelikler" />
-        </div>
       </div>
 
       <div className="px-4 pb-6">
