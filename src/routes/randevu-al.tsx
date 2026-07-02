@@ -507,7 +507,7 @@ function BookPage() {
                 <p className="text-[10px] text-muted-foreground text-right">{customerNote.length}/300</p>
               </div>
               <hr className="border-border" />
-              <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>
+              {!skipDateTime && <p><span className="text-muted-foreground">Tarih:</span> {date && format(date, "d MMMM yyyy", { locale: tr })} · {time}</p>}
               {(appliedDiscount || pointsToUse > 0) && (
                 <>
                   <p className="flex justify-between text-xs"><span className="text-muted-foreground">Ara Toplam:</span> <span>{totalPrice.toFixed(0)}₺</span></p>
