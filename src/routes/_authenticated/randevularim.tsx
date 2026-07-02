@@ -250,7 +250,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
     },
   });
 
-  if (!shopIds || shopIds.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
   if (!appts || appts.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz müşteri randevusu yok.</div>;
 
   const now = Date.now();
