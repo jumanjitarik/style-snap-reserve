@@ -248,7 +248,34 @@ function BookPage() {
   const create = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Giriş yap");
-      if (!shopId || serviceIds.length === 0 || !date || !time) throw new Error("Eksik bilgi");
+      if (!shopId || serviceIds.length === 0) throw new Error("Eksik bilgi");
+
+      // Fitness / Yoga & Pilates → üyelik satışı (tarih/saat yok)
+      if (skipDateTime) {
+        const { error } = await supabase.from("memberships").insert({
+          user_id: userId,
+          shop_id: shopId,
+          service_id: serviceIds[0],
+          service_ids: serviceIds,
+          amount: finalTotal,
+          notes: customerNote.trim() || null,
+          payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
+        });
+        if (error) throw error;
+        try {
+          const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
+          if (shop?.owner_id) {
+            await supabase.from("notifications").insert({
+              user_id: shop.owner_id,
+              title: "Yeni üyelik satışı",
+              body: `${shop.name} · ${finalTotal.toFixed(0)}₺ üyelik satın alındı.`,
+            });
+          }
+        } catch { /* sessiz */ }
+        return "membership" as const;
+      }
+
+      if (!date || !time) throw new Error("Tarih ve saat seç");
       const [hh, mm] = time.split(":").map(Number);
       const starts = new Date(date);
       starts.setHours(hh, mm, 0, 0);
@@ -274,7 +301,6 @@ function BookPage() {
       });
       if (error) throw error;
 
-      // Salon sahibine bilgi bildirimi gönder
       try {
         const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
         if (shop?.owner_id) {
@@ -290,10 +316,15 @@ function BookPage() {
           });
         }
       } catch { /* sessiz */ }
+      return "appointment" as const;
     },
 
-    onSuccess: () => {
-      toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı! Kalanı salonda nakit ödeyeceksin." : "Ödeme alındı, randevu onaylandı!");
+    onSuccess: (kind) => {
+      if (kind === "membership") {
+        toast.success("Üyelik satın alındı!");
+      } else {
+        toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı!" : "Ödeme alındı, randevu onaylandı!");
+      }
       navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
