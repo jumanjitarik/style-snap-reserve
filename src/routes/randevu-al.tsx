@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { addDays, format, startOfDay } from "date-fns";
 import { tr } from "date-fns/locale";
+import { useGeolocation } from "@/lib/geo";
+import { distanceKm, formatKm } from "@/lib/distance";
+import { MapPin } from "lucide-react";
 
 const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional() });
 
