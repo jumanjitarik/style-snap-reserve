@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 import { toast } from "sonner";
-import { Calendar, MapPin, Phone, Calendar as CalIcon } from "lucide-react";
+import { Calendar, MapPin, Phone, Calendar as CalIcon, BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/randevularim")({
   component: MyAppts,
 });
+
+type Tab = "customers" | "mine" | "customer_memberships" | "memberships";
 
 type StatusLabel = { text: string; tone: "open" | "past" | "cancelled" };
 function labelFor(starts_at: string, status: string): StatusLabel {
@@ -30,7 +32,7 @@ function toneClass(tone: StatusLabel["tone"]) {
 function MyAppts() {
   const [userId, setUserId] = useState<string | null>(null);
   const [isStaffOrOwner, setIsStaffOrOwner] = useState(false);
-  const [tab, setTab] = useState<"customers" | "mine">("customers");
+  const [tab, setTab] = useState<Tab>("mine");
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -40,9 +42,21 @@ function MyAppts() {
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
       const so = !!roles?.some((r) => r.role === "owner" || r.role === "staff" || r.role === "admin");
       setIsStaffOrOwner(so);
-      if (!so) setTab("mine");
+      if (so) setTab("customers");
     });
   }, []);
+
+  const TabBtn = ({ id, label }: { id: Tab; label: string }) => (
+    <button
+      onClick={() => setTab(id)}
+      className={cn(
+        "rounded-lg py-2 text-xs font-medium transition",
+        tab === id ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+      )}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <AppShell>
@@ -55,24 +69,24 @@ function MyAppts() {
         <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
       </header>
 
-      {isStaffOrOwner && (
-        <div className="px-4 pb-3">
+      <div className="px-4 pb-3 space-y-2">
+        {isStaffOrOwner && (
           <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
-            <button
-              onClick={() => setTab("customers")}
-              className={cn("rounded-lg py-2 text-sm font-medium transition", tab === "customers" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
-            >Müşteri Randevuları</button>
-            <button
-              onClick={() => setTab("mine")}
-              className={cn("rounded-lg py-2 text-sm font-medium transition", tab === "mine" ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
-            >Randevularım</button>
+            <TabBtn id="customers" label="Müşteri Randevuları" />
+            <TabBtn id="mine" label="Randevularım" />
           </div>
+        )}
+        <div className={cn("grid gap-1 rounded-xl border border-border bg-card p-1", isStaffOrOwner ? "grid-cols-2" : "grid-cols-1")}>
+          {isStaffOrOwner && <TabBtn id="customer_memberships" label="Müşteri Üyelikleri" />}
+          <TabBtn id="memberships" label="Üyelikler" />
         </div>
-      )}
+      </div>
 
       <div className="px-4 pb-6">
         {tab === "mine" && <MyOwnList />}
-        {tab === "customers" && userId && <CustomerList userId={userId} />}
+        {tab === "customers" && userId && isStaffOrOwner && <CustomerList userId={userId} />}
+        {tab === "memberships" && <MyMembershipsList />}
+        {tab === "customer_memberships" && userId && isStaffOrOwner && <CustomerMembershipsList userId={userId} />}
       </div>
     </AppShell>
   );
@@ -104,7 +118,6 @@ function MyOwnList() {
   });
 
   const list = data ?? [];
-  // open first (sorted ascending nearest), then past/cancelled
   const sorted = useMemo(() => {
     const now = Date.now();
     const open = list.filter((a) => a.status !== "cancelled" && new Date(a.starts_at).getTime() >= now)
@@ -287,6 +300,162 @@ function CustomerList({ userId }: { userId: string }) {
           <div className="space-y-2">{closed.map((a) => <Row key={a.id} a={a} />)}</div>
         )}
       </section>
+    </div>
+  );
+}
+
+function MyMembershipsList() {
+  const { data } = useQuery({
+    queryKey: ["my-memberships"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return [];
+      const { data } = await supabase
+        .from("memberships")
+        .select("id, amount, created_at, notes, shop:barbershops(id,name,address,category), service:services(name)")
+        .eq("user_id", u.user.id)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const list = data ?? [];
+  if (list.length === 0) {
+    return <p className="py-12 text-center text-sm text-muted-foreground">Henüz üyeliğin yok. Fitness veya yoga-pilates salonlarından satın alabilirsin.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      {list.map((m) => (
+        <div key={m.id} className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="font-semibold truncate flex items-center gap-1.5">
+                <BadgeCheck className="h-4 w-4 text-primary shrink-0" />{m.shop?.name}
+              </p>
+              <p className="text-sm text-muted-foreground">{m.service?.name}</p>
+            </div>
+            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold bg-primary/20 text-primary">
+              {m.shop?.category === "fitness" ? "FITNESS" : "YOGA/PILATES"}
+            </span>
+          </div>
+          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+            <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(new Date(m.created_at), "d MMMM yyyy · HH:mm", { locale: tr })}</p>
+            {m.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{m.shop.address}</p>}
+          </div>
+          <p className="mt-2 font-display text-xl text-primary">{Number(m.amount).toFixed(0)}₺</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CustomerMembershipsList({ userId }: { userId: string }) {
+  const { data: shopIds } = useQuery({
+    queryKey: ["my-shop-ids", userId],
+    queryFn: async () => {
+      const [owned, asStaff] = await Promise.all([
+        supabase.from("barbershops").select("id").eq("owner_id", userId),
+        supabase.from("staff").select("shop_id").eq("user_id", userId),
+      ]);
+      const ownIds = (owned.data ?? []).map((s) => s.id);
+      const staffIds = (asStaff.data ?? []).map((s) => s.shop_id);
+      return Array.from(new Set([...ownIds, ...staffIds]));
+    },
+  });
+
+  const { data: memberships } = useQuery({
+    queryKey: ["shop-memberships", shopIds],
+    enabled: !!shopIds && shopIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("memberships")
+        .select("id, amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .in("shop_id", shopIds!)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const userIds = Array.from(new Set((memberships ?? []).map((m) => m.user_id).filter(Boolean) as string[]));
+  const { data: profiles } = useQuery({
+    queryKey: ["mem-profiles", userIds],
+    enabled: userIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, full_name, phone, email").in("id", userIds);
+      const map = new Map<string, { full_name: string | null; phone: string | null; email: string | null }>();
+      (data ?? []).forEach((p) => map.set(p.id, p));
+      return map;
+    },
+  });
+
+  const services = useQuery({
+    queryKey: ["mem-services", memberships?.map((m) => m.service_id)],
+    enabled: !!memberships && memberships.length > 0,
+    queryFn: async () => {
+      const ids = Array.from(new Set((memberships ?? []).map((m) => m.service_id).filter(Boolean) as string[]));
+      const { data } = await supabase.from("services").select("id, name").in("id", ids);
+      const m = new Map<string, string>();
+      (data ?? []).forEach((s) => m.set(s.id, s.name));
+      return m;
+    },
+  });
+
+  const shopsQ = useQuery({
+    queryKey: ["mem-shops", shopIds],
+    enabled: !!shopIds && shopIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("barbershops").select("id, name").in("id", shopIds!);
+      const m = new Map<string, string>();
+      (data ?? []).forEach((s) => m.set(s.id, s.name));
+      return m;
+    },
+  });
+
+  if (!shopIds || shopIds.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
+  if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
+
+  const total = memberships.reduce((s, m) => s + Number(m.amount ?? 0), 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+        <p className="text-xs text-muted-foreground">Toplam üyelik geliri</p>
+        <p className="font-display text-2xl text-primary">{total.toFixed(0)}₺ <span className="text-xs font-sans text-muted-foreground">({memberships.length} satış)</span></p>
+      </div>
+      {memberships.map((m) => {
+        const p = m.user_id ? profiles?.get(m.user_id) : null;
+        const name = p?.full_name ?? m.guest_name ?? "Müşteri";
+        const phone = p?.phone ?? m.guest_phone ?? null;
+        return (
+          <div key={m.id} className="rounded-xl border border-border bg-card p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold truncate">{name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{shopsQ.data?.get(m.shop_id) ?? ""}</p>
+                {services.data?.get(m.service_id ?? "") && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{services.data.get(m.service_id ?? "")}</p>
+                )}
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                  <CalIcon className="h-3 w-3" />
+                  {format(new Date(m.created_at), "d MMM yyyy · HH:mm", { locale: tr })}
+                </p>
+              </div>
+              <span className="shrink-0 font-display text-lg text-primary">{Number(m.amount).toFixed(0)}₺</span>
+            </div>
+            {phone && (
+              <a href={`tel:${phone}`} className="mt-2 flex items-center gap-2 text-xs text-primary active:opacity-60">
+                <Phone className="h-3.5 w-3.5" /> {phone}
+              </a>
+            )}
+            {m.notes && (
+              <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2">
+                <p className="text-[10px] uppercase tracking-wider text-primary mb-0.5">Müşteri Notu</p>
+                <p className="text-[12px] whitespace-pre-wrap">{m.notes}</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
