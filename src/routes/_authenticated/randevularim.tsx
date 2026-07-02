@@ -100,9 +100,9 @@ function MyAppts() {
 
       <div className="px-4 pb-6">
         {tab === "mine" && <MyOwnList />}
-        {tab === "customers" && userId && isStaffOrOwner && <CustomerList userId={userId} />}
+        {tab === "customers" && userId && isStaffOrOwner && <CustomerList userId={userId} isAdmin={isAdmin} />}
         {tab === "memberships" && <MyMembershipsList />}
-        {tab === "customer_memberships" && userId && isStaffOrOwner && <CustomerMembershipsList userId={userId} />}
+        {tab === "customer_memberships" && userId && isStaffOrOwner && <CustomerMembershipsList userId={userId} isAdmin={isAdmin} />}
       </div>
     </AppShell>
   );
