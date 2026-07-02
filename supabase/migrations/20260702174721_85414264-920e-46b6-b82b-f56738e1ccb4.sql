@@ -1,0 +1,1 @@
+ALTER TABLE public.barbershops ADD COLUMN IF NOT EXISTS slot_capacity integer NOT NULL DEFAULT 1;
