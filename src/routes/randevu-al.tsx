@@ -151,6 +151,24 @@ function BookPage() {
     if (h) return !h.is_open;
     return d.getDay() === 0;
   };
+  const dateStr = date ? format(date, "yyyy-MM-dd") : null;
+  const { data: overrides } = useQuery({
+    queryKey: ["slot-overrides-book", shopId, dateStr],
+    enabled: !!shopId && !!dateStr,
+    queryFn: async () => {
+      const { data } = await supabase.from("slot_overrides" as never)
+        .select("slot_time, is_active")
+        .eq("shop_id", shopId!)
+        .eq("date", dateStr!);
+      return (data as { slot_time: string; is_active: boolean }[] | null) ?? [];
+    },
+  });
+  const overrideMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    (overrides ?? []).forEach((o) => m.set(o.slot_time.slice(0, 5), o.is_active));
+    return m;
+  }, [overrides]);
+
   const availableSlots = useMemo(() => {
     if (!date) return [];
     const h = selectedDayHours;
@@ -158,8 +176,8 @@ function BookPage() {
     const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
     const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
     if (!open || !close) return [];
-    return SLOTS.filter((s) => s >= open && s < close);
-  }, [date, selectedDayHours]);
+    return SLOTS.filter((s) => s >= open && s < close).filter((s) => overrideMap.get(s) !== false);
+  }, [date, selectedDayHours, overrideMap]);
 
   useEffect(() => {
     if (date && isDateDisabled(date)) { setDate(undefined); setTime(null); }
