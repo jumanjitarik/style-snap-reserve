@@ -29,10 +29,10 @@ export const Route = createFileRoute("/_authenticated/salon-yonetimi")({
 });
 
 function SalonYonetimi() {
-  const [tab, setTab] = useState<"appts" | "shop" | "hours" | "services" | "staff" | "pos">(() => {
-    if (typeof window === "undefined") return "appts";
+  const [tab, setTab] = useState<"shop" | "hours" | "plan" | "services" | "staff" | "pos">(() => {
+    if (typeof window === "undefined") return "shop";
     const saved = window.localStorage.getItem("salon.mgmt.tab");
-    return ["appts", "shop", "hours", "services", "staff", "pos"].includes(saved ?? "") ? saved as any : "appts";
+    return ["shop", "hours", "plan", "services", "staff", "pos"].includes(saved ?? "") ? saved as any : "shop";
   });
   const { data: shops } = useQuery({
     queryKey: ["owner-shops"],
