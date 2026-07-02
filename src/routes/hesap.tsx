@@ -23,6 +23,23 @@ function AccountPage() {
   const qc = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [feedbackSending, setFeedbackSending] = useState(false);
+
+  async function sendFeedback() {
+    const msg = feedbackMsg.trim();
+    if (msg.length < 3) { toast.error("Lütfen görüşünü yaz"); return; }
+    if (!userId) { toast.error("Giriş gerekli"); return; }
+    setFeedbackSending(true);
+    const { error } = await supabase.from("feedback").insert({ user_id: userId, message: msg });
+    setFeedbackSending(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Başarıyla gönderilmiştir");
+    setFeedbackMsg("");
+    setFeedbackOpen(false);
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserId(data.user?.id ?? null);
