@@ -829,6 +829,8 @@ function SettingsTab() {
       welcome_line3_text: settings.welcome_line3_text ?? "VE ŞIKSIN",
       welcome_line3_color: settings.welcome_line3_color ?? "#FFD400",
       loyalty_percent: settings.loyalty_percent ?? "1",
+      deposit_percent: settings.deposit_percent ?? "25",
+
       hero_height_px: settings.hero_height_px ?? "120",
       gap_top_px: settings.gap_top_px ?? "8",
       gap_line12_px: settings.gap_line12_px ?? "2",
