@@ -9,7 +9,9 @@ import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard, MessageCircle, Phone, Receipt } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { User, LogOut, Heart, Bell, CalendarDays, Shield, Upload, Save, Trash2, BellRing, CreditCard, MessageCircle, Phone, Receipt, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/hesap")({
