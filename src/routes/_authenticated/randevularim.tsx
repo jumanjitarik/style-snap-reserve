@@ -12,8 +12,12 @@ import { Calendar, MapPin, Phone, Calendar as CalIcon, BadgeCheck } from "lucide
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/randevularim")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    tab: (s.tab as Tab | undefined),
+  }),
   component: MyAppts,
 });
+
 
 type Tab = "customers" | "mine" | "customer_memberships" | "memberships";
 
@@ -30,9 +34,10 @@ function toneClass(tone: StatusLabel["tone"]) {
 }
 
 function MyAppts() {
+  const { tab: initialTab } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
   const [isStaffOrOwner, setIsStaffOrOwner] = useState(false);
-  const [tab, setTab] = useState<Tab>("mine");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "mine");
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -42,9 +47,10 @@ function MyAppts() {
       const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", uid);
       const so = !!roles?.some((r) => r.role === "owner" || r.role === "staff" || r.role === "admin");
       setIsStaffOrOwner(so);
-      if (so) setTab("customers");
+      if (!initialTab && so) setTab("customers");
     });
-  }, []);
+  }, [initialTab]);
+
 
   const TabBtn = ({ id, label }: { id: Tab; label: string }) => (
     <button

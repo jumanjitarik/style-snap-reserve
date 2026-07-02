@@ -116,6 +116,12 @@ function BookPage() {
     if (!allowDeposit && paymentMethod === "deposit") setPaymentMethod("full");
   }, [allowFull, allowDeposit]);
 
+  // Fitness/yoga salonlarında tarih & saat adımını atla
+  useEffect(() => {
+    if (skipDateTime && step === 4) setStep(5);
+  }, [skipDateTime, step]);
+
+
 
   const { data: staff } = useQuery({
     queryKey: ["book-staff", shopId],
@@ -322,12 +328,14 @@ function BookPage() {
     onSuccess: (kind) => {
       if (kind === "membership") {
         toast.success("Üyelik satın alındı!");
+        navigate({ to: "/randevularim", search: { tab: "memberships" } as never });
       } else {
         toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı!" : "Ödeme alındı, randevu onaylandı!");
+        navigate({ to: "/randevularim", search: { tab: "mine" } as never });
       }
-      navigate({ to: "/randevularim" });
     },
     onError: (e: Error) => toast.error(e.message),
+
   });
 
 
