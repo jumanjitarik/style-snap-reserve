@@ -266,26 +266,25 @@ function BookPage() {
 
       // Fitness / Yoga & Pilates → üyelik satışı (tarih/saat yok)
       if (skipDateTime) {
+        const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * depPct / 100) : finalTotal;
+        const remaining = Math.max(0, finalTotal - deposit);
         const { error } = await supabase.from("memberships").insert({
           user_id: userId,
           shop_id: shopId,
           service_id: serviceIds[0],
           service_ids: serviceIds,
           amount: finalTotal,
+          payment_amount: deposit,
+          deposit_amount: deposit,
+          remaining_amount: remaining,
+          payment_method: paymentMethod,
+          discount_code: appliedDiscount?.code ?? null,
+          discount_amount: appliedDiscount?.amount ?? 0,
+          points_used: pointsToUse,
           notes: customerNote.trim() || null,
           payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
         });
         if (error) throw error;
-        try {
-          const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
-          if (shop?.owner_id) {
-            await supabase.from("notifications").insert({
-              user_id: shop.owner_id,
-              title: "Yeni üyelik satışı",
-              body: `${shop.name} · ${finalTotal.toFixed(0)}₺ üyelik satın alındı.`,
-            });
-          }
-        } catch { /* sessiz */ }
         return "membership" as const;
       }
 
@@ -332,6 +331,7 @@ function BookPage() {
       } catch { /* sessiz */ }
       return "appointment" as const;
     },
+
 
     onSuccess: (kind) => {
       if (kind === "membership") {
