@@ -391,10 +391,10 @@ function MyMembershipsList() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("memberships")
-        .select("id, amount, created_at, notes, shop:barbershops(id,name,address,category), service:services(name)")
+        .select("id, amount, payment_amount, remaining_amount, deposit_amount, payment_method, points_used, points_earned, discount_amount, created_at, notes, shop:barbershops(id,name,address,category), service:services(name)")
         .eq("user_id", u.user.id)
         .order("created_at", { ascending: false });
-      return data ?? [];
+      return (data ?? []) as unknown as Array<Record<string, unknown> & { id: string; amount: number; created_at: string; notes: string | null; shop: { id: string; name: string; address: string | null; category: string | null } | null; service: { name: string } | null }>;
     },
   });
 
@@ -404,29 +404,42 @@ function MyMembershipsList() {
   }
   return (
     <div className="space-y-3">
-      {list.map((m) => (
-        <div key={m.id} className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-semibold truncate flex items-center gap-1.5">
-                <BadgeCheck className="h-4 w-4 text-primary shrink-0" />{m.shop?.name}
-              </p>
-              <p className="text-sm text-muted-foreground">{m.service?.name}</p>
+      {list.map((m) => {
+        const card = Number(m.payment_amount ?? 0);
+        const cash = Number(m.remaining_amount ?? 0);
+        const pts = Number(m.points_used ?? 0);
+        const earned = Number(m.points_earned ?? 0);
+        return (
+          <div key={m.id} className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold truncate flex items-center gap-1.5">
+                  <BadgeCheck className="h-4 w-4 text-primary shrink-0" />{m.shop?.name}
+                </p>
+                <p className="text-sm text-muted-foreground">{m.service?.name}</p>
+              </div>
+              <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold bg-primary/20 text-primary">
+                {m.shop?.category === "fitness" ? "FITNESS" : "YOGA/PILATES"}
+              </span>
             </div>
-            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold bg-primary/20 text-primary">
-              {m.shop?.category === "fitness" ? "FITNESS" : "YOGA/PILATES"}
-            </span>
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(new Date(m.created_at), "d MMMM yyyy · HH:mm", { locale: tr })}</p>
+              {m.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{m.shop.address}</p>}
+            </div>
+            <p className="mt-2 font-display text-xl text-primary">{Number(m.amount).toFixed(0)}₺</p>
+            <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
+              {card > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {card.toFixed(0)}₺</span>}
+              {cash > 0 && <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {cash.toFixed(0)}₺</span>}
+              {pts > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">Puan: −{pts}</span>}
+              {earned > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">+{earned}P kazanıldı</span>}
+            </div>
           </div>
-          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-            <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(new Date(m.created_at), "d MMMM yyyy · HH:mm", { locale: tr })}</p>
-            {m.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{m.shop.address}</p>}
-          </div>
-          <p className="mt-2 font-display text-xl text-primary">{Number(m.amount).toFixed(0)}₺</p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
+
 
 function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
   const { data: shopIds } = useQuery({
