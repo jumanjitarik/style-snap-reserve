@@ -68,6 +68,7 @@ function MuhasebePage() {
       let q = supabase
         .from("appointments")
         .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, payment_method, service_ids, service_id, user_id, shop_id, barbershops:shop_id(name), profiles:user_id(full_name, phone)")
+        .neq("status", "cancelled")
         .order("starts_at", { ascending: false });
       if (shopFilter === "ALL") q = q.in("shop_id", ownedIds);
       else q = q.eq("shop_id", shopFilter);
