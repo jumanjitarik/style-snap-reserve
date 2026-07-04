@@ -236,11 +236,9 @@ function BookPage() {
   }, [availableSlots, time]);
 
   const balance = profilePts ?? 0;
-  // Üyelik satışında (fitness/yoga-pilates) puan ve kupon kullanılamaz.
-  const effectiveDiscount = skipDateTime ? 0 : (appliedDiscount?.amount ?? 0);
-  const afterDiscount = Math.max(0, totalPrice - effectiveDiscount);
+  const afterDiscount = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
   // 1 puan = 1₺. Toplamı geçemez.
-  const pointsToUse = !skipDateTime && usePoints ? Math.min(balance, Math.floor(afterDiscount)) : 0;
+  const pointsToUse = usePoints ? Math.min(balance, Math.floor(afterDiscount)) : 0;
   const finalTotal = Math.max(0, afterDiscount - pointsToUse);
 
   async function applyDiscount() {
@@ -497,24 +495,22 @@ function BookPage() {
                 <p key={s.id} className="flex justify-between"><span>{s.name}</span><span className="font-semibold">{Number(s.price).toFixed(0)}₺</span></p>
               ))}
               <hr className="border-border" />
-              {!skipDateTime && (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Varsa İndirim Kodu</p>
-                  <div className="flex gap-2">
-                    <input
-                      placeholder="KOD"
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                      className="flex-1 rounded-md bg-input border border-border p-2 text-sm uppercase"
-                    />
-                    <Button type="button" variant="outline" onClick={applyDiscount}>Uygula</Button>
-                  </div>
-                  {appliedDiscount && (
-                    <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
-                  )}
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Varsa İndirim Kodu</p>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="KOD"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                    className="flex-1 rounded-md bg-input border border-border p-2 text-sm uppercase"
+                  />
+                  <Button type="button" variant="outline" onClick={applyDiscount}>Uygula</Button>
                 </div>
-              )}
-              {!skipDateTime && balance > 0 && (
+                {appliedDiscount && (
+                  <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
+                )}
+              </div>
+              {balance > 0 && (
                 <>
                   <hr className="border-border" />
                   <div className="space-y-1">
