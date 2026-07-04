@@ -33,6 +33,64 @@ function toneClass(tone: StatusLabel["tone"]) {
   return "bg-muted text-muted-foreground";
 }
 
+type Period = "day" | "week" | "month" | "year" | "all";
+const PERIODS: { id: Period; label: string }[] = [
+  { id: "day", label: "Günlük" },
+  { id: "week", label: "Haftalık" },
+  { id: "month", label: "Aylık" },
+  { id: "year", label: "Senelik" },
+  { id: "all", label: "Toplam" },
+];
+function periodStart(p: Period): number {
+  const d = new Date();
+  if (p === "all") return 0;
+  if (p === "day") { d.setHours(0, 0, 0, 0); return d.getTime(); }
+  if (p === "week") { const dd = new Date(); dd.setHours(0, 0, 0, 0); dd.setDate(dd.getDate() - dd.getDay()); return dd.getTime(); }
+  if (p === "month") return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  return new Date(d.getFullYear(), 0, 1).getTime();
+}
+function RevenueSummary({ items, dateField, title = "Toplam Gelir" }: {
+  items: Array<{ payment_amount?: number | null; remaining_amount?: number | null; [k: string]: unknown }>;
+  dateField: string;
+  title?: string;
+}) {
+  const [period, setPeriod] = useState<Period>("all");
+  const sum = useMemo(() => {
+    const since = periodStart(period);
+    let card = 0, cash = 0, count = 0;
+    for (const it of items) {
+      const t = new Date(String(it[dateField])).getTime();
+      if (t < since) continue;
+      card += Number(it.payment_amount ?? 0);
+      cash += Number(it.remaining_amount ?? 0);
+      count += 1;
+    }
+    return { card, cash, total: card + cash, count };
+  }, [items, dateField, period]);
+  return (
+    <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">{title}</p>
+        <p className="text-[10px] text-muted-foreground">{sum.count} kayıt</p>
+      </div>
+      <p className="font-display text-3xl text-primary">{sum.total.toFixed(0)}₺</p>
+      <div className="flex flex-wrap gap-1.5 text-[11px]">
+        <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {sum.card.toFixed(0)}₺</span>
+        <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {sum.cash.toFixed(0)}₺</span>
+      </div>
+      <div className="grid grid-cols-5 gap-1 pt-1">
+        {PERIODS.map((p) => (
+          <button key={p.id} onClick={() => setPeriod(p.id)}
+            className={cn("rounded-md py-1.5 text-[10px] font-medium transition", period === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function MyAppts() {
   const { tab: initialTab } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
@@ -303,6 +361,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
 
   return (
     <div className="space-y-5">
+      <RevenueSummary items={appts as never} dateField="starts_at" title="Toplam Randevu Geliri" />
       <section>
         <h2 className="font-display text-lg mb-2 flex items-center gap-2">Açık Randevular <span className="text-xs text-muted-foreground font-sans">({open.length})</span></h2>
         {open.length === 0 ? (
@@ -323,6 +382,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
   );
 }
 
+
 function MyMembershipsList() {
   const { data } = useQuery({
     queryKey: ["my-memberships"],
@@ -331,10 +391,10 @@ function MyMembershipsList() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("memberships")
-        .select("id, amount, created_at, notes, shop:barbershops(id,name,address,category), service:services(name)")
+        .select("id, amount, payment_amount, remaining_amount, deposit_amount, payment_method, points_used, points_earned, discount_amount, created_at, notes, shop:barbershops(id,name,address,category), service:services(name)")
         .eq("user_id", u.user.id)
         .order("created_at", { ascending: false });
-      return data ?? [];
+      return (data ?? []) as unknown as Array<Record<string, unknown> & { id: string; amount: number; created_at: string; notes: string | null; shop: { id: string; name: string; address: string | null; category: string | null } | null; service: { name: string } | null }>;
     },
   });
 
@@ -344,29 +404,42 @@ function MyMembershipsList() {
   }
   return (
     <div className="space-y-3">
-      {list.map((m) => (
-        <div key={m.id} className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <p className="font-semibold truncate flex items-center gap-1.5">
-                <BadgeCheck className="h-4 w-4 text-primary shrink-0" />{m.shop?.name}
-              </p>
-              <p className="text-sm text-muted-foreground">{m.service?.name}</p>
+      {list.map((m) => {
+        const card = Number(m.payment_amount ?? 0);
+        const cash = Number(m.remaining_amount ?? 0);
+        const pts = Number(m.points_used ?? 0);
+        const earned = Number(m.points_earned ?? 0);
+        return (
+          <div key={m.id} className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold truncate flex items-center gap-1.5">
+                  <BadgeCheck className="h-4 w-4 text-primary shrink-0" />{m.shop?.name}
+                </p>
+                <p className="text-sm text-muted-foreground">{m.service?.name}</p>
+              </div>
+              <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold bg-primary/20 text-primary">
+                {m.shop?.category === "fitness" ? "FITNESS" : "YOGA/PILATES"}
+              </span>
             </div>
-            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold bg-primary/20 text-primary">
-              {m.shop?.category === "fitness" ? "FITNESS" : "YOGA/PILATES"}
-            </span>
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(new Date(m.created_at), "d MMMM yyyy · HH:mm", { locale: tr })}</p>
+              {m.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{m.shop.address}</p>}
+            </div>
+            <p className="mt-2 font-display text-xl text-primary">{Number(m.amount).toFixed(0)}₺</p>
+            <div className="mt-1 flex flex-wrap gap-1.5 text-[11px]">
+              {card > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {card.toFixed(0)}₺</span>}
+              {cash > 0 && <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {cash.toFixed(0)}₺</span>}
+              {pts > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">Puan: −{pts}</span>}
+              {earned > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">+{earned}P kazanıldı</span>}
+            </div>
           </div>
-          <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-            <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(new Date(m.created_at), "d MMMM yyyy · HH:mm", { locale: tr })}</p>
-            {m.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{m.shop.address}</p>}
-          </div>
-          <p className="mt-2 font-display text-xl text-primary">{Number(m.amount).toFixed(0)}₺</p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
+
 
 function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
   const { data: shopIds } = useQuery({
@@ -389,11 +462,11 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
     queryFn: async () => {
       let q = supabase
         .from("memberships")
-        .select("id, amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .select("id, amount, payment_amount, remaining_amount, deposit_amount, payment_method, points_used, points_earned, discount_amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
         .order("created_at", { ascending: false });
       if (!isAdmin) q = q.in("shop_id", shopIds!);
       const { data } = await q;
-      return data ?? [];
+      return (data ?? []) as unknown as Array<Record<string, unknown> & { id: string; amount: number; created_at: string; user_id: string | null; guest_name: string | null; guest_phone: string | null; shop_id: string; service_id: string | null; notes: string | null }>;
     },
   });
 
@@ -436,20 +509,16 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
   if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
   if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
 
-  if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
-
-  const total = memberships.reduce((s, m) => s + Number(m.amount ?? 0), 0);
-
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-        <p className="text-xs text-muted-foreground">Toplam üyelik geliri</p>
-        <p className="font-display text-2xl text-primary">{total.toFixed(0)}₺ <span className="text-xs font-sans text-muted-foreground">({memberships.length} satış)</span></p>
-      </div>
+      <RevenueSummary items={memberships as never} dateField="created_at" title="Toplam Üyelik Geliri" />
       {memberships.map((m) => {
         const p = m.user_id ? profiles?.get(m.user_id) : null;
         const name = p?.full_name ?? m.guest_name ?? "Müşteri";
         const phone = p?.phone ?? m.guest_phone ?? null;
+        const card = Number(m.payment_amount ?? 0);
+        const cash = Number(m.remaining_amount ?? 0);
+        const pts = Number(m.points_used ?? 0);
         return (
           <div key={m.id} className="rounded-xl border border-border bg-card p-3">
             <div className="flex items-start justify-between gap-2">
@@ -465,6 +534,11 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 </p>
               </div>
               <span className="shrink-0 font-display text-lg text-primary">{Number(m.amount).toFixed(0)}₺</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+              {card > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {card.toFixed(0)}₺</span>}
+              {cash > 0 && <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {cash.toFixed(0)}₺</span>}
+              {pts > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">Puan: −{pts}</span>}
             </div>
             {phone && (
               <a href={`tel:${phone}`} className="mt-2 flex items-center gap-2 text-xs text-primary active:opacity-60">
@@ -483,3 +557,4 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
     </div>
   );
 }
+

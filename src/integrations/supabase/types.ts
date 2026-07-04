@@ -443,11 +443,19 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          deposit_amount: number
+          discount_amount: number
+          discount_code: string | null
           guest_name: string | null
           guest_phone: string | null
           id: string
           notes: string | null
+          payment_amount: number
+          payment_method: string
           payment_ref: string | null
+          points_earned: number
+          points_used: number
+          remaining_amount: number
           service_id: string | null
           service_ids: string[]
           shop_id: string
@@ -457,11 +465,19 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          deposit_amount?: number
+          discount_amount?: number
+          discount_code?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
           notes?: string | null
+          payment_amount?: number
+          payment_method?: string
           payment_ref?: string | null
+          points_earned?: number
+          points_used?: number
+          remaining_amount?: number
           service_id?: string | null
           service_ids?: string[]
           shop_id: string
@@ -471,11 +487,19 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          deposit_amount?: number
+          discount_amount?: number
+          discount_code?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
           notes?: string | null
+          payment_amount?: number
+          payment_method?: string
           payment_ref?: string | null
+          points_earned?: number
+          points_used?: number
+          remaining_amount?: number
           service_id?: string | null
           service_ids?: string[]
           shop_id?: string
