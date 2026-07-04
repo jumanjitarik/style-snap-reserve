@@ -236,9 +236,11 @@ function BookPage() {
   }, [availableSlots, time]);
 
   const balance = profilePts ?? 0;
-  const afterDiscount = Math.max(0, totalPrice - (appliedDiscount?.amount ?? 0));
+  // Üyelik satışında (fitness/yoga-pilates) puan ve kupon kullanılamaz.
+  const effectiveDiscount = skipDateTime ? 0 : (appliedDiscount?.amount ?? 0);
+  const afterDiscount = Math.max(0, totalPrice - effectiveDiscount);
   // 1 puan = 1₺. Toplamı geçemez.
-  const pointsToUse = usePoints ? Math.min(balance, Math.floor(afterDiscount)) : 0;
+  const pointsToUse = !skipDateTime && usePoints ? Math.min(balance, Math.floor(afterDiscount)) : 0;
   const finalTotal = Math.max(0, afterDiscount - pointsToUse);
 
   async function applyDiscount() {
