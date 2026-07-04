@@ -33,6 +33,64 @@ function toneClass(tone: StatusLabel["tone"]) {
   return "bg-muted text-muted-foreground";
 }
 
+type Period = "day" | "week" | "month" | "year" | "all";
+const PERIODS: { id: Period; label: string }[] = [
+  { id: "day", label: "Günlük" },
+  { id: "week", label: "Haftalık" },
+  { id: "month", label: "Aylık" },
+  { id: "year", label: "Senelik" },
+  { id: "all", label: "Toplam" },
+];
+function periodStart(p: Period): number {
+  const d = new Date();
+  if (p === "all") return 0;
+  if (p === "day") { d.setHours(0, 0, 0, 0); return d.getTime(); }
+  if (p === "week") { const dd = new Date(); dd.setHours(0, 0, 0, 0); dd.setDate(dd.getDate() - dd.getDay()); return dd.getTime(); }
+  if (p === "month") return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  return new Date(d.getFullYear(), 0, 1).getTime();
+}
+function RevenueSummary({ items, dateField, title = "Toplam Gelir" }: {
+  items: Array<{ payment_amount?: number | null; remaining_amount?: number | null; [k: string]: unknown }>;
+  dateField: string;
+  title?: string;
+}) {
+  const [period, setPeriod] = useState<Period>("all");
+  const sum = useMemo(() => {
+    const since = periodStart(period);
+    let card = 0, cash = 0, count = 0;
+    for (const it of items) {
+      const t = new Date(String(it[dateField])).getTime();
+      if (t < since) continue;
+      card += Number(it.payment_amount ?? 0);
+      cash += Number(it.remaining_amount ?? 0);
+      count += 1;
+    }
+    return { card, cash, total: card + cash, count };
+  }, [items, dateField, period]);
+  return (
+    <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">{title}</p>
+        <p className="text-[10px] text-muted-foreground">{sum.count} kayıt</p>
+      </div>
+      <p className="font-display text-3xl text-primary">{sum.total.toFixed(0)}₺</p>
+      <div className="flex flex-wrap gap-1.5 text-[11px]">
+        <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {sum.card.toFixed(0)}₺</span>
+        <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {sum.cash.toFixed(0)}₺</span>
+      </div>
+      <div className="grid grid-cols-5 gap-1 pt-1">
+        {PERIODS.map((p) => (
+          <button key={p.id} onClick={() => setPeriod(p.id)}
+            className={cn("rounded-md py-1.5 text-[10px] font-medium transition", period === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 function MyAppts() {
   const { tab: initialTab } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
