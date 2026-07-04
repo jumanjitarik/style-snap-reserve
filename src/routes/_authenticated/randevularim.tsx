@@ -361,6 +361,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
 
   return (
     <div className="space-y-5">
+      <RevenueSummary items={appts as never} dateField="starts_at" title="Toplam Randevu Geliri" />
       <section>
         <h2 className="font-display text-lg mb-2 flex items-center gap-2">Açık Randevular <span className="text-xs text-muted-foreground font-sans">({open.length})</span></h2>
         {open.length === 0 ? (
@@ -380,6 +381,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
     </div>
   );
 }
+
 
 function MyMembershipsList() {
   const { data } = useQuery({
