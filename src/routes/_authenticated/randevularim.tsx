@@ -462,11 +462,11 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
     queryFn: async () => {
       let q = supabase
         .from("memberships")
-        .select("id, amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .select("id, amount, payment_amount, remaining_amount, deposit_amount, payment_method, points_used, points_earned, discount_amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
         .order("created_at", { ascending: false });
       if (!isAdmin) q = q.in("shop_id", shopIds!);
       const { data } = await q;
-      return data ?? [];
+      return (data ?? []) as unknown as Array<Record<string, unknown> & { id: string; amount: number; created_at: string; user_id: string | null; guest_name: string | null; guest_phone: string | null; shop_id: string; service_id: string | null; notes: string | null }>;
     },
   });
 
@@ -509,20 +509,16 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
   if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
   if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
 
-  if (!memberships || memberships.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz üyelik satışı yok.</div>;
-
-  const total = memberships.reduce((s, m) => s + Number(m.amount ?? 0), 0);
-
   return (
     <div className="space-y-3">
-      <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-        <p className="text-xs text-muted-foreground">Toplam üyelik geliri</p>
-        <p className="font-display text-2xl text-primary">{total.toFixed(0)}₺ <span className="text-xs font-sans text-muted-foreground">({memberships.length} satış)</span></p>
-      </div>
+      <RevenueSummary items={memberships as never} dateField="created_at" title="Toplam Üyelik Geliri" />
       {memberships.map((m) => {
         const p = m.user_id ? profiles?.get(m.user_id) : null;
         const name = p?.full_name ?? m.guest_name ?? "Müşteri";
         const phone = p?.phone ?? m.guest_phone ?? null;
+        const card = Number(m.payment_amount ?? 0);
+        const cash = Number(m.remaining_amount ?? 0);
+        const pts = Number(m.points_used ?? 0);
         return (
           <div key={m.id} className="rounded-xl border border-border bg-card p-3">
             <div className="flex items-start justify-between gap-2">
@@ -538,6 +534,11 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 </p>
               </div>
               <span className="shrink-0 font-display text-lg text-primary">{Number(m.amount).toFixed(0)}₺</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+              {card > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {card.toFixed(0)}₺</span>}
+              {cash > 0 && <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {cash.toFixed(0)}₺</span>}
+              {pts > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">Puan: −{pts}</span>}
             </div>
             {phone && (
               <a href={`tel:${phone}`} className="mt-2 flex items-center gap-2 text-xs text-primary active:opacity-60">
@@ -556,3 +557,4 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
     </div>
   );
 }
+
