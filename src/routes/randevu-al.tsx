@@ -497,22 +497,24 @@ function BookPage() {
                 <p key={s.id} className="flex justify-between"><span>{s.name}</span><span className="font-semibold">{Number(s.price).toFixed(0)}₺</span></p>
               ))}
               <hr className="border-border" />
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Varsa İndirim Kodu</p>
-                <div className="flex gap-2">
-                  <input
-                    placeholder="KOD"
-                    value={discountCode}
-                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
-                    className="flex-1 rounded-md bg-input border border-border p-2 text-sm uppercase"
-                  />
-                  <Button type="button" variant="outline" onClick={applyDiscount}>Uygula</Button>
+              {!skipDateTime && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Varsa İndirim Kodu</p>
+                  <div className="flex gap-2">
+                    <input
+                      placeholder="KOD"
+                      value={discountCode}
+                      onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                      className="flex-1 rounded-md bg-input border border-border p-2 text-sm uppercase"
+                    />
+                    <Button type="button" variant="outline" onClick={applyDiscount}>Uygula</Button>
+                  </div>
+                  {appliedDiscount && (
+                    <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
+                  )}
                 </div>
-                {appliedDiscount && (
-                  <p className="text-xs text-primary">✓ {appliedDiscount.code} → -{appliedDiscount.amount.toFixed(0)}₺</p>
-                )}
-              </div>
-              {balance > 0 && (
+              )}
+              {!skipDateTime && balance > 0 && (
                 <>
                   <hr className="border-border" />
                   <div className="space-y-1">
