@@ -43,9 +43,17 @@ export function SafeImg({
   alt?: string;
   className?: string;
 }) {
-  const [resolved, setResolved] = useState<string | null>(() =>
-    src ? cache.get(src) ?? null : null
-  );
+  const [resolved, setResolved] = useState<string | null>(() => {
+    if (!src) return null;
+    const cached = cache.get(src);
+    if (cached) return cached;
+    // If no signing needed (plain URL / data URI), use src directly to avoid a flash.
+    if (extractPath(src) === null) {
+      cache.set(src, src);
+      return src;
+    }
+    return null;
+  });
 
   useEffect(() => {
     let active = true;
