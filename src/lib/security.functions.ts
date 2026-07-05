@@ -85,17 +85,8 @@ export const recordLoginFailure = createServerFn({ method: "POST" })
         }).select();
       }
     }
-    if (email) {
-      const { count } = await supabaseAdmin
-        .from("login_attempts").select("id", { count: "exact", head: true })
-        .eq("email", email).eq("success", false).gte("created_at", sinceDay);
-      if ((count ?? 0) >= DAILY_THRESHOLD) {
-        await supabaseAdmin.from("security_blocks").insert({
-          block_type: "email", value: email,
-          reason: `24 saat içinde ${count} hatalı giriş (e-posta)`,
-        }).select();
-      }
-    }
+    // Daily email block removed per policy — only IP is blocked on daily threshold.
+
     return { ok: true };
   });
 
