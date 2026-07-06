@@ -237,6 +237,10 @@ function MyOwnList() {
               {Number(a.points_used ?? 0) > 0 && (
                 <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">−{a.points_used} puan</span>
               )}
+              {Number(a.points_earned ?? 0) > 0 && (
+                <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">+{a.points_earned} puan kazandın</span>
+              )}
+
             </div>
             {lbl.tone === "open" && (
               canCancel ? (
