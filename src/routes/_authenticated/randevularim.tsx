@@ -352,6 +352,9 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
           {Number(a.payment_amount ?? 0) > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {Number(a.payment_amount).toFixed(0)}₺</span>}
           {Number(a.remaining_amount ?? 0) > 0 && <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {Number(a.remaining_amount).toFixed(0)}₺</span>}
           {Number(a.discount_amount ?? 0) > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">İndirim: −{Number(a.discount_amount).toFixed(0)}₺</span>}
+          {Number(a.points_used ?? 0) > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">Puan: −{a.points_used}</span>}
+          {Number(a.points_earned ?? 0) > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">+{a.points_earned} puan</span>}
+
         </div>
         {a.notes && (
           <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2">
