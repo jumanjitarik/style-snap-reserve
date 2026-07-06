@@ -1601,7 +1601,7 @@ function SecurityTab() {
       </div>
 
       <BlockList title="Engellenen IP'ler" items={ipBlocks} onUnblock={(id) => unblock.mutate(id)} />
-      <BlockList title="Engellenen E-postalar" items={emailBlocks} onUnblock={(id) => unblock.mutate(id)} />
+
       <BlockList title="Engellenen Üyeler" items={userBlocks} onUnblock={(id) => unblock.mutate(id)} />
 
       <div className="rounded-2xl border border-border bg-card p-4">
