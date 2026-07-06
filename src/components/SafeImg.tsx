@@ -34,7 +34,9 @@ async function resolveSrc(src: string): Promise<string> {
   return p;
 }
 
-export function SafeImg({
+import { memo } from "react";
+
+function SafeImgInner({
   src,
   alt = "",
   className,
@@ -47,7 +49,6 @@ export function SafeImg({
     if (!src) return null;
     const cached = cache.get(src);
     if (cached) return cached;
-    // If no signing needed (plain URL / data URI), use src directly to avoid a flash.
     if (extractPath(src) === null) {
       cache.set(src, src);
       return src;
@@ -61,8 +62,13 @@ export function SafeImg({
       setResolved(null);
       return;
     }
+    const cached = cache.get(src);
+    if (cached) {
+      setResolved((prev) => (prev === cached ? prev : cached));
+      return;
+    }
     resolveSrc(src).then((u) => {
-      if (active) setResolved(u);
+      if (active) setResolved((prev) => (prev === u ? prev : u));
     });
     return () => {
       active = false;
@@ -73,3 +79,8 @@ export function SafeImg({
   if (!resolved) return <div className={className} />;
   return <img src={resolved} alt={alt} className={className} loading="lazy" />;
 }
+
+export const SafeImg = memo(SafeImgInner, (prev, next) =>
+  prev.src === next.src && prev.alt === next.alt && prev.className === next.className,
+);
+
