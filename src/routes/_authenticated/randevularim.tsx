@@ -279,7 +279,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
     queryFn: async () => {
       let q = supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, user_id, guest_name, guest_phone, shop_id, service_id, notes")
         .order("starts_at", { ascending: true });
       if (!isAdmin) q = q.in("shop_id", shopIds!);
       const { data } = await q;
