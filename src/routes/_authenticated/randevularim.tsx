@@ -175,7 +175,7 @@ function MyOwnList() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, shop:barbershops(id,name,address), service:services(name)")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, shop:barbershops(id,name,address), service:services(name)")
         .eq("user_id", u.user.id)
         .order("starts_at", { ascending: false });
       return data ?? [];
