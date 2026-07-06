@@ -1562,17 +1562,17 @@ function SecurityTab() {
   const blocks = data?.blocks ?? [];
   const attempts = data?.attempts ?? [];
   const ipBlocks = blocks.filter((b) => b.block_type === "ip");
-  const emailBlocks = blocks.filter((b) => b.block_type === "email");
   const userBlocks = blocks.filter((b) => b.block_type === "user");
 
   const secureItems = [
     { label: "3 yanlış girişte 5 dk kilit", ok: true },
-    { label: "24 saatte 10 yanlış → IP + e-posta engeli", ok: true },
+    { label: "24 saatte 10 yanlış → IP engeli", ok: true },
     { label: "Şifreler Supabase Auth tarafından hash'lenir", ok: true },
     { label: "Row-Level Security tüm tablolarda aktif", ok: true },
     { label: "Servis anahtarı yalnızca sunucuda kullanılır", ok: true },
     { label: "Yönetici işlemleri denetim kayıtlarında", ok: true },
   ];
+
 
   return (
     <div className="space-y-4">
@@ -1601,7 +1601,7 @@ function SecurityTab() {
       </div>
 
       <BlockList title="Engellenen IP'ler" items={ipBlocks} onUnblock={(id) => unblock.mutate(id)} />
-      <BlockList title="Engellenen E-postalar" items={emailBlocks} onUnblock={(id) => unblock.mutate(id)} />
+
       <BlockList title="Engellenen Üyeler" items={userBlocks} onUnblock={(id) => unblock.mutate(id)} />
 
       <div className="rounded-2xl border border-border bg-card p-4">

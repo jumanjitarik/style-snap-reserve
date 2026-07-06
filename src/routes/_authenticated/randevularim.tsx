@@ -175,7 +175,7 @@ function MyOwnList() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, shop:barbershops(id,name,address), service:services(name)")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, shop:barbershops(id,name,address), service:services(name)")
         .eq("user_id", u.user.id)
         .order("starts_at", { ascending: false });
       return data ?? [];
@@ -237,6 +237,10 @@ function MyOwnList() {
               {Number(a.points_used ?? 0) > 0 && (
                 <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">−{a.points_used} puan</span>
               )}
+              {Number(a.points_earned ?? 0) > 0 && (
+                <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">+{a.points_earned} puan kazandın</span>
+              )}
+
             </div>
             {lbl.tone === "open" && (
               canCancel ? (
@@ -275,7 +279,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
     queryFn: async () => {
       let q = supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, user_id, guest_name, guest_phone, shop_id, service_id, notes")
         .order("starts_at", { ascending: true });
       if (!isAdmin) q = q.in("shop_id", shopIds!);
       const { data } = await q;
@@ -348,6 +352,9 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
           {Number(a.payment_amount ?? 0) > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {Number(a.payment_amount).toFixed(0)}₺</span>}
           {Number(a.remaining_amount ?? 0) > 0 && <span className="rounded-full bg-amber-500/15 text-amber-500 px-2 py-0.5 font-semibold">Salonda: {Number(a.remaining_amount).toFixed(0)}₺</span>}
           {Number(a.discount_amount ?? 0) > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">İndirim: −{Number(a.discount_amount).toFixed(0)}₺</span>}
+          {Number(a.points_used ?? 0) > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">Puan: −{a.points_used}</span>}
+          {Number(a.points_earned ?? 0) > 0 && <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 font-semibold">+{a.points_earned} puan</span>}
+
         </div>
         {a.notes && (
           <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2">

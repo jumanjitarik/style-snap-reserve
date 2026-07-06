@@ -124,20 +124,21 @@ export function BottomNav() {
                     "absolute top-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary transition-opacity",
                     active ? "opacity-100" : "opacity-0",
                   )} />
-                  <div className="relative h-7 w-7 flex items-center justify-center">
+                  <div className={cn(
+                    "relative h-7 w-7 flex items-center justify-center rounded-full",
+                    profile && avatar ? (active ? "ring-2 ring-primary" : "ring-2 ring-border") : "",
+                  )}>
                     {profile && avatar ? (
                       <SafeImg
                         src={avatar}
                         alt=""
-                        className={cn(
-                          "absolute inset-0 h-7 w-7 rounded-full object-cover ring-2",
-                          active ? "ring-primary" : "ring-border",
-                        )}
+                        className="absolute inset-0 h-7 w-7 rounded-full object-cover"
                       />
                     ) : (
                       <Icon className="h-6 w-6" />
                     )}
                   </div>
+
                   <span className="truncate leading-none">{label}</span>
                 </Link>
               </li>
