@@ -61,9 +61,11 @@ function AdminPanel() {
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
           <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-1 w-full mt-2">
+        <TabsList className="grid grid-cols-2 w-full mt-2">
           <TabsTrigger value="security"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Güven</TabsTrigger>
+          <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
         </TabsList>
+
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
