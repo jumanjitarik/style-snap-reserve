@@ -61,9 +61,11 @@ function AdminPanel() {
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
           <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-1 w-full mt-2">
+        <TabsList className="grid grid-cols-2 w-full mt-2">
           <TabsTrigger value="security"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Güven</TabsTrigger>
+          <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
         </TabsList>
+
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
         <TabsContent value="services"><ServicesTab /></TabsContent>
@@ -77,7 +79,9 @@ function AdminPanel() {
         <TabsContent value="discounts"><DiscountsTab /></TabsContent>
         <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
         <TabsContent value="security"><SecurityTab /></TabsContent>
+        <TabsContent value="password"><PasswordTab /></TabsContent>
       </Tabs>
+
     </AppShell>
   );
 }
@@ -1650,3 +1654,70 @@ function BlockList({ title, items, onUnblock }: {
     </div>
   );
 }
+
+function PasswordTab() {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<ProfileLite | null>(null);
+  const [pw, setPw] = useState("");
+  const [pw2, setPw2] = useState("");
+  const [saving, setSaving] = useState(false);
+  const updateFn = useServerFn(adminUpdateUser);
+
+  const { data: profiles } = useQuery({
+    queryKey: ["admin-pw-profiles", search],
+    queryFn: async () => {
+      let q = supabase.from("profiles").select("id, full_name, email, phone").order("full_name", { ascending: true, nullsFirst: false }).limit(50);
+      if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      return (await q).data ?? [];
+    },
+  });
+
+  async function submit() {
+    if (!selected) { toast.error("Üye seç"); return; }
+    if (pw.length < 4) { toast.error("Şifre en az 4 karakter"); return; }
+    if (pw !== pw2) { toast.error("Şifreler eşleşmiyor"); return; }
+    setSaving(true);
+    try {
+      await updateFn({ data: { user_id: selected.id, password: pw } });
+      toast.success(`${selected.full_name ?? selected.email} için şifre güncellendi`);
+      setPw(""); setPw2(""); setSelected(null);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="py-4 space-y-3">
+      <p className="text-xs text-muted-foreground">Üye seç ve yeni şifresini belirle. Üye bu şifreyle giriş yapabilir.</p>
+      <Input placeholder="Üye ara (isim / e-posta / telefon)" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="space-y-1 max-h-72 overflow-y-auto rounded-xl border border-border p-2">
+        {(profiles ?? []).map((p) => (
+          <button
+            key={p.id}
+            onClick={() => setSelected(p as ProfileLite)}
+            className={`w-full text-left rounded-lg p-2 text-sm ${selected?.id === p.id ? "bg-primary/15 border border-primary/40" : "hover:bg-muted"}`}
+          >
+            <p className="font-medium truncate">{p.full_name ?? "—"}</p>
+            <p className="text-xs text-muted-foreground truncate">{p.email} {p.phone && `· ${p.phone}`}</p>
+          </button>
+        ))}
+        {(profiles ?? []).length === 0 && <p className="text-xs text-muted-foreground px-2 py-4 text-center">Sonuç yok</p>}
+      </div>
+
+      {selected && (
+        <div className="rounded-xl border border-primary/30 bg-card p-3 space-y-2">
+          <p className="text-sm">Seçilen: <span className="font-semibold text-primary">{selected.full_name ?? selected.email}</span></p>
+          <div><Label className="text-xs">Yeni Şifre</Label><Input type="text" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="en az 4 karakter" /></div>
+          <div><Label className="text-xs">Yeni Şifre (tekrar)</Label><Input type="text" value={pw2} onChange={(e) => setPw2(e.target.value)} /></div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => { setSelected(null); setPw(""); setPw2(""); }}>İptal</Button>
+            <Button className="flex-1" disabled={saving} onClick={submit}>{saving ? "Kaydediliyor..." : "Şifreyi Belirle"}</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
