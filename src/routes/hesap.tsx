@@ -269,6 +269,33 @@ function AccountPage() {
           )}
         </div>
 
+        <button
+          onClick={() => setPwOpen(true)}
+          className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-card p-4 active:scale-[0.98] transition text-left"
+        >
+          <KeyRound className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Şifre Değiştir</span>
+        </button>
+
+        <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Şifre Değiştir</DialogTitle>
+              <DialogDescription>Mevcut şifreni ve yeni şifreni gir.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <div><Label>Mevcut Şifre</Label><Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} /></div>
+              <div><Label>Yeni Şifre (en az 6 hane)</Label><Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} /></div>
+              <div><Label>Yeni Şifre (tekrar)</Label><Input type="password" value={pwNew2} onChange={(e) => setPwNew2(e.target.value)} /></div>
+              <Button className="w-full" disabled={pwSaving} onClick={changePassword}>
+                {pwSaving ? "Kaydediliyor..." : "Şifreyi Güncelle"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
+
         <Link to="/randevularim" className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
           <CalendarDays className="h-5 w-5 text-primary" /><span>Randevularım</span>
         </Link>
