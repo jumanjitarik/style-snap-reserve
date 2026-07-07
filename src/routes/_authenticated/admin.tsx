@@ -79,7 +79,9 @@ function AdminPanel() {
         <TabsContent value="discounts"><DiscountsTab /></TabsContent>
         <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
         <TabsContent value="security"><SecurityTab /></TabsContent>
+        <TabsContent value="password"><PasswordTab /></TabsContent>
       </Tabs>
+
     </AppShell>
   );
 }
