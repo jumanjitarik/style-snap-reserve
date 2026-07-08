@@ -152,7 +152,7 @@ function BusinessRequestPage() {
               </Button>
             </div>
           )}
-          <p className="text-xs text-muted-foreground mt-1">İsteğe bağlı — vergi levhanızın net bir fotoğrafını yükleyin.</p>
+          <p className="text-xs text-muted-foreground mt-1">İş yeri teyitli için vergi levhanızın net bir fotoğrafını yükleyin.</p>
         </div>
         <Button className="w-full h-12" disabled={sending} onClick={submit}>
           <Send className="h-4 w-4 mr-2" /> {sending ? "Gönderiliyor…" : "Formu Gönder"}
