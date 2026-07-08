@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -16,6 +17,8 @@ import { tr } from "date-fns/locale";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { MapPin } from "lucide-react";
+import { createBookingPaytr, getBookingPaymentStatus } from "@/lib/paytr.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 const searchSchema = z.object({ shop: z.string().optional(), service: z.string().optional(), services: z.string().optional(), mode: z.enum(["appointment", "membership"]).optional() });
 
