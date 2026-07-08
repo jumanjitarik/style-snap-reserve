@@ -28,6 +28,7 @@ import { Route as AuthenticatedMuhasebeRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedFavorilerRouteImport } from './routes/_authenticated/favoriler'
 import { Route as AuthenticatedBildirimlerRouteImport } from './routes/_authenticated/bildirimler'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicPaytrCallbackRouteImport } from './routes/api/public/paytr-callback'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -126,6 +127,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicPaytrCallbackRoute = ApiPublicPaytrCallbackRouteImport.update({
+  id: '/api/public/paytr-callback',
+  path: '/api/public/paytr-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
+  '/api/public/paytr-callback': typeof ApiPublicPaytrCallbackRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/randevularim': typeof AuthenticatedRandevularimRoute
   '/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
+  '/api/public/paytr-callback': typeof ApiPublicPaytrCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/_authenticated/randevularim': typeof AuthenticatedRandevularimRoute
   '/_authenticated/salon-yonetimi': typeof AuthenticatedSalonYonetimiRoute
   '/kuafor/$id': typeof KuaforIdRoute
+  '/api/public/paytr-callback': typeof ApiPublicPaytrCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/randevularim'
     | '/salon-yonetimi'
     | '/kuafor/$id'
+    | '/api/public/paytr-callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/randevularim'
     | '/salon-yonetimi'
     | '/kuafor/$id'
+    | '/api/public/paytr-callback'
   id:
     | '__root__'
     | '/'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/_authenticated/randevularim'
     | '/_authenticated/salon-yonetimi'
     | '/kuafor/$id'
+    | '/api/public/paytr-callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   KuaforIdRoute: typeof KuaforIdRoute
+  ApiPublicPaytrCallbackRoute: typeof ApiPublicPaytrCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -402,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/paytr-callback': {
+      id: '/api/public/paytr-callback'
+      path: '/api/public/paytr-callback'
+      fullPath: '/api/public/paytr-callback'
+      preLoaderRoute: typeof ApiPublicPaytrCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -442,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   KuaforIdRoute: KuaforIdRoute,
+  ApiPublicPaytrCallbackRoute: ApiPublicPaytrCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
