@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Store, Send, CheckCircle2 } from "lucide-react";
+import { Store, Send, CheckCircle2, Camera, ImagePlus, X as XIcon } from "lucide-react";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/isyeri-ekle")({
@@ -26,6 +27,18 @@ function BusinessRequestPage() {
   });
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [taxFile, setTaxFile] = useState<File | null>(null);
+  const [taxPreview, setTaxPreview] = useState<string | null>(null);
+  const galleryRef = useRef<HTMLInputElement | null>(null);
+  const cameraRef = useRef<HTMLInputElement | null>(null);
+
+  function onPickFile(f: File | null) {
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { toast.error("Sadece resim dosyası yükleyebilirsiniz."); return; }
+    if (f.size > 8 * 1024 * 1024) { toast.error("Dosya 8MB'den küçük olmalı."); return; }
+    setTaxFile(f);
+    setTaxPreview(URL.createObjectURL(f));
+  }
 
   async function submit() {
     if (!form.business_name.trim() || !form.address.trim() || !form.services.trim() || !form.subject.trim() || !form.phone.trim()) {
@@ -35,12 +48,26 @@ function BusinessRequestPage() {
     setSending(true);
     const { data: u } = await supabase.auth.getUser();
     const phone = "+90" + form.phone.replace(/\D/g, "").replace(/^90/, "");
+
+    let tax_certificate_url: string | null = null;
+    if (taxFile) {
+      const ext = taxFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("business-docs").upload(path, taxFile, {
+        contentType: taxFile.type,
+        upsert: false,
+      });
+      if (upErr) { setSending(false); toast.error("Vergi levhası yüklenemedi: " + upErr.message); return; }
+      tax_certificate_url = path;
+    }
+
     const { error } = await supabase.from("business_requests" as never).insert({
       business_name: form.business_name.trim(),
       address: form.address.trim(),
       services: form.services.trim(),
       subject: form.subject.trim(),
       phone,
+      tax_certificate_url,
       created_by: u.user?.id ?? null,
     } as never);
     setSending(false);
