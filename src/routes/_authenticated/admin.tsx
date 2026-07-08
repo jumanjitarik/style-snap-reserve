@@ -61,9 +61,10 @@ function AdminPanel() {
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
           <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-2 w-full mt-2">
+        <TabsList className="grid grid-cols-3 w-full mt-2">
           <TabsTrigger value="security"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Güven</TabsTrigger>
           <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
+          <TabsTrigger value="members">👥 Üyeler</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats"><StatsTab /></TabsContent>
@@ -80,6 +81,7 @@ function AdminPanel() {
         <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
         <TabsContent value="security"><SecurityTab /></TabsContent>
         <TabsContent value="password"><PasswordTab /></TabsContent>
+        <TabsContent value="members"><MembersTab /></TabsContent>
       </Tabs>
 
     </AppShell>
