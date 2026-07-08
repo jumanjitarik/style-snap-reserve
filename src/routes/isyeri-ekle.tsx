@@ -128,6 +128,32 @@ function BusinessRequestPage() {
               value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, "") })} placeholder="5xxxxxxxxx" />
           </div>
         </div>
+        <div>
+          <Label>Vergi Levhası Fotoğrafı</Label>
+          <input ref={galleryRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => onPickFile(e.target.files?.[0] ?? null)} />
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+            onChange={(e) => onPickFile(e.target.files?.[0] ?? null)} />
+          {taxPreview ? (
+            <div className="relative mt-2 rounded-md overflow-hidden border border-border">
+              <img src={taxPreview} alt="Vergi levhası önizleme" className="w-full max-h-64 object-contain bg-muted" />
+              <button type="button" onClick={() => { setTaxFile(null); setTaxPreview(null); }}
+                className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/90 border border-border flex items-center justify-center">
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="h-12" onClick={() => galleryRef.current?.click()}>
+                <ImagePlus className="h-4 w-4 mr-2" /> Galeriden Seç
+              </Button>
+              <Button type="button" variant="outline" className="h-12" onClick={() => cameraRef.current?.click()}>
+                <Camera className="h-4 w-4 mr-2" /> Kamera ile Çek
+              </Button>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">İsteğe bağlı — vergi levhanızın net bir fotoğrafını yükleyin.</p>
+        </div>
         <Button className="w-full h-12" disabled={sending} onClick={submit}>
           <Send className="h-4 w-4 mr-2" /> {sending ? "Gönderiliyor…" : "Formu Gönder"}
         </Button>
