@@ -77,17 +77,9 @@ async function insertPendingCharge(input: {
 }
 
 function getOrigin(): string {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getRequest } = require("@tanstack/react-start/server") as { getRequest: () => Request };
-    const req = getRequest();
-    const proto = req.headers.get("x-forwarded-proto") ?? "https";
-    const host = req.headers.get("host")!;
-    return `${proto}://${host}`;
-  } catch {
-    return "https://kuaforapp.antalyasosyal.com";
-  }
+  return process.env.PUBLIC_APP_ORIGIN ?? "https://kuaforapp.antalyasosyal.com";
 }
+
 
 /* ------------- iFrame token ------------- */
 
