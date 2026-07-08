@@ -243,3 +243,181 @@ export const createPaytrLink = createServerFn({ method: "POST" })
 
     return { chargeId, url: json.link };
   });
+
+/* ------------- Customer booking (appointment / membership) via PayTR iFrame ------------- */
+
+const bookingInput = z.object({
+  kind: z.enum(["appointment", "membership"]),
+  shopId: z.string().uuid(),
+  serviceIds: z.array(z.string().uuid()).min(1),
+  staffId: z.string().uuid().nullable().optional(),
+  startsAt: z.string().datetime().nullable().optional(),
+  paymentMethod: z.enum(["full", "deposit"]).default("full"),
+  discountCode: z.string().trim().max(64).nullable().optional(),
+  pointsUsed: z.number().int().min(0).default(0),
+  note: z.string().trim().max(500).nullable().optional(),
+  customerEmail: z.string().trim().email().nullable().optional(),
+  customerName: z.string().trim().max(120).nullable().optional(),
+  customerPhone: z.string().trim().max(30).nullable().optional(),
+  userIp: z.string().trim().max(64).nullable().optional(),
+});
+
+export const createBookingPaytr = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => bookingInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as { supabase: any; userId: string };
+
+    if (data.kind === "appointment" && !data.startsAt) throw new Error("Tarih ve saat gerekli.");
+
+    const creds = await loadPaytrCreds();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Insert appointment/membership as pending_payment; DB triggers compute amounts.
+    let appointmentId: string | null = null;
+    let membershipId: string | null = null;
+    let finalAmount = 0;
+    const merchantOid = newMerchantOid();
+
+    if (data.kind === "appointment") {
+      const { data: row, error } = await supabase.from("appointments").insert({
+        user_id: userId,
+        shop_id: data.shopId,
+        service_id: data.serviceIds[0],
+        service_ids: data.serviceIds,
+        staff_id: data.staffId ?? null,
+        starts_at: data.startsAt!,
+        status: "pending_payment",
+        payment_method: data.paymentMethod,
+        discount_code: data.discountCode ?? null,
+        points_used: data.pointsUsed ?? 0,
+        notes: data.note ?? null,
+        payment_ref: merchantOid,
+      }).select("id, payment_amount").single();
+      if (error) throw error;
+      appointmentId = row!.id;
+      finalAmount = Number(row!.payment_amount ?? 0);
+    } else {
+      const { data: row, error } = await supabase.from("memberships").insert({
+        user_id: userId,
+        shop_id: data.shopId,
+        service_id: data.serviceIds[0],
+        service_ids: data.serviceIds,
+        status: "pending_payment",
+        payment_method: data.paymentMethod,
+        discount_code: data.discountCode ?? null,
+        points_used: data.pointsUsed ?? 0,
+        notes: data.note ?? null,
+        payment_ref: merchantOid,
+      }).select("id, payment_amount").single();
+      if (error) throw error;
+      membershipId = row!.id;
+      finalAmount = Number(row!.payment_amount ?? 0);
+    }
+
+    if (!finalAmount || finalAmount <= 0) throw new Error("Ödenecek tutar hesaplanamadı.");
+
+    // Link a virtual pos charge for tracking + callback lookup.
+    const { data: chargeRow, error: chErr } = await supabaseAdmin
+      .from("virtual_pos_charges")
+      .insert({
+        shop_id: data.shopId,
+        service_ids: data.serviceIds,
+        amount: finalAmount,
+        customer_name: data.customerName ?? null,
+        customer_phone: data.customerPhone ?? null,
+        description: data.kind === "appointment" ? "Randevu ödemesi" : "Üyelik ödemesi",
+        status: "pending",
+        created_by: userId,
+        payment_channel: "paytr_iframe",
+        paytr_merchant_oid: merchantOid,
+        appointment_id: appointmentId,
+        membership_id: membershipId,
+      })
+      .select("id")
+      .single();
+    if (chErr) throw chErr;
+
+    // Build PayTR token
+    const payment_amount = String(Math.round(finalAmount * 100));
+    const email = data.customerEmail || "musteri@kuaforapp.local";
+    const user_name = (data.customerName?.trim()) || "Müşteri";
+    const user_phone = (data.customerPhone?.trim()) || "05000000000";
+    const user_address = "Salon";
+    const user_ip = data.userIp || "127.0.0.1";
+    const basket = [[data.kind === "appointment" ? "Randevu" : "Üyelik", finalAmount.toFixed(2), 1]];
+    const user_basket = Buffer.from(JSON.stringify(basket)).toString("base64");
+    const no_installment = "0";
+    const max_installment = "0";
+    const currency = creds.currency;
+
+    const hashStr = creds.id + user_ip + merchantOid + email + payment_amount + user_basket + no_installment + max_installment + currency + creds.testMode;
+    const paytr_token = createHmac("sha256", creds.key).update(hashStr + creds.salt).digest("base64");
+
+    const origin = getOrigin();
+    const body = new URLSearchParams({
+      merchant_id: creds.id,
+      user_ip,
+      merchant_oid: merchantOid,
+      email,
+      payment_amount,
+      paytr_token,
+      user_basket,
+      debug_on: creds.testMode,
+      no_installment,
+      max_installment,
+      user_name,
+      user_address,
+      user_phone,
+      merchant_ok_url: `${origin}/randevularim?paytr=ok`,
+      merchant_fail_url: `${origin}/randevularim?paytr=fail`,
+      timeout_limit: "30",
+      currency,
+      test_mode: creds.testMode,
+    });
+
+    const res = await fetch("https://www.paytr.com/odeme/api/get-token", { method: "POST", body });
+    const json = (await res.json()) as { status?: string; token?: string; reason?: string };
+    if (json.status !== "success" || !json.token) {
+      // Rollback: cancel the pending record
+      if (appointmentId) await supabaseAdmin.from("appointments").update({ status: "cancelled" }).eq("id", appointmentId);
+      if (membershipId) await supabaseAdmin.from("memberships").update({ status: "cancelled" }).eq("id", membershipId);
+      throw new Error("PayTR token alınamadı: " + (json.reason ?? "bilinmeyen hata"));
+    }
+    await supabaseAdmin
+      .from("virtual_pos_charges")
+      .update({ paytr_token: json.token })
+      .eq("id", chargeRow!.id);
+
+    return {
+      merchantOid,
+      chargeId: chargeRow!.id,
+      appointmentId,
+      membershipId,
+      amount: finalAmount,
+      iframeUrl: `https://www.paytr.com/odeme/guvenli/${json.token}`,
+    };
+  });
+
+/* ------------- Poll booking payment status ------------- */
+
+const statusInput = z.object({ merchantOid: z.string().min(1) });
+
+export const getBookingPaymentStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => statusInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as { userId: string };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("virtual_pos_charges")
+      .select("id, status, appointment_id, membership_id, created_by")
+      .eq("paytr_merchant_oid", data.merchantOid)
+      .maybeSingle();
+    if (!row || row.created_by !== userId) return { status: "unknown" as const };
+    return {
+      status: row.status as "pending" | "paid" | "failed",
+      appointmentId: row.appointment_id,
+      membershipId: row.membership_id,
+    };
+  });

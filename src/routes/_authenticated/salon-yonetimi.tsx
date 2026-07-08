@@ -78,7 +78,7 @@ function SalonYonetimi() {
         )}
 
         <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); window.localStorage.setItem("salon.mgmt.tab", v); }} className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsList className="grid grid-cols-3 h-auto w-full gap-1 p-1">
             <TabsTrigger value="shop">Salon</TabsTrigger>
             <TabsTrigger value="hours">Saatler</TabsTrigger>
             <TabsTrigger value="plan">Rezervasyon Planı</TabsTrigger>
@@ -435,30 +435,6 @@ function VirtualPosTab({ shopId }: { shopId: string }) {
     },
   });
 
-  const createCharge = useMutation({
-    mutationFn: async () => {
-      const value = Number(amount.replace(",", "."));
-      if (!value || value <= 0) throw new Error("Tutar gir");
-      const { data: u } = await supabase.auth.getUser();
-      const { error } = await supabase.from("virtual_pos_charges").insert({
-        shop_id: shopId,
-        service_ids: selected,
-        amount: value,
-        customer_name: customerName.trim() || null,
-        customer_phone: customerPhone.trim() || null,
-        description: description.trim() || null,
-        status: "paid",
-        created_by: u.user?.id ?? null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Sanal POS çekimi kaydedildi");
-      setSelected([]); setAmount(""); setCustomerName(""); setCustomerPhone(""); setDescription("");
-      qc.invalidateQueries({ queryKey: ["pos-charges", shopId] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   function toggle(id: string, price: number) {
     setSelected((arr) => {
@@ -495,9 +471,6 @@ function VirtualPosTab({ shopId }: { shopId: string }) {
         <div><Label className="text-xs">Manuel Tutar (₺)</Label><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9,.]/g, ""))} /></div>
         <div><Label className="text-xs">Açıklama</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
         <div className="grid grid-cols-1 gap-2">
-          <Button onClick={() => createCharge.mutate()} disabled={createCharge.isPending} variant="outline" className="w-full">
-            <CreditCard className="h-4 w-4 mr-1" /> Nakit / Manuel Kaydet
-          </Button>
           <Button
             className="w-full"
             disabled={busy !== null}
