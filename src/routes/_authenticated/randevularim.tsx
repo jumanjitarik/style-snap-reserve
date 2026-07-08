@@ -50,7 +50,7 @@ function periodStart(p: Period): number {
   return new Date(d.getFullYear(), 0, 1).getTime();
 }
 function RevenueSummary({ items, dateField, title = "Toplam Gelir" }: {
-  items: Array<{ payment_amount?: number | null; remaining_amount?: number | null; [k: string]: unknown }>;
+  items: Array<{ payment_amount?: number | null; remaining_amount?: number | null; status?: string | null; [k: string]: unknown }>;
   dateField: string;
   title?: string;
 }) {
@@ -59,6 +59,7 @@ function RevenueSummary({ items, dateField, title = "Toplam Gelir" }: {
     const since = periodStart(period);
     let card = 0, cash = 0, count = 0;
     for (const it of items) {
+      if (it.status === "cancelled") continue;
       const t = new Date(String(it[dateField])).getTime();
       if (t < since) continue;
       card += Number(it.payment_amount ?? 0);
@@ -67,6 +68,7 @@ function RevenueSummary({ items, dateField, title = "Toplam Gelir" }: {
     }
     return { card, cash, total: card + cash, count };
   }, [items, dateField, period]);
+
   return (
     <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-3 space-y-2">
       <div className="flex items-center justify-between">
