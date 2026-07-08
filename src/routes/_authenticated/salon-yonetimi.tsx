@@ -435,30 +435,6 @@ function VirtualPosTab({ shopId }: { shopId: string }) {
     },
   });
 
-  const createCharge = useMutation({
-    mutationFn: async () => {
-      const value = Number(amount.replace(",", "."));
-      if (!value || value <= 0) throw new Error("Tutar gir");
-      const { data: u } = await supabase.auth.getUser();
-      const { error } = await supabase.from("virtual_pos_charges").insert({
-        shop_id: shopId,
-        service_ids: selected,
-        amount: value,
-        customer_name: customerName.trim() || null,
-        customer_phone: customerPhone.trim() || null,
-        description: description.trim() || null,
-        status: "paid",
-        created_by: u.user?.id ?? null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("Sanal POS çekimi kaydedildi");
-      setSelected([]); setAmount(""); setCustomerName(""); setCustomerPhone(""); setDescription("");
-      qc.invalidateQueries({ queryKey: ["pos-charges", shopId] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   function toggle(id: string, price: number) {
     setSelected((arr) => {
