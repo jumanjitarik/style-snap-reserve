@@ -268,6 +268,7 @@ export type Database = {
           services: string
           status: string
           subject: string
+          tax_certificate_url: string | null
           updated_at: string
         }
         Insert: {
@@ -280,6 +281,7 @@ export type Database = {
           services: string
           status?: string
           subject: string
+          tax_certificate_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -292,6 +294,7 @@ export type Database = {
           services?: string
           status?: string
           subject?: string
+          tax_certificate_url?: string | null
           updated_at?: string
         }
         Relationships: []
