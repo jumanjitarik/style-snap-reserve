@@ -1721,4 +1721,96 @@ function PasswordTab() {
   );
 }
 
+function ManualBlockPanel({ onDone }: { onDone: () => void }) {
+  const addIp = useServerFn(adminAddIpBlock);
+  const blockUser = useServerFn(adminBlockUser);
+  const [ip, setIp] = useState("");
+  const [ipReason, setIpReason] = useState("");
+  const [ipMinutes, setIpMinutes] = useState("");
+  const [ipBusy, setIpBusy] = useState(false);
+
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState<ProfileLite | null>(null);
+  const [userReason, setUserReason] = useState("");
+  const [userBusy, setUserBusy] = useState(false);
+
+  const { data: profiles } = useQuery({
+    queryKey: ["admin-block-profiles", userSearch],
+    queryFn: async () => {
+      let q = supabase.from("profiles").select("id, full_name, email, phone").order("full_name", { ascending: true, nullsFirst: false }).limit(30);
+      if (userSearch.trim()) q = q.or(`full_name.ilike.%${userSearch}%,email.ilike.%${userSearch}%,phone.ilike.%${userSearch}%`);
+      return (await q).data ?? [];
+    },
+  });
+
+  async function submitIp() {
+    const v = ip.trim();
+    if (v.length < 3) { toast.error("Geçerli bir IP gir"); return; }
+    setIpBusy(true);
+    try {
+      const mins = ipMinutes.trim() ? Math.max(1, parseInt(ipMinutes, 10)) : undefined;
+      await addIp({ data: { ip: v, reason: ipReason.trim() || undefined, minutes: mins } });
+      toast.success("IP engellendi");
+      setIp(""); setIpReason(""); setIpMinutes("");
+      onDone();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setIpBusy(false); }
+  }
+
+  async function submitUser() {
+    if (!selectedUser) { toast.error("Üye seç"); return; }
+    setUserBusy(true);
+    try {
+      await blockUser({ data: { user_id: selectedUser.id, reason: userReason.trim() || undefined } });
+      toast.success(`${selectedUser.full_name ?? selectedUser.email} engellendi`);
+      setSelectedUser(null); setUserReason("");
+      onDone();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally { setUserBusy(false); }
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+      <div>
+        <p className="text-xs uppercase tracking-wider text-primary mb-2">Manuel IP Engelle</p>
+        <div className="space-y-2">
+          <Input placeholder="IP adresi (örn. 1.2.3.4)" value={ip} onChange={(e) => setIp(e.target.value)} />
+          <Input placeholder="Sebep (opsiyonel)" value={ipReason} onChange={(e) => setIpReason(e.target.value)} />
+          <Input placeholder="Süre dakika (boş = kalıcı)" inputMode="numeric" value={ipMinutes} onChange={(e) => setIpMinutes(e.target.value.replace(/\D/g, ""))} />
+          <Button className="w-full" disabled={ipBusy} onClick={submitIp}>{ipBusy ? "Engelleniyor..." : "IP'yi Engelle"}</Button>
+        </div>
+      </div>
+
+      <div className="border-t border-border pt-3">
+        <p className="text-xs uppercase tracking-wider text-primary mb-2">Üye Seçerek Engelle</p>
+        <Input placeholder="Üye ara (isim / e-posta / telefon)" value={userSearch} onChange={(e) => setUserSearch(e.target.value)} />
+        <div className="mt-2 space-y-1 max-h-56 overflow-y-auto rounded-lg border border-border p-2">
+          {(profiles ?? []).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedUser(p as ProfileLite)}
+              className={`w-full text-left rounded-md p-2 text-sm ${selectedUser?.id === p.id ? "bg-destructive/15 border border-destructive/40" : "hover:bg-muted"}`}
+            >
+              <p className="font-medium truncate">{p.full_name ?? "—"}</p>
+              <p className="text-xs text-muted-foreground truncate">{p.email} {p.phone && `· ${p.phone}`}</p>
+            </button>
+          ))}
+          {(profiles ?? []).length === 0 && <p className="text-xs text-muted-foreground px-2 py-3 text-center">Sonuç yok</p>}
+        </div>
+        {selectedUser && (
+          <div className="mt-2 space-y-2">
+            <p className="text-xs">Seçilen: <span className="font-semibold text-destructive">{selectedUser.full_name ?? selectedUser.email}</span></p>
+            <Input placeholder="Sebep (opsiyonel)" value={userReason} onChange={(e) => setUserReason(e.target.value)} />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => { setSelectedUser(null); setUserReason(""); }}>İptal</Button>
+              <Button variant="destructive" className="flex-1" disabled={userBusy} onClick={submitUser}>{userBusy ? "..." : "Üyeyi Engelle"}</Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
