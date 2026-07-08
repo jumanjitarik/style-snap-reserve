@@ -27,26 +27,20 @@ function AccountPage() {
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
-  const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
-  const [pwNew2, setPwNew2] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
 
   async function changePassword() {
     if (pwNew.length < 6) { toast.error("Yeni şifre en az 6 hane olmalı"); return; }
-    if (pwNew !== pwNew2) { toast.error("Yeni şifreler eşleşmiyor"); return; }
-    const email = profile?.email;
-    if (!email) { toast.error("E-posta bulunamadı"); return; }
     setPwSaving(true);
-    const { error: signErr } = await supabase.auth.signInWithPassword({ email, password: pwCurrent });
-    if (signErr) { setPwSaving(false); toast.error("Mevcut şifre hatalı"); return; }
     const { error } = await supabase.auth.updateUser({ password: pwNew });
     setPwSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Şifre güncellendi");
-    setPwCurrent(""); setPwNew(""); setPwNew2("");
+    setPwNew("");
     setPwOpen(false);
   }
+
 
 
   async function sendFeedback() {
@@ -281,18 +275,17 @@ function AccountPage() {
           <DialogContent className="max-w-sm">
             <DialogHeader>
               <DialogTitle>Şifre Değiştir</DialogTitle>
-              <DialogDescription>Mevcut şifreni ve yeni şifreni gir.</DialogDescription>
+              <DialogDescription>Yeni şifreni gir.</DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
-              <div><Label>Mevcut Şifre</Label><Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} /></div>
               <div><Label>Yeni Şifre (en az 6 hane)</Label><Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} /></div>
-              <div><Label>Yeni Şifre (tekrar)</Label><Input type="password" value={pwNew2} onChange={(e) => setPwNew2(e.target.value)} /></div>
               <Button className="w-full" disabled={pwSaving} onClick={changePassword}>
                 {pwSaving ? "Kaydediliyor..." : "Şifreyi Güncelle"}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+
 
 
 

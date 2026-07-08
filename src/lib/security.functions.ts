@@ -163,3 +163,30 @@ export const adminBlockUser = createServerFn({ method: "POST" })
     }, { onConflict: "block_type,value" });
     return { ok: true };
   });
+
+export const adminAddIpBlock = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    ip: z.string().trim().min(3).max(64),
+    reason: z.string().max(200).optional(),
+    minutes: z.number().int().positive().max(60 * 24 * 365).optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: roleRows } = await context.supabase
+      .from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin");
+    if (!roleRows || roleRows.length === 0) throw new Error("Yetkisiz");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const expires_at = data.minutes
+      ? new Date(Date.now() + data.minutes * 60 * 1000).toISOString()
+      : null;
+    const { error } = await supabaseAdmin.from("security_blocks").upsert({
+      block_type: "ip",
+      value: data.ip,
+      reason: data.reason ?? "Yönetici tarafından engellendi",
+      expires_at,
+      unblocked_at: null,
+    }, { onConflict: "block_type,value" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
