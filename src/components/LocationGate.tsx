@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button";
 import { useGeolocation } from "@/lib/geo";
 import { useEffect, useState } from "react";
 
+const DISMISS_KEY = "gates_dismissed_v1";
+
+function readDismissed() {
+  if (typeof window === "undefined") return false;
+  try { return localStorage.getItem(DISMISS_KEY) === "1"; } catch { return false; }
+}
+function setDismissed() {
+  try { localStorage.setItem(DISMISS_KEY, "1"); } catch { /* noop */ }
+}
+
 function tryClose() {
   try { window.close(); } catch { /* noop */ }
   setTimeout(() => {
@@ -12,6 +22,7 @@ function tryClose() {
 
 export function LocationGate({ children }: { children: React.ReactNode }) {
   const { permission, request } = useGeolocation();
+  const [dismissed, setDismissedState] = useState<boolean>(() => readDismissed());
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | "unsupported">(
     typeof window !== "undefined" && "Notification" in window ? Notification.permission : "unsupported",
   );
@@ -21,6 +32,17 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
     const i = setInterval(() => setNotifPerm(Notification.permission), 1000);
     return () => clearInterval(i);
   }, []);
+
+  // Once user granted or dismissed once, don't gate again on subsequent visits.
+  useEffect(() => {
+    if (permission === "granted" && (notifPerm === "granted" || notifPerm === "unsupported")) {
+      setDismissed();
+    }
+  }, [permission, notifPerm]);
+
+  const skip = () => { setDismissed(); setDismissedState(true); };
+
+  if (dismissed) return <>{children}</>;
 
   // Location gate first
   if (permission !== "granted" && permission !== "unsupported" && permission !== "checking") {
@@ -48,7 +70,10 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         )}
-        <button onClick={tryClose} className="mt-6 text-sm text-muted-foreground underline">
+        <button onClick={skip} className="mt-4 text-sm text-muted-foreground underline">
+          Şimdi Değil
+        </button>
+        <button onClick={tryClose} className="mt-2 text-xs text-muted-foreground/70 underline">
           Çıkış Yap
         </button>
       </div>
@@ -84,7 +109,10 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         )}
-        <button onClick={tryClose} className="mt-6 text-sm text-muted-foreground underline">
+        <button onClick={skip} className="mt-4 text-sm text-muted-foreground underline">
+          Şimdi Değil
+        </button>
+        <button onClick={tryClose} className="mt-2 text-xs text-muted-foreground/70 underline">
           <X className="inline h-3 w-3 mr-1" /> Çıkış Yap
         </button>
       </div>
