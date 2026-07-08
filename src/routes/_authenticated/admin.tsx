@@ -66,6 +66,10 @@ function AdminPanel() {
           <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
           <TabsTrigger value="members">👥 Üyeler</TabsTrigger>
         </TabsList>
+        <TabsList className="grid grid-cols-2 w-full mt-2">
+          <TabsTrigger value="seo">🔎 SEO</TabsTrigger>
+          <TabsTrigger value="paytr">💳 PayTR</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -82,6 +86,8 @@ function AdminPanel() {
         <TabsContent value="security"><SecurityTab /></TabsContent>
         <TabsContent value="password"><PasswordTab /></TabsContent>
         <TabsContent value="members"><MembersTab /></TabsContent>
+        <TabsContent value="seo"><SeoTab /></TabsContent>
+        <TabsContent value="paytr"><PaytrTab /></TabsContent>
       </Tabs>
 
     </AppShell>
