@@ -262,91 +262,66 @@ function BookPage() {
     toast.success(`İndirim uygulandı: -${Math.min(amount, totalPrice).toFixed(0)}₺`);
   }
 
+  const createPaytr = useServerFn(createBookingPaytr);
+  const pollStatus = useServerFn(getBookingPaymentStatus);
+  const [paytrIframe, setPaytrIframe] = useState<string | null>(null);
+  const [paytrOid, setPaytrOid] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!paytrOid) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await pollStatus({ data: { merchantOid: paytrOid } });
+        if (r.status === "paid") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setPaytrIframe(null); setPaytrOid(null);
+          toast.success("Ödeme başarılı, kaydınız onaylandı!");
+          navigate({ to: "/randevularim", search: { tab: r.membershipId ? "memberships" : "mine" } as never });
+        } else if (r.status === "failed") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setPaytrIframe(null); setPaytrOid(null);
+          toast.error("Ödeme başarısız oldu. Kayıt iptal edildi.");
+        }
+      } catch { /* ignore */ }
+    }, 3000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [paytrOid, pollStatus, navigate]);
+
   const create = useMutation({
     mutationFn: async () => {
       if (!userId) throw new Error("Giriş yap");
       if (!shopId || serviceIds.length === 0) throw new Error("Eksik bilgi");
 
-      // Fitness / Yoga & Pilates → üyelik satışı (tarih/saat yok)
-      if (skipDateTime) {
-        const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * depPct / 100) : finalTotal;
-        const remaining = Math.max(0, finalTotal - deposit);
-        const { error } = await supabase.from("memberships").insert({
-          user_id: userId,
-          shop_id: shopId,
-          service_id: serviceIds[0],
-          service_ids: serviceIds,
-          amount: finalTotal,
-          payment_amount: deposit,
-          deposit_amount: deposit,
-          remaining_amount: remaining,
-          payment_method: paymentMethod,
-          discount_code: appliedDiscount?.code ?? null,
-          discount_amount: appliedDiscount?.amount ?? 0,
-          points_used: pointsToUse,
-          notes: customerNote.trim() || null,
-          payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
-        });
-        if (error) throw error;
-        return "membership" as const;
+      let startsAt: string | null = null;
+      if (!skipDateTime) {
+        if (!date || !time) throw new Error("Tarih ve saat seç");
+        const [hh, mm] = time.split(":").map(Number);
+        const s = new Date(date);
+        s.setHours(hh, mm, 0, 0);
+        startsAt = s.toISOString();
       }
 
-      if (!date || !time) throw new Error("Tarih ve saat seç");
-      const [hh, mm] = time.split(":").map(Number);
-      const starts = new Date(date);
-      starts.setHours(hh, mm, 0, 0);
-      const deposit = paymentMethod === "deposit" ? Math.round(finalTotal * depPct / 100) : finalTotal;
-      const remaining = Math.max(0, finalTotal - deposit);
-      const { error } = await supabase.from("appointments").insert({
-        user_id: userId,
-        shop_id: shopId,
-        service_id: serviceIds[0],
-        service_ids: serviceIds,
-        staff_id: staffId,
-        starts_at: starts.toISOString(),
-        status: "confirmed",
-        payment_amount: deposit,
-        deposit_amount: deposit,
-        remaining_amount: remaining,
-        payment_method: paymentMethod,
-        discount_code: appliedDiscount?.code ?? null,
-        discount_amount: appliedDiscount?.amount ?? 0,
-        points_used: pointsToUse,
-        notes: customerNote.trim() || null,
-        payment_ref: "SIM-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
-      });
-      if (error) throw error;
+      const { data: prof } = await supabase.from("profiles").select("full_name, phone, email").eq("id", userId).maybeSingle();
 
-      try {
-        const { data: shop } = await supabase.from("barbershops").select("owner_id, name").eq("id", shopId).maybeSingle();
-        if (shop?.owner_id) {
-          const dt = starts.toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
-          const note = customerNote.trim() ? ` · Not: ${customerNote.trim().slice(0, 120)}` : "";
-          const body = paymentMethod === "deposit"
-            ? `${dt} · Yeni randevu — Sistemden ${deposit}₺ alındı, salonda ${remaining}₺ tahsil edilecek.${note}`
-            : `${dt} · Yeni randevu — Tamamı sistemden ödendi (${deposit}₺).${note}`;
-          await supabase.from("notifications").insert({
-            user_id: shop.owner_id,
-            title: paymentMethod === "deposit" ? "Yeni randevu (Kapora)" : "Yeni randevu",
-            body,
-          });
-        }
-      } catch { /* sessiz */ }
-      return "appointment" as const;
-    },
-
-
-    onSuccess: (kind) => {
-      if (kind === "membership") {
-        toast.success("Üyelik satın alındı!");
-        navigate({ to: "/randevularim", search: { tab: "memberships" } as never });
-      } else {
-        toast.success(paymentMethod === "deposit" ? "Kapora alındı, randevu onaylandı!" : "Ödeme alındı, randevu onaylandı!");
-        navigate({ to: "/randevularim", search: { tab: "mine" } as never });
-      }
+      const res = await createPaytr({ data: {
+        kind: skipDateTime ? "membership" : "appointment",
+        shopId: shopId!,
+        serviceIds,
+        staffId: skipDateTime ? null : staffId,
+        startsAt,
+        paymentMethod,
+        discountCode: appliedDiscount?.code ?? null,
+        pointsUsed: pointsToUse,
+        note: customerNote.trim() || null,
+        customerEmail: prof?.email ?? null,
+        customerName: prof?.full_name ?? null,
+        customerPhone: prof?.phone ?? null,
+      } });
+      setPaytrOid(res.merchantOid);
+      setPaytrIframe(res.iframeUrl);
     },
     onError: (e: Error) => toast.error(e.message),
-
   });
 
 
