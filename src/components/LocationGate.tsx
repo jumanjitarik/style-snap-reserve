@@ -1,28 +1,10 @@
-import { Bell, MapPin, X } from "lucide-react";
+import { Bell, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGeolocation } from "@/lib/geo";
 import { useEffect, useState } from "react";
 
-const DISMISS_KEY = "gates_dismissed_v1";
-
-function readDismissed() {
-  if (typeof window === "undefined") return false;
-  try { return localStorage.getItem(DISMISS_KEY) === "1"; } catch { return false; }
-}
-function setDismissed() {
-  try { localStorage.setItem(DISMISS_KEY, "1"); } catch { /* noop */ }
-}
-
-function tryClose() {
-  try { window.close(); } catch { /* noop */ }
-  setTimeout(() => {
-    try { window.location.href = "about:blank"; } catch { /* noop */ }
-  }, 100);
-}
-
 export function LocationGate({ children }: { children: React.ReactNode }) {
   const { permission, request } = useGeolocation();
-  const [dismissed, setDismissedState] = useState<boolean>(() => readDismissed());
   const [notifPerm, setNotifPerm] = useState<NotificationPermission | "unsupported">(
     typeof window !== "undefined" && "Notification" in window ? Notification.permission : "unsupported",
   );
@@ -33,18 +15,7 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
     return () => clearInterval(i);
   }, []);
 
-  // Once user granted or dismissed once, don't gate again on subsequent visits.
-  useEffect(() => {
-    if (permission === "granted" && (notifPerm === "granted" || notifPerm === "unsupported")) {
-      setDismissed();
-    }
-  }, [permission, notifPerm]);
-
-  const skip = () => { setDismissed(); setDismissedState(true); };
-
-  if (dismissed) return <>{children}</>;
-
-  // Location gate first
+  // Location gate first — must be granted, no skip
   if (permission !== "granted" && permission !== "unsupported" && permission !== "checking") {
     const denied = permission === "denied";
     return (
@@ -54,7 +25,7 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
         </div>
         <h1 className="font-display text-2xl mb-3">Konum izni gerekli</h1>
         <p className="text-sm text-muted-foreground max-w-xs mb-8">
-          Etraftaki salonları görmek için konum izni vermelisiniz.
+          En yakın salonları görmen için konum izni gerekli.
         </p>
         {!denied ? (
           <Button onClick={request} className="w-full max-w-xs h-12">
@@ -70,17 +41,11 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         )}
-        <button onClick={skip} className="mt-4 text-sm text-muted-foreground underline">
-          Şimdi Değil
-        </button>
-        <button onClick={tryClose} className="mt-2 text-xs text-muted-foreground/70 underline">
-          Çıkış Yap
-        </button>
       </div>
     );
   }
 
-  // Notification gate (only if supported and not yet granted)
+  // Notification gate — must be granted (if supported)
   if (notifPerm === "default" || notifPerm === "denied") {
     const denied = notifPerm === "denied";
     const ask = async () => {
@@ -93,7 +58,7 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
         </div>
         <h1 className="font-display text-2xl mb-3">Bildirim izni gerekli</h1>
         <p className="text-sm text-muted-foreground max-w-xs mb-8">
-          Randevunuzu size bildirmemiz için bildirim izni vermeniz gerekir.
+          Randevu bilgileri ve salon üyeliği bilgileri için bildirim izni gerekir.
         </p>
         {!denied ? (
           <Button onClick={ask} className="w-full max-w-xs h-12">
@@ -109,12 +74,6 @@ export function LocationGate({ children }: { children: React.ReactNode }) {
             </Button>
           </div>
         )}
-        <button onClick={skip} className="mt-4 text-sm text-muted-foreground underline">
-          Şimdi Değil
-        </button>
-        <button onClick={tryClose} className="mt-2 text-xs text-muted-foreground/70 underline">
-          <X className="inline h-3 w-3 mr-1" /> Çıkış Yap
-        </button>
       </div>
     );
   }
