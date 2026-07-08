@@ -177,9 +177,9 @@ function Index() {
           </div>
         ) : null}
         <div className="relative px-4 pb-3" style={{ paddingTop: `${welcome?.gapTop ?? 8}px` }}>
-          <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
-          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line2.color, marginTop: `${welcome?.gapLine12 ?? 2}px` }}>{welcome?.line2.text}</h1>
-          <h1 className="text-3xl font-display leading-[0.95]" style={{ color: welcome?.line3.color, marginTop: `${welcome?.gapLine23 ?? 0}px` }}>{welcome?.line3.text}</h1>
+          <p className="text-xs normal-case tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
+          <h1 className="text-3xl font-sans font-black leading-[0.95] normal-case" style={{ color: welcome?.line2.color, marginTop: `${welcome?.gapLine12 ?? 2}px` }}>{welcome?.line2.text}</h1>
+          <h1 className="text-3xl font-sans font-black leading-[0.95] normal-case" style={{ color: welcome?.line3.color, marginTop: `${welcome?.gapLine23 ?? 0}px` }}>{welcome?.line3.text}</h1>
         </div>
       </header>
 

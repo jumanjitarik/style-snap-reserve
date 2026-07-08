@@ -393,13 +393,24 @@ async function uploadImage(file: File, folder: string): Promise<string> {
 }
 
 /* ============ VIRTUAL POS ============ */
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useServerFn } from "@tanstack/react-start";
+import { createPaytrIframeToken, createPaytrLink } from "@/lib/paytr.functions";
+import { Link as LinkIcon, ExternalLink, Copy } from "lucide-react";
+
 function VirtualPosTab({ shopId }: { shopId: string }) {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [amount, setAmount] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [description, setDescription] = useState("");
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"iframe" | "link" | null>(null);
+  const createIframe = useServerFn(createPaytrIframeToken);
+  const createLink = useServerFn(createPaytrLink);
 
   const { data: services } = useQuery({
     queryKey: ["pos-services", shopId],
@@ -480,12 +491,103 @@ function VirtualPosTab({ shopId }: { shopId: string }) {
           <div><Label className="text-xs">Müşteri Adı</Label><Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div>
           <div><Label className="text-xs">Telefon</Label><Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} /></div>
         </div>
+        <div><Label className="text-xs">E-posta (PayTR fişi için önerilir)</Label><Input type="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} placeholder="opsiyonel" /></div>
         <div><Label className="text-xs">Manuel Tutar (₺)</Label><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9,.]/g, ""))} /></div>
         <div><Label className="text-xs">Açıklama</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-        <Button onClick={() => createCharge.mutate()} disabled={createCharge.isPending} className="w-full">
-          <CreditCard className="h-4 w-4 mr-1" /> Çekimi Kaydet
-        </Button>
+        <div className="grid grid-cols-1 gap-2">
+          <Button onClick={() => createCharge.mutate()} disabled={createCharge.isPending} variant="outline" className="w-full">
+            <CreditCard className="h-4 w-4 mr-1" /> Nakit / Manuel Kaydet
+          </Button>
+          <Button
+            className="w-full"
+            disabled={busy !== null}
+            onClick={async () => {
+              const value = Number(amount.replace(",", "."));
+              if (!value || value <= 0) { toast.error("Tutar gir"); return; }
+              setBusy("iframe");
+              try {
+                const res = await createIframe({ data: {
+                  shopId, amount: value, serviceIds: selected,
+                  customerName: customerName.trim() || null,
+                  customerPhone: customerPhone.trim() || null,
+                  customerEmail: customerEmail.trim() || null,
+                  description: description.trim() || null,
+                } });
+                setIframeUrl(res.iframeUrl);
+                qc.invalidateQueries({ queryKey: ["pos-charges", shopId] });
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setBusy(null); }
+            }}
+          >
+            <CreditCard className="h-4 w-4 mr-1" /> {busy === "iframe" ? "PayTR açılıyor..." : "PayTR ile Kartla Öde (iFrame)"}
+          </Button>
+          <Button
+            variant="secondary"
+            className="w-full"
+            disabled={busy !== null}
+            onClick={async () => {
+              const value = Number(amount.replace(",", "."));
+              if (!value || value <= 0) { toast.error("Tutar gir"); return; }
+              setBusy("link");
+              try {
+                const res = await createLink({ data: {
+                  shopId, amount: value, serviceIds: selected,
+                  customerName: customerName.trim() || null,
+                  customerPhone: customerPhone.trim() || null,
+                  customerEmail: customerEmail.trim() || null,
+                  description: description.trim() || null,
+                } });
+                setLinkUrl(res.url);
+                qc.invalidateQueries({ queryKey: ["pos-charges", shopId] });
+              } catch (e) { toast.error((e as Error).message); }
+              finally { setBusy(null); }
+            }}
+          >
+            <LinkIcon className="h-4 w-4 mr-1" /> {busy === "link" ? "Link oluşturuluyor..." : "PayTR Ödeme Linki Oluştur"}
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={!!iframeUrl} onOpenChange={(v) => !v && setIframeUrl(null)}>
+        <DialogContent className="max-w-md p-0">
+          <DialogHeader className="p-3">
+            <DialogTitle>PayTR Ödeme</DialogTitle>
+            <DialogDescription>Kart bilgisini güvenli PayTR formunda gir. Ödeme tamamlandığında kayıt otomatik "paid" olur.</DialogDescription>
+          </DialogHeader>
+          {iframeUrl && (
+            <iframe src={iframeUrl} className="w-full" style={{ height: "70vh", border: 0 }} allow="payment" />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!linkUrl} onOpenChange={(v) => !v && setLinkUrl(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ödeme Linki Hazır</DialogTitle>
+            <DialogDescription>Bu linki müşteriye WhatsApp / SMS ile gönder. Ödeme yapıldığında kayıt otomatik güncellenir.</DialogDescription>
+          </DialogHeader>
+          {linkUrl && (
+            <div className="space-y-2">
+              <Input readOnly value={linkUrl} onFocus={(e) => e.currentTarget.select()} />
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => { navigator.clipboard.writeText(linkUrl); toast.success("Kopyalandı"); }}>
+                  <Copy className="h-4 w-4 mr-1" /> Kopyala
+                </Button>
+                <Button asChild>
+                  <a href={linkUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4 mr-1" /> Aç</a>
+                </Button>
+              </div>
+              {customerPhone.trim() && (
+                <Button variant="secondary" className="w-full" asChild>
+                  <a href={`https://wa.me/${customerPhone.replace(/\D/g, "")}?text=${encodeURIComponent("Ödeme linki: " + linkUrl)}`} target="_blank" rel="noreferrer">
+                    WhatsApp ile Gönder
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-2">
         {(charges ?? []).map((c: any) => (

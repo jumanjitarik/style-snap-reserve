@@ -80,7 +80,7 @@ export function TopBar() {
           ) : (
             <div className="h-9 w-9 rounded-md bg-gradient-to-br from-primary to-primary/40" />
           )}
-          <span className="font-display text-xl tracking-wide text-primary truncate">{name}</span>
+          <span className="font-sans font-black text-xl tracking-wide text-primary truncate normal-case">{name}</span>
         </Link>
         {signedIn && (
           <div className="flex items-center gap-1">

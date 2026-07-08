@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { DB_CATEGORIES, type ShopCategory } from "@/lib/categories";
 import { toast } from "sonner";
-import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket, Store, Phone, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Trash2, Plus, Upload, Star, TrendingUp, CalendarDays, XCircle, Download, Megaphone, Settings, Activity, Send, Receipt, Ticket, Store, Phone, CheckCircle2, ShieldCheck, Save } from "lucide-react";
 import { adminSecurityOverview, adminRemoveBlock, adminAddIpBlock, adminBlockUser } from "@/lib/security.functions";
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
@@ -66,6 +66,10 @@ function AdminPanel() {
           <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
           <TabsTrigger value="members">👥 Üyeler</TabsTrigger>
         </TabsList>
+        <TabsList className="grid grid-cols-2 w-full mt-2">
+          <TabsTrigger value="seo">🔎 SEO</TabsTrigger>
+          <TabsTrigger value="paytr">💳 PayTR</TabsTrigger>
+        </TabsList>
 
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
@@ -82,6 +86,8 @@ function AdminPanel() {
         <TabsContent value="security"><SecurityTab /></TabsContent>
         <TabsContent value="password"><PasswordTab /></TabsContent>
         <TabsContent value="members"><MembersTab /></TabsContent>
+        <TabsContent value="seo"><SeoTab /></TabsContent>
+        <TabsContent value="paytr"><PaytrTab /></TabsContent>
       </Tabs>
 
     </AppShell>
@@ -1938,4 +1944,166 @@ function ManualBlockPanel({ onDone }: { onDone: () => void }) {
     </div>
   );
 }
+
+/* ============ SEO TAB ============ */
+function SeoTab() {
+  const qc = useQueryClient();
+  const [newPath, setNewPath] = useState("");
+  const { data: rows } = useQuery({
+    queryKey: ["admin-page-seo"],
+    queryFn: async () => (await supabase.from("page_seo").select("path,title,description,keywords").order("path")).data ?? [],
+  });
+  const [drafts, setDrafts] = useState<Record<string, { title: string; description: string; keywords: string }>>({});
+  useEffect(() => {
+    const map: Record<string, { title: string; description: string; keywords: string }> = {};
+    (rows ?? []).forEach((r) => { map[r.path] = { title: r.title ?? "", description: r.description ?? "", keywords: r.keywords ?? "" }; });
+    setDrafts(map);
+  }, [rows]);
+
+  const save = useMutation({
+    mutationFn: async (p: string) => {
+      const d = drafts[p];
+      const { error } = await supabase.from("page_seo").upsert({ path: p, title: d.title, description: d.description, keywords: d.keywords }, { onConflict: "path" });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("SEO kaydedildi"); qc.invalidateQueries({ queryKey: ["admin-page-seo"] }); qc.invalidateQueries({ queryKey: ["page-seo"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  async function addPath() {
+    const p = newPath.trim();
+    if (!p.startsWith("/")) { toast.error("Yol / ile başlamalı (örn: /kuaforler)"); return; }
+    const { error } = await supabase.from("page_seo").upsert({ path: p, title: "", description: "", keywords: "" }, { onConflict: "path" });
+    if (error) { toast.error(error.message); return; }
+    setNewPath("");
+    qc.invalidateQueries({ queryKey: ["admin-page-seo"] });
+  }
+
+  async function removePath(p: string) {
+    if (!confirm(`${p} silinsin mi?`)) return;
+    const { error } = await supabase.from("page_seo").delete().eq("path", p);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["admin-page-seo"] });
+  }
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-primary/30 bg-card p-3">
+        <p className="text-xs uppercase tracking-wider text-primary mb-2">Yeni Sayfa Ekle</p>
+        <div className="flex gap-2">
+          <Input placeholder="/kuaforler" value={newPath} onChange={(e) => setNewPath(e.target.value)} />
+          <Button onClick={addPath}><Plus className="h-4 w-4" /></Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-1">Bir sayfa yolunu (route) yaz ve ekle. Boş satır oluşturulur, sonra doldurup kaydet.</p>
+      </div>
+      {(rows ?? []).map((r) => {
+        const d = drafts[r.path] ?? { title: "", description: "", keywords: "" };
+        return (
+          <div key={r.path} className="rounded-xl border border-border bg-card p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-display text-lg text-primary truncate">{r.path}</p>
+              <Button size="icon" variant="ghost" onClick={() => removePath(r.path)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+            <div><Label className="text-xs">Sayfa Başlığı (title)</Label>
+              <Input maxLength={70} value={d.title} onChange={(e) => setDrafts((m) => ({ ...m, [r.path]: { ...d, title: e.target.value } }))} />
+              <p className="text-[10px] text-muted-foreground">{d.title.length}/70</p>
+            </div>
+            <div><Label className="text-xs">Açıklama (description)</Label>
+              <Textarea rows={2} maxLength={180} value={d.description} onChange={(e) => setDrafts((m) => ({ ...m, [r.path]: { ...d, description: e.target.value } }))} />
+              <p className="text-[10px] text-muted-foreground">{d.description.length}/180</p>
+            </div>
+            <div><Label className="text-xs">Anahtar Kelimeler (virgülle ayır)</Label>
+              <Input value={d.keywords} onChange={(e) => setDrafts((m) => ({ ...m, [r.path]: { ...d, keywords: e.target.value } }))} />
+            </div>
+            <Button className="w-full" disabled={save.isPending} onClick={() => save.mutate(r.path)}>
+              <Save className="h-4 w-4 mr-1" /> Kaydet
+            </Button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ============ PAYTR TAB ============ */
+function PaytrTab() {
+  const qc = useQueryClient();
+  const { data: settings } = useQuery({
+    queryKey: ["admin-paytr-settings"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("key,value").in("key", [
+        "paytr_merchant_id", "paytr_merchant_key", "paytr_merchant_salt", "paytr_test_mode", "paytr_currency",
+      ]);
+      return Object.fromEntries((data ?? []).map((r) => [r.key, r.value ?? ""])) as Record<string, string>;
+    },
+  });
+  const [form, setForm] = useState({ id: "", key: "", salt: "", test: true, currency: "TL" });
+  const inited = useState(false);
+  if (settings && !inited[0]) {
+    setForm({
+      id: settings.paytr_merchant_id ?? "",
+      key: settings.paytr_merchant_key ?? "",
+      salt: settings.paytr_merchant_salt ?? "",
+      test: (settings.paytr_test_mode ?? "1") === "1",
+      currency: settings.paytr_currency ?? "TL",
+    });
+    inited[1](true);
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const rows = [
+        { key: "paytr_merchant_id", value: form.id.trim() },
+        { key: "paytr_merchant_key", value: form.key.trim() },
+        { key: "paytr_merchant_salt", value: form.salt.trim() },
+        { key: "paytr_test_mode", value: form.test ? "1" : "0" },
+        { key: "paytr_currency", value: form.currency },
+      ];
+      const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("PayTR bilgileri kaydedildi"); qc.invalidateQueries({ queryKey: ["admin-paytr-settings"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const callback = origin + "/api/public/paytr-callback";
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="rounded-xl border border-primary/30 bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">PayTR Merchant Bilgileri</p>
+        <div><Label>Merchant ID</Label><Input value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} placeholder="123456" /></div>
+        <div><Label>Merchant Key</Label><Input value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} placeholder="xxxxxxxxxxxx" /></div>
+        <div><Label>Merchant Salt</Label><Input value={form.salt} onChange={(e) => setForm({ ...form, salt: e.target.value })} placeholder="xxxxxxxxxxxx" /></div>
+        <div className="grid grid-cols-2 gap-2 items-end">
+          <div><Label>Para Birimi</Label>
+            <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TL">TL</SelectItem>
+                <SelectItem value="USD">USD</SelectItem>
+                <SelectItem value="EUR">EUR</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-between rounded-md border border-border px-3 h-10">
+            <span className="text-sm">Test Modu</span>
+            <Switch checked={form.test} onCheckedChange={(v) => setForm({ ...form, test: v })} />
+          </div>
+        </div>
+        <Button className="w-full h-11" disabled={save.isPending} onClick={() => save.mutate()}>
+          <Save className="h-4 w-4 mr-1" /> Kaydet
+        </Button>
+      </div>
+      <div className="rounded-xl border border-border bg-card p-3 space-y-1 text-xs">
+        <p className="text-primary font-semibold">Callback / Bildirim URL</p>
+        <code className="block break-all bg-muted rounded p-2">{callback}</code>
+        <p className="text-muted-foreground">PayTR mağaza panelinde “Bildirim URL” alanına bu adresi yaz. Link ödemeleri için <code>callback_link</code> parametresi bu adresi otomatik kullanır.</p>
+        <p className="text-muted-foreground mt-1">PayTR panelden Merchant ID / Key / Salt bilgilerini alıp buraya gir. Test modu açıkken gerçek çekim yapılmaz.</p>
+      </div>
+    </div>
+  );
+}
+
 
