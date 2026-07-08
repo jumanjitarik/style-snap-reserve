@@ -46,7 +46,12 @@ async function showNotif(title: string, body: string, image?: string | null, lin
   opts.vibrate = [200, 100, 200];
   // @ts-expect-error mobile-only fields
   if (image) opts.image = image;
+  // Some platforms surface document.title as the notification's site label
+  // (e.g. "from <title>"). Temporarily blank it so only the notification's
+  // own title/body show, then restore.
+  const prevTitle = typeof document !== "undefined" ? document.title : "";
   try {
+    if (typeof document !== "undefined") document.title = " ";
     const reg = await ensureSW();
     if (reg) {
       await reg.showNotification(title, opts);
@@ -55,6 +60,11 @@ async function showNotif(title: string, body: string, image?: string | null, lin
       if (link) n.onclick = () => { window.focus(); window.open(link!, "_self"); };
     }
   } catch { /* noop */ }
+  finally {
+    if (typeof document !== "undefined") {
+      setTimeout(() => { document.title = prevTitle; }, 150);
+    }
+  }
 }
 
 export async function startPushNotifications(userId: string) {

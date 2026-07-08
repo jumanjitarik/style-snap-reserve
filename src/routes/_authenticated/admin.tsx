@@ -61,9 +61,10 @@ function AdminPanel() {
           <TabsTrigger value="discounts"><Ticket className="h-3.5 w-3.5 mr-1" /> Kupon</TabsTrigger>
           <TabsTrigger value="biz"><Store className="h-3.5 w-3.5 mr-1" /> Talep</TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-2 w-full mt-2">
+        <TabsList className="grid grid-cols-3 w-full mt-2">
           <TabsTrigger value="security"><ShieldCheck className="h-3.5 w-3.5 mr-1" /> Güven</TabsTrigger>
           <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
+          <TabsTrigger value="members">👥 Üyeler</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats"><StatsTab /></TabsContent>
@@ -80,6 +81,7 @@ function AdminPanel() {
         <TabsContent value="biz"><BusinessRequestsTab /></TabsContent>
         <TabsContent value="security"><SecurityTab /></TabsContent>
         <TabsContent value="password"><PasswordTab /></TabsContent>
+        <TabsContent value="members"><MembersTab /></TabsContent>
       </Tabs>
 
     </AppShell>
@@ -1023,43 +1025,39 @@ function SettingsTab() {
 
 
 function ActivityTab() {
+  const [search, setSearch] = useState("");
   const { data: profiles } = useQuery({
-    queryKey: ["admin-profiles-all"],
-    queryFn: async () => (await supabase.from("profiles").select("id, full_name, email, phone, gender, created_at, last_seen_at, last_ip, last_city, last_country").order("created_at", { ascending: false }).limit(500)).data ?? [],
+    queryKey: ["admin-profiles-lite"],
+    queryFn: async () => (await supabase.from("profiles").select("id, full_name, email, phone").limit(2000)).data ?? [],
   });
   const { data: activity } = useQuery({
     queryKey: ["admin-activity"],
     queryFn: async () => (await supabase.from("user_activity").select("*").order("created_at", { ascending: false }).limit(500)).data ?? [],
   });
 
-  function exportMembers() {
-    const rows = (profiles ?? []).map((p) => ({
-      "Ad Soyad": p.full_name ?? "",
-      "E-posta": p.email ?? "",
-      "Telefon": p.phone ?? "",
-      "Cinsiyet": p.gender ?? "",
-      "Kayıt Tarihi": p.created_at ? new Date(p.created_at).toLocaleString("tr-TR") : "",
-      "Son Giriş": p.last_seen_at ? new Date(p.last_seen_at).toLocaleString("tr-TR") : "",
-      "IP": p.last_ip ?? "",
-      "İl": p.last_city ?? "",
-      "Ülke": p.last_country ?? "",
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Üyeler");
-    XLSX.writeFile(wb, `uyeler-${Date.now()}.xlsx`);
-  }
+  const norm = (x: string) => x.toLocaleLowerCase("tr-TR");
+  const q = norm(search.trim());
+  const filtered = (activity ?? []).filter((a) => {
+    if (!q) return true;
+    const u = (profiles ?? []).find((p) => p.id === a.user_id);
+    return [u?.full_name, u?.email, u?.phone, a.ip, a.city, a.country, a.action]
+      .some((v) => v && norm(String(v)).includes(q));
+  });
+
   function exportActivity() {
-    const rows = (activity ?? []).map((a) => ({
-      "Tarih": new Date(a.created_at).toLocaleString("tr-TR"),
-      "Üye ID": a.user_id ?? "",
-      "Aksiyon": a.action,
-      "IP": a.ip ?? "",
-      "İl": a.city ?? "",
-      "Bölge": a.region ?? "",
-      "Ülke": a.country ?? "",
-      "Tarayıcı": a.user_agent ?? "",
-    }));
+    const rows = filtered.map((a) => {
+      const u = (profiles ?? []).find((p) => p.id === a.user_id);
+      return {
+        "Tarih": new Date(a.created_at).toLocaleString("tr-TR"),
+        "Üye": u?.full_name ?? u?.email ?? a.user_id ?? "",
+        "Aksiyon": a.action,
+        "IP": a.ip ?? "",
+        "İl": a.city ?? "",
+        "Bölge": a.region ?? "",
+        "Ülke": a.country ?? "",
+        "Tarayıcı": a.user_agent ?? "",
+      };
+    });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Aktivite");
@@ -1069,12 +1067,12 @@ function ActivityTab() {
   return (
     <div className="py-4 space-y-3">
       <div className="flex gap-2">
-        <Button onClick={exportMembers} className="flex-1"><Download className="h-4 w-4 mr-1" /> Üyeler Excel</Button>
-        <Button onClick={exportActivity} variant="outline" className="flex-1"><Download className="h-4 w-4 mr-1" /> Aktivite Excel</Button>
+        <Input placeholder="Ara (isim / e-posta / IP / şehir / aksiyon)" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Button onClick={exportActivity} variant="outline"><Download className="h-4 w-4 mr-1" /> Excel</Button>
       </div>
-      <p className="text-xs uppercase tracking-wider text-primary mt-2">Son Aktiviteler ({(activity ?? []).length})</p>
-      <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
-        {(activity ?? []).slice(0, 100).map((a) => {
+      <p className="text-xs uppercase tracking-wider text-primary mt-2">Son Aktiviteler ({filtered.length})</p>
+      <div className="space-y-1.5 max-h-[70vh] overflow-y-auto">
+        {filtered.slice(0, 200).map((a) => {
           const u = (profiles ?? []).find((p) => p.id === a.user_id);
           return (
             <div key={a.id} className="rounded-lg border border-border bg-card p-2 text-xs">
@@ -1088,22 +1086,149 @@ function ActivityTab() {
             </div>
           );
         })}
-      </div>
-      <p className="text-xs uppercase tracking-wider text-primary mt-4">Üye Listesi ({(profiles ?? []).length})</p>
-      <div className="space-y-1.5 max-h-[60vh] overflow-y-auto">
-        {(profiles ?? []).slice(0, 100).map((p) => (
-          <div key={p.id} className="rounded-lg border border-border bg-card p-2 text-xs">
-            <p className="font-medium">{p.full_name ?? "—"}</p>
-            <p className="text-muted-foreground truncate">{p.email} · {p.phone ?? "-"}</p>
-            <p className="text-muted-foreground">
-              Kayıt: {p.created_at ? new Date(p.created_at).toLocaleDateString("tr-TR") : "-"} · Son: {p.last_seen_at ? new Date(p.last_seen_at).toLocaleDateString("tr-TR") : "-"} · {p.last_city ?? "-"}/{p.last_country ?? "-"}
-            </p>
-          </div>
-        ))}
+        {filtered.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Sonuç yok</p>}
       </div>
     </div>
   );
 }
+
+function MembersTab() {
+  const [search, setSearch] = useState("");
+  const { data: profiles } = useQuery({
+    queryKey: ["admin-members", search],
+    queryFn: async () => {
+      let q = supabase.from("profiles").select("id, full_name, email, phone, is_blocked, last_ip, last_city, last_country, last_seen_at, points, gender, created_at").order("created_at", { ascending: false }).limit(500);
+      if (search.trim()) q = q.or(`full_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      return (await q).data ?? [];
+    },
+  });
+
+  function exportMembers() {
+    const rows = (profiles ?? []).map((p) => ({
+      "Ad Soyad": p.full_name ?? "",
+      "E-posta": p.email ?? "",
+      "Telefon": p.phone ?? "",
+      "Cinsiyet": p.gender ?? "",
+      "Kayıt Tarihi": p.created_at ? new Date(p.created_at).toLocaleString("tr-TR") : "",
+      "Son Giriş": p.last_seen_at ? new Date(p.last_seen_at).toLocaleString("tr-TR") : "",
+      "IP": p.last_ip ?? "",
+      "İl": p.last_city ?? "",
+      "Ülke": p.last_country ?? "",
+      "Puan": p.points ?? 0,
+      "Engelli": p.is_blocked ? "Evet" : "Hayır",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Üyeler");
+    XLSX.writeFile(wb, `uyeler-${Date.now()}.xlsx`);
+  }
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="flex gap-2">
+        <Input placeholder="Üye ara (isim / e-posta / telefon)" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Button onClick={exportMembers} variant="secondary"><Download className="h-4 w-4 mr-1" /> Excel</Button>
+      </div>
+      <p className="text-xs uppercase tracking-wider text-primary">Üye Listesi ({(profiles ?? []).length})</p>
+      <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+        {(profiles ?? []).map((p) => (
+          <MemberManageRow key={p.id} profile={p as ProfileLite} />
+        ))}
+        {(profiles ?? []).length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Sonuç yok</p>}
+      </div>
+    </div>
+  );
+}
+
+function MemberManageRow({ profile }: { profile: ProfileLite }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    full_name: profile.full_name ?? "",
+    email: profile.email ?? "",
+    phone: profile.phone ?? "",
+    password: "",
+  });
+  const updateFn = useServerFn(adminUpdateUser);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      await updateFn({
+        data: {
+          user_id: profile.id,
+          full_name: form.full_name.trim() || undefined,
+          email: form.email.trim() || undefined,
+          phone: form.phone.trim() || null,
+          password: form.password ? form.password : undefined,
+        },
+      });
+    },
+    onSuccess: () => { toast.success("Üye güncellendi"); setOpen(false); setForm((f) => ({ ...f, password: "" })); qc.invalidateQueries({ queryKey: ["admin-members"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const toggleBlock = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("profiles").update({ is_blocked: !profile.is_blocked }).eq("id", profile.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success(profile.is_blocked ? "Engel kaldırıldı" : "Üye engellendi"); qc.invalidateQueries({ queryKey: ["admin-members"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const removeUser = useMutation({
+    mutationFn: async () => {
+      const { adminDeleteUser } = await import("@/lib/admin-users.functions");
+      await adminDeleteUser({ data: { user_id: profile.id } });
+    },
+    onSuccess: () => { toast.success("Üye silindi"); qc.invalidateQueries({ queryKey: ["admin-members"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const sendReset = useMutation({
+    mutationFn: async () => {
+      if (!profile.email) throw new Error("Üyenin e-postası yok");
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Şifre sıfırlama bağlantısı gönderildi"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className={`rounded-xl border p-3 ${profile.is_blocked ? "border-destructive/40 bg-destructive/5" : "border-border bg-card"}`}>
+      <p className="font-medium text-sm">{profile.full_name ?? "—"} {profile.is_blocked && <span className="text-[10px] text-destructive">· ENGELLİ</span>}</p>
+      <p className="text-xs text-muted-foreground truncate">{profile.email} {profile.phone && `· ${profile.phone}`}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">
+        IP: <span className="font-mono">{profile.last_ip ?? "-"}</span>
+        {profile.last_city && ` · ${profile.last_city}`}
+        {profile.last_country && ` / ${profile.last_country}`}
+        {profile.last_seen_at && ` · ${new Date(profile.last_seen_at).toLocaleString("tr-TR")}`}
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        <Button size="sm" onClick={() => setOpen((o) => !o)}>{open ? "Kapat" : "Düzenle"}</Button>
+        <Button size="sm" variant={profile.is_blocked ? "default" : "secondary"} onClick={() => toggleBlock.mutate()}>
+          {profile.is_blocked ? "Engeli Kaldır" : "Engelle"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => sendReset.mutate()} disabled={sendReset.isPending || !profile.email}>
+          📧 Sıfırlama Gönder
+        </Button>
+        <Button size="sm" variant="destructive" onClick={() => confirm(`${profile.full_name ?? profile.email} silinsin mi? Geri alınamaz.`) && removeUser.mutate()}>
+          <Trash2 className="h-4 w-4 mr-1" /> Sil
+        </Button>
+      </div>
+      {open && (
+        <div className="mt-3 space-y-2 border-t border-border pt-3">
+          <div><Label className="text-xs">Ad Soyad</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
+          <div><Label className="text-xs">E-posta</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+          <div><Label className="text-xs">Telefon</Label><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
+          <div><Label className="text-xs">Yeni Şifre (boş = değişmez)</Label><Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="en az 4 karakter" /></div>
+          <Button size="sm" className="w-full" disabled={save.isPending} onClick={() => save.mutate()}>Kaydet</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function BroadcastTab() {
   const [form, setForm] = useState({ title: "", body: "", image_url: "", link_url: "", audience: "all" as "all"|"customers"|"owners"|"staff"|"others" });
