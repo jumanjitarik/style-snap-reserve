@@ -1604,9 +1604,12 @@ function SecurityTab() {
         </div>
       </div>
 
+      <ManualBlockPanel onDone={() => qc.invalidateQueries({ queryKey: ["admin-security"] })} />
+
       <BlockList title="Engellenen IP'ler" items={ipBlocks} onUnblock={(id) => unblock.mutate(id)} />
 
       <BlockList title="Engellenen Üyeler" items={userBlocks} onUnblock={(id) => unblock.mutate(id)} />
+
 
       <div className="rounded-2xl border border-border bg-card p-4">
         <p className="text-xs uppercase tracking-wider text-primary mb-2">Son Giriş Denemeleri</p>
