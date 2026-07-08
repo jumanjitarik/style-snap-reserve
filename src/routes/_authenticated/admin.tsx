@@ -1659,7 +1659,6 @@ function PasswordTab() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ProfileLite | null>(null);
   const [pw, setPw] = useState("");
-  const [pw2, setPw2] = useState("");
   const [saving, setSaving] = useState(false);
   const updateFn = useServerFn(adminUpdateUser);
 
@@ -1675,12 +1674,11 @@ function PasswordTab() {
   async function submit() {
     if (!selected) { toast.error("Üye seç"); return; }
     if (pw.length < 4) { toast.error("Şifre en az 4 karakter"); return; }
-    if (pw !== pw2) { toast.error("Şifreler eşleşmiyor"); return; }
     setSaving(true);
     try {
       await updateFn({ data: { user_id: selected.id, password: pw } });
       toast.success(`${selected.full_name ?? selected.email} için şifre güncellendi`);
-      setPw(""); setPw2(""); setSelected(null);
+      setPw(""); setSelected(null);
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -1710,9 +1708,8 @@ function PasswordTab() {
         <div className="rounded-xl border border-primary/30 bg-card p-3 space-y-2">
           <p className="text-sm">Seçilen: <span className="font-semibold text-primary">{selected.full_name ?? selected.email}</span></p>
           <div><Label className="text-xs">Yeni Şifre</Label><Input type="text" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="en az 4 karakter" /></div>
-          <div><Label className="text-xs">Yeni Şifre (tekrar)</Label><Input type="text" value={pw2} onChange={(e) => setPw2(e.target.value)} /></div>
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => { setSelected(null); setPw(""); setPw2(""); }}>İptal</Button>
+            <Button variant="outline" className="flex-1" onClick={() => { setSelected(null); setPw(""); }}>İptal</Button>
             <Button className="flex-1" disabled={saving} onClick={submit}>{saving ? "Kaydediliyor..." : "Şifreyi Belirle"}</Button>
           </div>
         </div>
@@ -1720,4 +1717,5 @@ function PasswordTab() {
     </div>
   );
 }
+
 
