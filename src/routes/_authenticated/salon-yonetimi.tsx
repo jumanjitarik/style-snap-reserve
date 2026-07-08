@@ -495,9 +495,6 @@ function VirtualPosTab({ shopId }: { shopId: string }) {
         <div><Label className="text-xs">Manuel Tutar (₺)</Label><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9,.]/g, ""))} /></div>
         <div><Label className="text-xs">Açıklama</Label><Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
         <div className="grid grid-cols-1 gap-2">
-          <Button onClick={() => createCharge.mutate()} disabled={createCharge.isPending} variant="outline" className="w-full">
-            <CreditCard className="h-4 w-4 mr-1" /> Nakit / Manuel Kaydet
-          </Button>
           <Button
             className="w-full"
             disabled={busy !== null}
