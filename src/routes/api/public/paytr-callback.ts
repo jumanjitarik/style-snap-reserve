@@ -35,17 +35,33 @@ export const Route = createFileRoute("/api/public/paytr-callback")({
             .digest("base64");
           if (expected !== hash) return new Response("BADHASH", { status: 200 });
 
-          await supabaseAdmin
+          const newStatus = status === "success" ? "paid" : "failed";
+          const { data: charge } = await supabaseAdmin
             .from("virtual_pos_charges")
             .update({
-              status: status === "success" ? "paid" : "failed",
+              status: newStatus,
               paytr_raw: {
                 status, total_amount, payment_type, currency, test_mode,
                 failed_reason_code, failed_reason_msg,
                 received_at: new Date().toISOString(),
               },
             })
-            .eq("paytr_merchant_oid", merchant_oid);
+            .eq("paytr_merchant_oid", merchant_oid)
+            .select("id, appointment_id, membership_id")
+            .maybeSingle();
+
+          if (charge?.appointment_id) {
+            await supabaseAdmin
+              .from("appointments")
+              .update({ status: status === "success" ? "confirmed" : "cancelled" })
+              .eq("id", charge.appointment_id);
+          }
+          if (charge?.membership_id) {
+            await supabaseAdmin
+              .from("memberships")
+              .update({ status: status === "success" ? "confirmed" : "cancelled" })
+              .eq("id", charge.membership_id);
+          }
 
           return new Response("OK", { status: 200 });
         } catch (e) {
