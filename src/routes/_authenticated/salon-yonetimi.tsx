@@ -393,13 +393,24 @@ async function uploadImage(file: File, folder: string): Promise<string> {
 }
 
 /* ============ VIRTUAL POS ============ */
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useServerFn } from "@tanstack/react-start";
+import { createPaytrIframeToken, createPaytrLink } from "@/lib/paytr.functions";
+import { Link as LinkIcon, ExternalLink, Copy } from "lucide-react";
+
 function VirtualPosTab({ shopId }: { shopId: string }) {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string[]>([]);
   const [amount, setAmount] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
   const [description, setDescription] = useState("");
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"iframe" | "link" | null>(null);
+  const createIframe = useServerFn(createPaytrIframeToken);
+  const createLink = useServerFn(createPaytrLink);
 
   const { data: services } = useQuery({
     queryKey: ["pos-services", shopId],
