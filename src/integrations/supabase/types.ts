@@ -567,6 +567,30 @@ export type Database = {
           },
         ]
       }
+      page_seo: {
+        Row: {
+          description: string | null
+          keywords: string | null
+          path: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          keywords?: string | null
+          path: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          keywords?: string | null
+          path?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -931,6 +955,11 @@ export type Database = {
           customer_phone: string | null
           description: string | null
           id: string
+          payment_channel: string
+          paytr_merchant_oid: string | null
+          paytr_raw: Json | null
+          paytr_token: string | null
+          paytr_url: string | null
           service_ids: string[]
           shop_id: string
           status: string
@@ -943,6 +972,11 @@ export type Database = {
           customer_phone?: string | null
           description?: string | null
           id?: string
+          payment_channel?: string
+          paytr_merchant_oid?: string | null
+          paytr_raw?: Json | null
+          paytr_token?: string | null
+          paytr_url?: string | null
           service_ids?: string[]
           shop_id: string
           status?: string
@@ -955,6 +989,11 @@ export type Database = {
           customer_phone?: string | null
           description?: string | null
           id?: string
+          payment_channel?: string
+          paytr_merchant_oid?: string | null
+          paytr_raw?: Json | null
+          paytr_token?: string | null
+          paytr_url?: string | null
           service_ids?: string[]
           shop_id?: string
           status?: string
