@@ -459,6 +459,7 @@ export type Database = {
           service_id: string | null
           service_ids: string[]
           shop_id: string
+          status: string
           updated_at: string
           user_id: string | null
         }
@@ -481,6 +482,7 @@ export type Database = {
           service_id?: string | null
           service_ids?: string[]
           shop_id: string
+          status?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -503,6 +505,7 @@ export type Database = {
           service_id?: string | null
           service_ids?: string[]
           shop_id?: string
+          status?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -949,12 +952,14 @@ export type Database = {
       virtual_pos_charges: {
         Row: {
           amount: number
+          appointment_id: string | null
           created_at: string
           created_by: string | null
           customer_name: string | null
           customer_phone: string | null
           description: string | null
           id: string
+          membership_id: string | null
           payment_channel: string
           paytr_merchant_oid: string | null
           paytr_raw: Json | null
@@ -966,12 +971,14 @@ export type Database = {
         }
         Insert: {
           amount: number
+          appointment_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           description?: string | null
           id?: string
+          membership_id?: string | null
           payment_channel?: string
           paytr_merchant_oid?: string | null
           paytr_raw?: Json | null
@@ -983,12 +990,14 @@ export type Database = {
         }
         Update: {
           amount?: number
+          appointment_id?: string | null
           created_at?: string
           created_by?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           description?: string | null
           id?: string
+          membership_id?: string | null
           payment_channel?: string
           paytr_merchant_oid?: string | null
           paytr_raw?: Json | null
@@ -999,6 +1008,20 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "virtual_pos_charges_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "virtual_pos_charges_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "virtual_pos_charges_shop_id_fkey"
             columns: ["shop_id"]
