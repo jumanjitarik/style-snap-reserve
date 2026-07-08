@@ -78,7 +78,7 @@ function SalonYonetimi() {
         )}
 
         <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); window.localStorage.setItem("salon.mgmt.tab", v); }} className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsList className="grid grid-cols-3 h-auto w-full gap-1 p-1">
             <TabsTrigger value="shop">Salon</TabsTrigger>
             <TabsTrigger value="hours">Saatler</TabsTrigger>
             <TabsTrigger value="plan">Rezervasyon Planı</TabsTrigger>
