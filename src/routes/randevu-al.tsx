@@ -556,25 +556,29 @@ function BookPage() {
 
 
 
-            <div className="rounded-xl border border-border bg-card p-4 space-y-2">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Kart Bilgileri (Demo)</p>
-              <input placeholder="Kart Numarası" className="w-full rounded-md bg-input border border-border p-2 text-sm" defaultValue="4242 4242 4242 4242" />
-              <div className="flex gap-2">
-                <input placeholder="AA/YY" className="w-1/2 rounded-md bg-input border border-border p-2 text-sm" defaultValue="12/30" />
-                <input placeholder="CVC" className="w-1/2 rounded-md bg-input border border-border p-2 text-sm" defaultValue="123" />
-              </div>
-            </div>
             <Button onClick={() => create.mutate()} disabled={create.isPending} className="w-full h-12 font-semibold bg-gradient-to-r from-primary to-primary/80">
-              {create.isPending ? "İşleniyor..." : skipDateTime
+              {create.isPending ? "PayTR açılıyor..." : skipDateTime
                 ? (paymentMethod === "deposit"
-                    ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
-                    : `Üyeliği Satın Al · ${finalTotal.toFixed(0)}₺`)
+                    ? `PayTR ile Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
+                    : `PayTR ile Üyeliği Satın Al · ${finalTotal.toFixed(0)}₺`)
                 : paymentMethod === "deposit"
-                  ? `Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
-                  : `Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
+                  ? `PayTR ile Kaporayı Öde · ${Math.round(finalTotal * depPct / 100)}₺`
+                  : `PayTR ile Öde ve Onayla · ${finalTotal.toFixed(0)}₺`}
             </Button>
 
-            <p className="text-[10px] text-center text-muted-foreground">Gerçek kart çekimi Stripe entegrasyonu gerektirir.</p>
+            <p className="text-[10px] text-center text-muted-foreground">Ödemen PayTR güvenli sanal POS ekranında tamamlanır.</p>
+
+            <Dialog open={!!paytrIframe} onOpenChange={(v) => { if (!v) { setPaytrIframe(null); setPaytrOid(null); } }}>
+              <DialogContent className="max-w-md p-0">
+                <DialogHeader className="p-3">
+                  <DialogTitle>PayTR Ödeme</DialogTitle>
+                  <DialogDescription>Kart bilgilerini güvenli PayTR formunda gir. Ödeme tamamlandığında kaydın otomatik onaylanır.</DialogDescription>
+                </DialogHeader>
+                {paytrIframe && (
+                  <iframe src={paytrIframe} className="w-full" style={{ height: "70vh", border: 0 }} allow="payment" />
+                )}
+              </DialogContent>
+            </Dialog>
 
           </>
         )}
