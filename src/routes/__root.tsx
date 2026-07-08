@@ -147,6 +147,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <SeoHead />
       <Outlet />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
