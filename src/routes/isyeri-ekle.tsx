@@ -51,8 +51,9 @@ function BusinessRequestPage() {
 
     let tax_certificate_url: string | null = null;
     if (taxFile) {
+      if (!u.user?.id) { setSending(false); toast.error("Giriş yapmalısınız."); return; }
       const ext = taxFile.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${crypto.randomUUID()}.${ext}`;
+      const path = `${u.user.id}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("business-docs").upload(path, taxFile, {
         contentType: taxFile.type,
         upsert: false,
@@ -60,6 +61,7 @@ function BusinessRequestPage() {
       if (upErr) { setSending(false); toast.error("Vergi levhası yüklenemedi: " + upErr.message); return; }
       tax_certificate_url = path;
     }
+
 
     const { error } = await supabase.from("business_requests" as never).insert({
       business_name: form.business_name.trim(),
