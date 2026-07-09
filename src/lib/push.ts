@@ -51,7 +51,7 @@ async function showNotif(title: string, body: string, image?: string | null, lin
   // own title/body show, then restore.
   const prevTitle = typeof document !== "undefined" ? document.title : "";
   try {
-    if (typeof document !== "undefined") document.title = " ";
+    if (typeof document !== "undefined") document.title = "";
     const reg = await ensureSW();
     if (reg) {
       await reg.showNotification(title, opts);
@@ -62,7 +62,10 @@ async function showNotif(title: string, body: string, image?: string | null, lin
   } catch { /* noop */ }
   finally {
     if (typeof document !== "undefined") {
-      setTimeout(() => { document.title = prevTitle; }, 150);
+      // Keep the title blank long enough for the OS to render the notification
+      // without the "from <app>" label. A short flash often restores before the
+      // tray notification is actually composed.
+      setTimeout(() => { document.title = prevTitle; }, 3000);
     }
   }
 }
