@@ -205,6 +205,9 @@ function ShopDetail() {
 
           <ReviewSection shopId={id} userId={userId} reviews={reviews ?? []} />
 
+          <WaitlistWidget shopId={id} userId={userId} />
+
+
           {shop.lat != null && shop.lng != null && (
             <section className="mt-6 mb-6">
               <h2 className="mb-2 font-display text-lg tracking-wider">Konum</h2>
