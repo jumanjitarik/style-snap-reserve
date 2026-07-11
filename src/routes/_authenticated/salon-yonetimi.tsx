@@ -904,35 +904,143 @@ function ReservationPlanTab({ shopId }: { shopId: string }) {
   });
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <CalendarClock className="h-5 w-5 text-primary" />
-        <Label className="text-xs mb-0">Tarih</Label>
-        <Input type="date" className="flex-1" value={date} onChange={(e) => setDate(e.target.value)} />
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Seçili tarihte saatlere tıklayarak açık/kapalı yapabilirsin. Kapalı saatler müşterilere seçim ekranında gizlenir.
-      </p>
-      <div className="grid grid-cols-4 gap-2">
-        {PLAN_SLOTS.map((s) => {
-          const isActive = map.has(s) ? map.get(s)! : true;
-          return (
-            <button
-              key={s}
-              onClick={() => toggle.mutate(s)}
-              className={cn(
-                "rounded-lg border py-2.5 text-sm font-medium active:scale-95 transition",
-                isActive
-                  ? "border-primary/50 bg-primary/10 text-primary"
-                  : "border-border bg-muted/40 text-muted-foreground line-through opacity-70",
-              )}
-            >
-              {s}
-            </button>
-          );
-        })}
+    <div className="space-y-5">
+      <WeeklyCalendarView shopId={shopId} />
+
+      <div className="pt-3 border-t border-border space-y-3">
+        <div className="flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-primary" />
+          <Label className="text-xs mb-0">Slot açma/kapama · Tarih</Label>
+          <Input type="date" className="flex-1" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Seçili tarihte saatlere tıklayarak açık/kapalı yapabilirsin. Kapalı saatler müşterilere seçim ekranında gizlenir.
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {PLAN_SLOTS.map((s) => {
+            const isActive = map.has(s) ? map.get(s)! : true;
+            return (
+              <button
+                key={s}
+                onClick={() => toggle.mutate(s)}
+                className={cn(
+                  "rounded-lg border py-2.5 text-sm font-medium active:scale-95 transition",
+                  isActive
+                    ? "border-primary/50 bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 text-muted-foreground line-through opacity-70",
+                )}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
 }
+
+function WeeklyCalendarView({ shopId }: { shopId: string }) {
+  const [weekStart, setWeekStart] = useState<Date>(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const day = d.getDay(); // 0=Sun, 1=Mon
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d;
+  });
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart); d.setDate(d.getDate() + i); return d;
+  }), [weekStart]);
+  const rangeStart = weekStart.toISOString();
+  const rangeEnd = new Date(weekStart.getTime() + 7 * 86400000).toISOString();
+
+  const { data: appts } = useQuery({
+    queryKey: ["weekly-appts", shopId, rangeStart],
+    queryFn: async () => {
+      const { data } = await supabase.from("appointments")
+        .select("id, starts_at, status")
+        .eq("shop_id", shopId)
+        .neq("status", "cancelled")
+        .gte("starts_at", rangeStart)
+        .lt("starts_at", rangeEnd);
+      return data ?? [];
+    },
+  });
+
+  const bookedMap = useMemo(() => {
+    const m = new Map<string, number>();
+    (appts ?? []).forEach((a) => {
+      const d = new Date(a.starts_at);
+      const key = `${d.toISOString().slice(0, 10)}_${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      m.set(key, (m.get(key) ?? 0) + 1);
+    });
+    return m;
+  }, [appts]);
+
+  const DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+  const HOURS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+  const todayKey = new Date().toISOString().slice(0, 10);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg">Haftalık Takvim</h3>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={() => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() - 7); return n; })}>‹</Button>
+          <span className="text-xs px-2 min-w-[110px] text-center">
+            {weekStart.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} – {new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}
+          </span>
+          <Button size="sm" variant="outline" onClick={() => setWeekStart((d) => { const n = new Date(d); n.setDate(n.getDate() + 7); return n; })}>›</Button>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-[10px] border-collapse">
+          <thead>
+            <tr>
+              <th className="p-1 border border-border bg-muted/40 sticky left-0"></th>
+              {days.map((d, i) => {
+                const key = d.toISOString().slice(0, 10);
+                const isToday = key === todayKey;
+                return (
+                  <th key={i} className={cn("p-1 border border-border font-semibold", isToday ? "bg-primary/20 text-primary" : "bg-muted/40")}>
+                    <div>{DAY_NAMES[i]}</div>
+                    <div className="text-[9px] font-normal opacity-70">{d.getDate()}</div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {HOURS.map((h) => (
+              <tr key={h}>
+                <td className="p-1 border border-border bg-muted/40 font-mono text-center sticky left-0">{h}</td>
+                {days.map((d, i) => {
+                  const dayKey = d.toISOString().slice(0, 10);
+                  const key = `${dayKey}_${h}`;
+                  const key30 = `${dayKey}_${h.slice(0, 3)}30`;
+                  const count = (bookedMap.get(key) ?? 0) + (bookedMap.get(key30) ?? 0);
+                  return (
+                    <td key={i} className={cn(
+                      "p-1 border border-border text-center h-8",
+                      count === 0 && "bg-transparent",
+                      count === 1 && "bg-amber-500/20 text-amber-600 font-semibold",
+                      count >= 2 && "bg-primary/30 text-primary font-bold",
+                    )}>
+                      {count > 0 ? count : ""}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-amber-500/20 border border-border" /> 1 randevu</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-primary/30 border border-border" /> 2+ randevu</span>
+      </div>
+    </div>
+  );
+}
+
 
