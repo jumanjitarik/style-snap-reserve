@@ -306,7 +306,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
     queryFn: async () => {
       let q = supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, user_id, guest_name, guest_phone, shop_id, service_id, service_ids, notes")
         .order("starts_at", { ascending: true });
       if (!isAdmin) q = q.in("shop_id", shopIds!);
       const { data } = await q;
@@ -327,17 +327,26 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
     },
   });
 
+  const allSvcIds = useMemo(() => {
+    const s = new Set<string>();
+    (appts ?? []).forEach((a) => {
+      if (a.service_id) s.add(a.service_id);
+      ((a as unknown as { service_ids: string[] | null }).service_ids ?? []).forEach((id) => id && s.add(id));
+    });
+    return Array.from(s);
+  }, [appts]);
+
   const services = useQuery({
-    queryKey: ["appt-services", appts?.map((a) => a.service_id)],
-    enabled: !!appts && appts.length > 0,
+    queryKey: ["appt-services", allSvcIds],
+    enabled: allSvcIds.length > 0,
     queryFn: async () => {
-      const ids = Array.from(new Set(appts!.map((a) => a.service_id).filter(Boolean) as string[]));
-      const { data } = await supabase.from("services").select("id, name").in("id", ids);
+      const { data } = await supabase.from("services").select("id, name").in("id", allSvcIds);
       const m = new Map<string, string>();
       (data ?? []).forEach((s) => m.set(s.id, s.name));
       return m;
     },
   });
+
 
   if (!isAdmin && (!shopIds || shopIds.length === 0)) return <p className="py-8 text-center text-sm text-muted-foreground">Salonunuz/işiniz bulunamadı.</p>;
   if (!appts || appts.length === 0) return <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Henüz müşteri randevusu yok.</div>;
