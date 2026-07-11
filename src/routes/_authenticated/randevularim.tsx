@@ -372,9 +372,13 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
               <CalIcon className="h-3 w-3" />
               {format(new Date(a.starts_at), "d MMM yyyy · HH:mm", { locale: tr })}
             </p>
-            {services.data?.get(a.service_id ?? "") && (
-              <p className="text-xs text-muted-foreground mt-0.5">{services.data.get(a.service_id ?? "")}</p>
-            )}
+            {(() => {
+              const arr = ((a as unknown as { service_ids: string[] | null }).service_ids ?? []).filter(Boolean);
+              const ids = arr.length > 0 ? arr : (a.service_id ? [a.service_id] : []);
+              const names = ids.map((id) => services.data?.get(id) ?? "").filter(Boolean).join(", ");
+              return names ? <p className="text-xs text-muted-foreground mt-0.5">{names}</p> : null;
+            })()}
+
           </div>
           <span className={`shrink-0 rounded-full text-[10px] tracking-wider px-2 py-0.5 font-bold ${toneClass(lbl.tone)}`}>{lbl.text}</span>
         </div>
