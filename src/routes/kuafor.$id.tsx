@@ -98,7 +98,10 @@ function ShopDetail() {
   });
   const { data: reviews } = useQuery({
     queryKey: ["reviews", id],
-    queryFn: async () => (await supabase.from("reviews").select("id, rating, comment, created_at, user_id").eq("shop_id", id).order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_shop_reviews" as never, { _shop_id: id } as never);
+      return (data as { id: string; rating: number; comment: string | null; created_at: string; user_id: string; author_name: string }[] | null) ?? [];
+    },
   });
   const { data: isFav } = useQuery({
     queryKey: ["fav", id, userId],
