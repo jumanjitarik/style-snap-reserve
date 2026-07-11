@@ -177,10 +177,31 @@ function MyOwnList() {
       if (!u.user) return [];
       const { data } = await supabase
         .from("appointments")
-        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, shop:barbershops(id,name,address), service:services(name)")
+        .select("id, starts_at, status, payment_amount, deposit_amount, remaining_amount, discount_amount, points_used, points_earned, service_id, service_ids, shop:barbershops(id,name,address), service:services(name)")
         .eq("user_id", u.user.id)
         .order("starts_at", { ascending: false });
       return data ?? [];
+    },
+  });
+
+  const list = data ?? [];
+  const allServiceIds = useMemo(() => {
+    const s = new Set<string>();
+    list.forEach((a) => {
+      const arr = (a as unknown as { service_ids: string[] | null }).service_ids ?? [];
+      arr.forEach((id) => { if (id) s.add(id); });
+    });
+    return Array.from(s);
+  }, [list]);
+
+  const { data: serviceNames } = useQuery({
+    queryKey: ["own-appt-services", allServiceIds],
+    enabled: allServiceIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.from("services").select("id, name").in("id", allServiceIds);
+      const m = new Map<string, string>();
+      (data ?? []).forEach((s) => m.set(s.id, s.name));
+      return m;
     },
   });
 
@@ -193,7 +214,6 @@ function MyOwnList() {
     onError: () => toast.error("24 saat kala iptal sağlanmamaktadır"),
   });
 
-  const list = data ?? [];
   const sorted = useMemo(() => {
     const now = Date.now();
     const open = list.filter((a) => a.status !== "cancelled" && new Date(a.starts_at).getTime() >= now)
@@ -212,15 +232,20 @@ function MyOwnList() {
         const lbl = labelFor(a.starts_at, a.status);
         const canCancel = hoursLeft > 24 && a.status === "confirmed";
         const total = Number(a.payment_amount ?? 0) + Number(a.remaining_amount ?? 0);
+        const svcIds = ((a as unknown as { service_ids: string[] | null }).service_ids ?? []).filter(Boolean);
+        const svcNames = svcIds.length > 0
+          ? svcIds.map((id) => serviceNames?.get(id) ?? "").filter(Boolean).join(", ")
+          : (a.service?.name ?? "");
         return (
           <div key={a.id} className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="font-semibold truncate">{a.shop?.name}</p>
-                <p className="text-sm text-muted-foreground">{a.service?.name}</p>
+                <p className="text-sm text-muted-foreground">{svcNames}</p>
               </div>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${toneClass(lbl.tone)}`}>{lbl.text}</span>
             </div>
+
             <div className="mt-2 space-y-1 text-xs text-muted-foreground">
               <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{format(startsAt, "d MMMM yyyy · HH:mm", { locale: tr })}</p>
               {a.shop?.address && <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{a.shop.address}</p>}
