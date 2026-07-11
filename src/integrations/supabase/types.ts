@@ -62,6 +62,44 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_watchers: {
+        Row: {
+          created_at: string
+          id: string
+          notified_at: string | null
+          shop_id: string
+          slot_time: string | null
+          user_id: string
+          watch_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          shop_id: string
+          slot_time?: string | null
+          user_id: string
+          watch_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notified_at?: string | null
+          shop_id?: string
+          slot_time?: string | null
+          user_id?: string
+          watch_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_watchers_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           created_at: string
@@ -79,6 +117,7 @@ export type Database = {
           points_used: number
           remaining_amount: number
           reminded_1h: boolean
+          reminded_24h: boolean
           reminded_2h: boolean
           service_id: string
           service_ids: string[] | null
@@ -104,6 +143,7 @@ export type Database = {
           points_used?: number
           remaining_amount?: number
           reminded_1h?: boolean
+          reminded_24h?: boolean
           reminded_2h?: boolean
           service_id: string
           service_ids?: string[] | null
@@ -129,6 +169,7 @@ export type Database = {
           points_used?: number
           remaining_amount?: number
           reminded_1h?: boolean
+          reminded_24h?: boolean
           reminded_2h?: boolean
           service_id?: string
           service_ids?: string[] | null
@@ -1046,6 +1087,17 @@ export type Database = {
           full_name: string
           id: string
           phone: string
+        }[]
+      }
+      get_shop_reviews: {
+        Args: { _shop_id: string }
+        Returns: {
+          author_name: string
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          user_id: string
         }[]
       }
       has_role: {
