@@ -1050,7 +1050,7 @@ function ActivityTab() {
       .some((v) => v && norm(String(v)).includes(q));
   });
 
-  function exportActivity() {
+  async function exportActivity() {
     const rows = filtered.map((a) => {
       const u = (profiles ?? []).find((p) => p.id === a.user_id);
       return {
@@ -1110,7 +1110,7 @@ function MembersTab() {
     },
   });
 
-  function exportMembers() {
+  async function exportMembers() {
     const rows = (profiles ?? []).map((p) => ({
       "Ad Soyad": p.full_name ?? "",
       "E-posta": p.email ?? "",
@@ -1381,7 +1381,7 @@ function AccountingTab() {
   const totalRemaining = filtered.reduce((s: number, r: any) => s + Number(r.remaining_amount ?? 0), 0);
   const totalCount = filtered.length;
 
-  const exportXlsx = () => {
+  const exportXlsx = async () => {
     const data = filtered.map((r: any) => ({
       Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
       Müşteri: r.profiles?.full_name ?? "—",

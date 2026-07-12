@@ -112,7 +112,7 @@ function MuhasebePage() {
     };
   }, [rows]);
 
-  function exportXlsx() {
+  async function exportXlsx() {
     const data = filtered.map((r: any) => ({
       Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
       Salon: r.barbershops?.name ?? "—",

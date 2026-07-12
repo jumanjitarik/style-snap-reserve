@@ -177,7 +177,7 @@ function AppointmentsTab({ shops }: { shops: { id: string; name: string }[] }) {
   const totalCollected = filtered.reduce((s, r: any) => s + Number(r.payment_amount ?? 0), 0);
   const totalRemaining = filtered.reduce((s, r: any) => s + Number(r.remaining_amount ?? 0), 0);
 
-  function exportXlsx() {
+  async function exportXlsx() {
     const data = filtered.map((r: any) => ({
       Tarih: new Date(r.starts_at).toLocaleString("tr-TR"),
       Salon: r.barbershops?.name ?? "—",
