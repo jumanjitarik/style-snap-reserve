@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ArrowUpDown, Download, Store, Plus, Trash2, Save, Upload, X, Clock, CreditCard, CalendarClock } from "lucide-react";
-import * as XLSX from "xlsx";
+
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -190,6 +190,7 @@ function AppointmentsTab({ shops }: { shops: { id: string; name: string }[] }) {
       Durum: r.status,
       Not: r.notes ?? "",
     }));
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Salon");

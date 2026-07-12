@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowUpDown, Download, Store, Receipt } from "lucide-react";
-import * as XLSX from "xlsx";
+
 
 export const Route = createFileRoute("/_authenticated/muhasebe")({
   ssr: false,
@@ -124,6 +124,7 @@ function MuhasebePage() {
       Salonda_Nakit: Number(r.remaining_amount ?? 0),
       Durum: r.status,
     }));
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Muhasebe");

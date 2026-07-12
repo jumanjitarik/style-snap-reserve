@@ -20,7 +20,7 @@ import { adminSecurityOverview, adminRemoveBlock, adminAddIpBlock, adminBlockUse
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
-import * as XLSX from "xlsx";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
@@ -1064,6 +1064,7 @@ function ActivityTab() {
         "Tarayıcı": a.user_agent ?? "",
       };
     });
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Aktivite");
@@ -1123,6 +1124,7 @@ function MembersTab() {
       "Puan": p.points ?? 0,
       "Engelli": p.is_blocked ? "Evet" : "Hayır",
     }));
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Üyeler");
@@ -1394,6 +1396,7 @@ function AccountingTab() {
       Puan_Kazanılan: Number(r.points_earned ?? 0),
       Durum: r.status,
     }));
+    const XLSX = await import("xlsx");
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Muhasebe");
