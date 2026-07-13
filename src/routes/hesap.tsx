@@ -363,6 +363,14 @@ function AccountPage() {
           </Link>
         )}
 
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-card p-4 active:scale-[0.98] transition text-left"
+        >
+          <MessageSquare className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Geri Bildirim</span>
+        </button>
+
         {showSupport && (
           <div className="rounded-xl border border-primary/30 bg-card p-3 space-y-2">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Destek</p>
@@ -388,14 +396,6 @@ function AccountPage() {
           </div>
         )}
 
-        <button
-          onClick={() => setFeedbackOpen(true)}
-          className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-card p-4 active:scale-[0.98] transition text-left"
-        >
-          <MessageSquare className="h-5 w-5 text-primary" />
-          <span className="font-semibold">Geri Bildirim</span>
-        </button>
-
         <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
@@ -416,10 +416,11 @@ function AccountPage() {
         </Dialog>
 
         {!isAdmin && (
-          <Button variant="destructive" onClick={deleteAccount} className="w-full h-12">
+          <Button variant="outline" onClick={deleteAccount} className="w-full h-12">
             <Trash2 className="h-4 w-4 mr-2" /> Hesabımı Sil
           </Button>
         )}
+
         <Button variant="outline" onClick={signOut} className="w-full h-12 mt-2">
           <LogOut className="h-4 w-4 mr-2" /> Çıkış Yap
         </Button>
