@@ -289,66 +289,55 @@ function AccountPage() {
 
 
 
-        <Link to="/randevularim" className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
-          <CalendarDays className="h-5 w-5 text-primary" /><span>Randevularım</span>
-        </Link>
-        <div className="grid grid-cols-2 gap-2">
-          <Link to="/bildirimler" className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
-            <Bell className="h-5 w-5 text-primary" /><span className="text-sm font-medium">Bildirimler</span>
-          </Link>
-          <Button variant="outline" className="w-full h-full min-h-[56px]" onClick={async () => {
-            try {
-              if (!("Notification" in window) && !("serviceWorker" in navigator)) {
-                toast.error("Bu tarayıcı sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
-                return;
-              }
-              let perm: NotificationPermission = "default";
-              if ("Notification" in window) {
-                perm = Notification.permission;
-                if (perm === "default") perm = await Notification.requestPermission();
-                if (perm !== "granted") { toast.error("Bildirim izni reddedildi. Telefon ayarlarından izin verebilirsin."); return; }
-              }
-              const reg = await navigator.serviceWorker?.ready.catch(() => null);
-              const opts: NotificationOptions = {
-                body: "Bildirim sistemi çalışıyor ✅",
-                icon: "/favicon.ico",
-                badge: "/favicon.ico",
-                tag: "test-notif",
-                data: { url: "/bildirimler" },
-              };
-              (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).vibrate = [200, 100, 200];
-              (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).renotify = true;
-              let shown = false;
-              if (reg && typeof reg.showNotification === "function") {
-                try { await reg.showNotification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
-              }
-              if (!shown && "Notification" in window) {
-                try { new Notification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
-              }
-              if (!shown) {
-                toast.error("Bu cihaz sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
-                return;
-              }
-              // Also create a row so it appears in the in-app list.
-              const { data: u } = await supabase.auth.getUser();
-              if (u.user) {
-                await supabase.from("notifications").insert({
-                  user_id: u.user.id,
-                  title: "Test Bildirimi",
-                  body: "Bildirim sistemi çalışıyor ✅",
-                });
-              }
-              toast.success("Test bildirimi gönderildi");
-            } catch (e) {
-              toast.error("Bildirim gönderilemedi: " + (e as Error).message);
+        <Button variant="outline" className="w-full h-12" onClick={async () => {
+          try {
+            if (!("Notification" in window) && !("serviceWorker" in navigator)) {
+              toast.error("Bu tarayıcı sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
+              return;
             }
-          }}>
-            <BellRing className="h-4 w-4 mr-1" /> <span className="text-sm">Bildirim Testi</span>
-          </Button>
-        </div>
-        <Link to="/favoriler" className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 active:scale-[0.98] transition">
-          <Heart className="h-5 w-5 text-primary" /><span>Favoriler</span>
-        </Link>
+            let perm: NotificationPermission = "default";
+            if ("Notification" in window) {
+              perm = Notification.permission;
+              if (perm === "default") perm = await Notification.requestPermission();
+              if (perm !== "granted") { toast.error("Bildirim izni reddedildi. Telefon ayarlarından izin verebilirsin."); return; }
+            }
+            const reg = await navigator.serviceWorker?.ready.catch(() => null);
+            const opts: NotificationOptions = {
+              body: "Bildirim sistemi çalışıyor ✅",
+              icon: "/favicon.ico",
+              badge: "/favicon.ico",
+              tag: "test-notif",
+              data: { url: "/bildirimler" },
+            };
+            (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).vibrate = [200, 100, 200];
+            (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).renotify = true;
+            let shown = false;
+            if (reg && typeof reg.showNotification === "function") {
+              try { await reg.showNotification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
+            }
+            if (!shown && "Notification" in window) {
+              try { new Notification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
+            }
+            if (!shown) {
+              toast.error("Bu cihaz sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
+              return;
+            }
+            const { data: u } = await supabase.auth.getUser();
+            if (u.user) {
+              await supabase.from("notifications").insert({
+                user_id: u.user.id,
+                title: "Test Bildirimi",
+                body: "Bildirim sistemi çalışıyor ✅",
+              });
+            }
+            toast.success("Test bildirimi gönderildi");
+          } catch (e) {
+            toast.error("Bildirim gönderilemedi: " + (e as Error).message);
+          }
+        }}>
+          <BellRing className="h-4 w-4 mr-2" /> Bildirim Testi
+        </Button>
+
         {isOwner && (
           <>
             <Link to="/salon-yonetimi" className="flex items-center gap-3 rounded-xl border border-primary/40 bg-card p-4 active:scale-[0.98] transition">
