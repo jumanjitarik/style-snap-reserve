@@ -289,54 +289,58 @@ function AccountPage() {
 
 
 
-        <Button variant="outline" className="w-full h-12" onClick={async () => {
-          try {
-            if (!("Notification" in window) && !("serviceWorker" in navigator)) {
-              toast.error("Bu tarayıcı sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
-              return;
-            }
-            let perm: NotificationPermission = "default";
-            if ("Notification" in window) {
-              perm = Notification.permission;
-              if (perm === "default") perm = await Notification.requestPermission();
-              if (perm !== "granted") { toast.error("Bildirim izni reddedildi. Telefon ayarlarından izin verebilirsin."); return; }
-            }
-            const reg = await navigator.serviceWorker?.ready.catch(() => null);
-            const opts: NotificationOptions = {
-              body: "Bildirim sistemi çalışıyor ✅",
-              icon: "/favicon.ico",
-              badge: "/favicon.ico",
-              tag: "test-notif",
-              data: { url: "/bildirimler" },
-            };
-            (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).vibrate = [200, 100, 200];
-            (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).renotify = true;
-            let shown = false;
-            if (reg && typeof reg.showNotification === "function") {
-              try { await reg.showNotification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
-            }
-            if (!shown && "Notification" in window) {
-              try { new Notification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
-            }
-            if (!shown) {
-              toast.error("Bu cihaz sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
-              return;
-            }
-            const { data: u } = await supabase.auth.getUser();
-            if (u.user) {
-              await supabase.from("notifications").insert({
-                user_id: u.user.id,
-                title: "Test Bildirimi",
+        <button
+          onClick={async () => {
+            try {
+              if (!("Notification" in window) && !("serviceWorker" in navigator)) {
+                toast.error("Bu tarayıcı sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
+                return;
+              }
+              let perm: NotificationPermission = "default";
+              if ("Notification" in window) {
+                perm = Notification.permission;
+                if (perm === "default") perm = await Notification.requestPermission();
+                if (perm !== "granted") { toast.error("Bildirim izni reddedildi. Telefon ayarlarından izin verebilirsin."); return; }
+              }
+              const reg = await navigator.serviceWorker?.ready.catch(() => null);
+              const opts: NotificationOptions = {
                 body: "Bildirim sistemi çalışıyor ✅",
-              });
+                icon: "/favicon.ico",
+                badge: "/favicon.ico",
+                tag: "test-notif",
+                data: { url: "/bildirimler" },
+              };
+              (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).vibrate = [200, 100, 200];
+              (opts as NotificationOptions & { vibrate?: number[]; renotify?: boolean }).renotify = true;
+              let shown = false;
+              if (reg && typeof reg.showNotification === "function") {
+                try { await reg.showNotification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
+              }
+              if (!shown && "Notification" in window) {
+                try { new Notification("Test Bildirimi", opts); shown = true; } catch { /* fall through */ }
+              }
+              if (!shown) {
+                toast.error("Bu cihaz sistem bildirimini desteklemiyor. Uygulamayı ana ekrana ekleyip PWA olarak açmayı dene.");
+                return;
+              }
+              const { data: u } = await supabase.auth.getUser();
+              if (u.user) {
+                await supabase.from("notifications").insert({
+                  user_id: u.user.id,
+                  title: "Test Bildirimi",
+                  body: "Bildirim sistemi çalışıyor ✅",
+                });
+              }
+              toast.success("Test bildirimi gönderildi");
+            } catch (e) {
+              toast.error("Bildirim gönderilemedi: " + (e as Error).message);
             }
-            toast.success("Test bildirimi gönderildi");
-          } catch (e) {
-            toast.error("Bildirim gönderilemedi: " + (e as Error).message);
-          }
-        }}>
-          <BellRing className="h-4 w-4 mr-2" /> Bildirim Testi
-        </Button>
+          }}
+          className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-card p-4 active:scale-[0.98] transition text-left"
+        >
+          <BellRing className="h-5 w-5 text-primary" />
+          <span className="font-semibold">Bildirim Testi</span>
+        </button>
 
         {isOwner && (
           <>
