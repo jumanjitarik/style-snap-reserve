@@ -366,12 +366,17 @@ function BookPage() {
             <h2 className="font-display text-xl">Kategori Seç</h2>
             <div className="grid grid-cols-2 gap-2">
               {visibleCategories.map((c) => (
-                <button key={c.key} onClick={() => { setCategory(c.key); setStep(2); }}
+                <button key={c.id} onClick={() => { setCategory(c.slug); setStep(2); }}
                   className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition">
-                  <c.icon className="h-7 w-7 text-primary" />
-                  <span className="text-sm text-center">{c.label}</span>
+                  {c.icon_url ? (
+                    <SafeImg src={c.icon_url} alt={c.name} className="h-7 w-7 object-contain" />
+                  ) : (
+                    <CategoryFallbackIcon className="h-7 w-7 text-primary" />
+                  )}
+                  <span className="text-sm text-center">{c.name}</span>
                 </button>
               ))}
+
             </div>
           </>
         )}
