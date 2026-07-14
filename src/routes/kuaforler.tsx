@@ -204,18 +204,24 @@ function ShopList() {
         >
           Tümü
         </button>
-        {CATEGORIES.map((c) => (
+        {(cats ?? []).map((c) => (
           <button
-            key={c.key}
-            onClick={() => navigate({ search: { cat: c.key } })}
+            key={c.id}
+            onClick={() => navigate({ search: { cat: c.slug } })}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
+              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95 flex items-center gap-1.5",
+              cat === c.slug ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
-            {c.label}
+            {c.icon_url ? (
+              <SafeImg src={c.icon_url} alt="" className="h-3.5 w-3.5 object-contain" />
+            ) : (
+              <CategoryFallbackIcon className="h-3.5 w-3.5" />
+            )}
+            {c.name}
           </button>
         ))}
+
       </div>
 
       <div className="px-4 pb-3 relative">
