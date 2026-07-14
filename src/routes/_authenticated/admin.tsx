@@ -2113,3 +2113,258 @@ function PaytrTab() {
 }
 
 
+
+// -------------------- Categories Tab --------------------
+type CatRow = { id: string; slug: string; name: string; icon_url: string | null; sort_order: number; active: boolean };
+
+async function uploadCategoryLogo(file: File): Promise<string> {
+  const { data: u } = await supabase.auth.getUser();
+  const ext = (file.name.split(".").pop() || "png").toLowerCase();
+  const path = `category-logos/${u.user!.id}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("barbershop-photos").upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function CategoriesTab() {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState<CatRow | null>(null);
+  const [assigning, setAssigning] = useState<CatRow | null>(null);
+
+  const { data: cats } = useQuery({
+    queryKey: ["admin-custom-cats"],
+    queryFn: async () =>
+      ((await supabase
+        .from("custom_categories")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true })).data ?? []) as CatRow[],
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!editing) return;
+      const payload = {
+        slug: editing.slug.trim(),
+        name: editing.name.trim(),
+        icon_url: editing.icon_url || null,
+        sort_order: Number(editing.sort_order) || 0,
+        active: editing.active,
+      };
+      if (!payload.slug || !payload.name) throw new Error("Slug ve isim zorunlu");
+      if (editing.id) {
+        const { error } = await supabase.from("custom_categories").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("custom_categories").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Kaydedildi");
+      setEditing(null);
+      qc.invalidateQueries({ queryKey: ["admin-custom-cats"] });
+      qc.invalidateQueries({ queryKey: ["custom-categories"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("custom_categories").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Silindi");
+      qc.invalidateQueries({ queryKey: ["admin-custom-cats"] });
+      qc.invalidateQueries({ queryKey: ["custom-categories"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (assigning) return <CategoryShopAssignments cat={assigning} onDone={() => setAssigning(null)} />;
+
+  if (editing) {
+    return (
+      <div className="space-y-3 py-4">
+        <div>
+          <Label>Kategori Adı</Label>
+          <Input value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+        </div>
+        <div>
+          <Label>Slug (URL, ör: male_barber)</Label>
+          <Input
+            value={editing.slug}
+            onChange={(e) => setEditing({ ...editing, slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "_") })}
+          />
+        </div>
+        <div>
+          <Label>Sıra</Label>
+          <Input
+            type="number"
+            value={editing.sort_order}
+            onChange={(e) => setEditing({ ...editing, sort_order: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+        <div className="flex items-center justify-between rounded-md border border-border p-3">
+          <Label className="!m-0">Aktif</Label>
+          <Switch checked={editing.active} onCheckedChange={(v) => setEditing({ ...editing, active: v })} />
+        </div>
+        <div>
+          <Label>Logo / İkon</Label>
+          <div className="flex gap-2 items-center">
+            {editing.icon_url && <SafeImg src={editing.icon_url} className="h-16 w-16 rounded object-contain bg-muted p-1" alt="" />}
+            <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
+              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url ? "Değiştir" : "Logo yükle"}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    const url = await uploadCategoryLogo(f);
+                    setEditing({ ...editing, icon_url: url });
+                    toast.success("Yüklendi");
+                  } catch (err) {
+                    toast.error((err as Error).message);
+                  }
+                }}
+              />
+            </label>
+            {editing.icon_url && (
+              <Button size="icon" variant="destructive" onClick={() => setEditing({ ...editing, icon_url: "" })}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2 pt-2">
+          <Button variant="outline" onClick={() => setEditing(null)} className="flex-1">İptal</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="flex-1">Kaydet</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-4 space-y-3">
+      <Button
+        onClick={() => setEditing({ id: "", slug: "", name: "", icon_url: "", sort_order: (cats?.length ?? 0) + 1, active: true })}
+        className="w-full"
+      >
+        <Plus className="h-4 w-4 mr-1" /> Yeni Kategori
+      </Button>
+      {(cats ?? []).map((c) => (
+        <div key={c.id} className="rounded-xl border border-border bg-card p-3">
+          <div className="flex items-center gap-3">
+            {c.icon_url ? (
+              <SafeImg src={c.icon_url} className="h-10 w-10 rounded object-contain bg-muted p-1" alt="" />
+            ) : (
+              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs">
+                {c.name.slice(0, 2)}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold truncate">
+                {c.name} {!c.active && <span className="text-[10px] text-muted-foreground">(pasif)</span>}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">#{c.slug} · sıra {c.sort_order}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button size="sm" variant="ghost" onClick={() => setAssigning(c)}>Salonlar</Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(c)}>Düzenle</Button>
+              <Button size="icon" variant="ghost" onClick={() => confirm("Silinsin mi?") && del.mutate(c.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CategoryShopAssignments({ cat, onDone }: { cat: CatRow; onDone: () => void }) {
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+
+  const { data: shops } = useQuery({
+    queryKey: ["admin-shops-min"],
+    queryFn: async () =>
+      (await supabase.from("barbershops").select("id, name, city").order("name", { ascending: true })).data ?? [],
+  });
+
+  const { data: assigned } = useQuery({
+    queryKey: ["admin-cat-shops", cat.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("barbershop_categories")
+        .select("shop_id")
+        .eq("category_id", cat.id);
+      return new Set((data ?? []).map((r) => r.shop_id));
+    },
+  });
+
+  const toggle = useMutation({
+    mutationFn: async ({ shopId, on }: { shopId: string; on: boolean }) => {
+      if (on) {
+        const { error } = await supabase
+          .from("barbershop_categories")
+          .insert({ shop_id: shopId, category_id: cat.id });
+        if (error && !String(error.message).includes("duplicate")) throw error;
+      } else {
+        const { error } = await supabase
+          .from("barbershop_categories")
+          .delete()
+          .eq("shop_id", shopId)
+          .eq("category_id", cat.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-cat-shops", cat.id] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const norm = (x: string) => x.toLocaleLowerCase("tr-TR");
+  const filtered = (shops ?? []).filter((s) => {
+    if (!search.trim()) return true;
+    const q = norm(search);
+    return norm(s.name).includes(q) || norm(s.city ?? "").includes(q);
+  });
+
+  return (
+    <div className="py-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" onClick={onDone}>← Geri</Button>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold truncate">{cat.name}</p>
+          <p className="text-xs text-muted-foreground">Bu kategoride görünecek salonları seç</p>
+        </div>
+      </div>
+      <Input placeholder="Salon ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="space-y-1.5">
+        {filtered.map((s) => {
+          const on = assigned?.has(s.id) ?? false;
+          return (
+            <label key={s.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={on}
+                onChange={(e) => toggle.mutate({ shopId: s.id, on: e.target.checked })}
+                className="h-4 w-4 accent-primary"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{s.name}</p>
+                {s.city && <p className="text-[11px] text-muted-foreground truncate">{s.city}</p>}
+              </div>
+            </label>
+          );
+        })}
+        {filtered.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">Salon yok.</p>}
+      </div>
+    </div>
+  );
+}
