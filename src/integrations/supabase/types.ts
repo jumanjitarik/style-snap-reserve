@@ -203,6 +203,39 @@ export type Database = {
           },
         ]
       }
+      barbershop_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          shop_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          shop_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barbershop_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "custom_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "barbershop_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       barbershop_images: {
         Row: {
           created_at: string
@@ -364,6 +397,39 @@ export type Database = {
           source_text?: string
           target_lang?: string
           translation?: string
+        }
+        Relationships: []
+      }
+      custom_categories: {
+        Row: {
+          active: boolean
+          created_at: string
+          icon_url: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          icon_url?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
