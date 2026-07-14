@@ -326,3 +326,35 @@ function Index() {
     </AppShell></LocationGate>
   );
 }
+
+function CategoriesSection() {
+  const { data: cats } = useCustomCategories();
+  const list = cats ?? [];
+  if (list.length === 0) return null;
+  return (
+    <section className="px-4 pt-6">
+      <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
+      <div className="grid grid-cols-3 gap-2">
+        {list.map((c) => (
+          <Link
+            key={c.id}
+            to="/kuaforler"
+            search={{ cat: c.slug } as never}
+            className="relative flex flex-col items-center gap-2 overflow-hidden rounded-xl border border-border/60 p-3 hover:border-primary/50 transition active:scale-95"
+            style={{ backgroundImage: `url(${categoryMarble})`, backgroundSize: "cover", backgroundPosition: "center" }}
+          >
+            {c.icon_url ? (
+              <SafeImg src={c.icon_url} alt={c.name} className="relative h-6 w-6 object-contain" />
+            ) : (
+              <CategoryFallbackIcon className="relative h-6 w-6 text-primary" />
+            )}
+            <span className="relative text-[11px] text-center leading-tight text-white">{c.name}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+  );
+}
