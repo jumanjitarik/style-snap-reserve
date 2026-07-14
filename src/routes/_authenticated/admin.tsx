@@ -90,6 +90,7 @@ function AdminPanel() {
         <TabsContent value="members"><MembersTab /></TabsContent>
         <TabsContent value="seo"><SeoTab /></TabsContent>
         <TabsContent value="paytr"><PaytrTab /></TabsContent>
+        <TabsContent value="cats"><CategoriesTab /></TabsContent>
       </Tabs>
 
     </AppShell>
