@@ -355,6 +355,3 @@ function CategoriesSection() {
     </section>
   );
 }
-
-  );
-}
