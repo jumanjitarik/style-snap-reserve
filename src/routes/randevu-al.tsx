@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
+import { categoryLabel } from "@/lib/categories";
+import { useCustomCategories, fetchShopIdsForCategorySlug, CategoryFallbackIcon, type DbCategory } from "@/lib/dynamic-categories";
+import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { addDays, format, startOfDay } from "date-fns";
@@ -34,12 +36,16 @@ function BookPage() {
   const { shop: initialShop, service: initialService, services: initialServices, mode } = Route.useSearch();
   const isMembershipMode = mode === "membership";
   const pageTitle = isMembershipMode ? "Üyelik Al" : "Randevu Al";
-  const visibleCategories = useMemo(() => {
+  const { data: allCats } = useCustomCategories();
+  const visibleCategories = useMemo<DbCategory[]>(() => {
     const membershipKeys = new Set(["fitness", "yoga_pilates"]);
+    const list = allCats ?? [];
     return isMembershipMode
-      ? CATEGORIES.filter((c) => membershipKeys.has(c.key))
-      : CATEGORIES.filter((c) => !membershipKeys.has(c.key));
-  }, [isMembershipMode]);
+      ? list.filter((c) => membershipKeys.has(c.slug))
+      : list.filter((c) => !membershipKeys.has(c.slug));
+  }, [isMembershipMode, allCats]);
+  
+
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
@@ -82,12 +88,17 @@ function BookPage() {
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
+      let ids: string[] | null = null;
+      if (category) {
+        ids = await fetchShopIdsForCategorySlug(category);
+        if (ids !== null && ids.length === 0) return [];
+      }
       let q = supabase.from("barbershops").select("id, name, category, address, lat, lng, allow_full_payment, allow_deposit_payment");
-      const ui = category ? findUiCategory(category) : null;
-      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
+      if (ids && ids.length > 0) q = q.in("id", ids);
       const { data } = await q;
       return data ?? [];
     },
+
   });
 
   const sortedShops = useMemo((): Array<{ id: string; name: string; address: string | null; lat: number | null; lng: number | null; _km: number }> => {
@@ -355,12 +366,17 @@ function BookPage() {
             <h2 className="font-display text-xl">Kategori Seç</h2>
             <div className="grid grid-cols-2 gap-2">
               {visibleCategories.map((c) => (
-                <button key={c.key} onClick={() => { setCategory(c.key); setStep(2); }}
+                <button key={c.id} onClick={() => { setCategory(c.slug); setStep(2); }}
                   className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition">
-                  <c.icon className="h-7 w-7 text-primary" />
-                  <span className="text-sm text-center">{c.label}</span>
+                  {c.icon_url ? (
+                    <SafeImg src={c.icon_url} alt={c.name} className="h-7 w-7 object-contain" />
+                  ) : (
+                    <CategoryFallbackIcon className="h-7 w-7 text-primary" />
+                  )}
+                  <span className="text-sm text-center">{c.name}</span>
                 </button>
               ))}
+
             </div>
           </>
         )}
@@ -368,7 +384,7 @@ function BookPage() {
         {step === 2 && (
           <>
             <button onClick={() => setStep(1)} className="text-xs text-primary">← Kategori</button>
-            <h2 className="font-display text-xl">Salon Seç {category && `· ${findUiCategory(category)?.label ?? ""}`}</h2>
+            <h2 className="font-display text-xl">Salon Seç {category && `· ${(allCats ?? []).find((c) => c.slug === category)?.name ?? ""}`}</h2>
             {coords && sortedShops.length > 0 && sortedShops[0]._km !== Infinity && (
               <p className="text-xs text-muted-foreground">En yakın: <span className="text-primary font-semibold">{sortedShops[0].name}</span> · {formatKm(sortedShops[0]._km)}</p>
             )}

@@ -6,7 +6,8 @@ import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
-import { CATEGORIES, categoryLabel, findUiCategory, type ShopCategory } from "@/lib/categories";
+import { categoryLabel } from "@/lib/categories";
+import { useCustomCategories, fetchShopIdsForCategorySlug, CategoryFallbackIcon } from "@/lib/dynamic-categories";
 import { MapPin, ArrowUpDown, Search, Store } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -59,14 +60,20 @@ function ShopList() {
   const { data } = useQuery({
     queryKey: ["shops-list", cat ?? "all"],
     queryFn: async () => {
+      let ids: string[] | null = null;
+      if (cat) {
+        ids = await fetchShopIdsForCategorySlug(cat);
+        if (ids !== null && ids.length === 0) return [];
+      }
       let q = supabase.from("barbershops").select("id, name, category, address, city, cover_image_url, lat, lng");
-      const ui = cat ? findUiCategory(cat) : null;
-      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
+      if (ids && ids.length > 0) q = q.in("id", ids);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
+  const { data: cats } = useCustomCategories();
+
 
   const shopIds = useMemo(() => (data ?? []).map((s) => s.id), [data]);
   const { data: reviews } = useQuery({
@@ -197,18 +204,24 @@ function ShopList() {
         >
           Tümü
         </button>
-        {CATEGORIES.map((c) => (
+        {(cats ?? []).map((c) => (
           <button
-            key={c.key}
-            onClick={() => navigate({ search: { cat: c.key } })}
+            key={c.id}
+            onClick={() => navigate({ search: { cat: c.slug } })}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
+              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95 flex items-center gap-1.5",
+              cat === c.slug ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
-            {c.label}
+            {c.icon_url ? (
+              <SafeImg src={c.icon_url} alt="" className="h-3.5 w-3.5 object-contain" />
+            ) : (
+              <CategoryFallbackIcon className="h-3.5 w-3.5" />
+            )}
+            {c.name}
           </button>
         ))}
+
       </div>
 
       <div className="px-4 pb-3 relative">
