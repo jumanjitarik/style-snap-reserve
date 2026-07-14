@@ -36,12 +36,16 @@ function BookPage() {
   const { shop: initialShop, service: initialService, services: initialServices, mode } = Route.useSearch();
   const isMembershipMode = mode === "membership";
   const pageTitle = isMembershipMode ? "Üyelik Al" : "Randevu Al";
-  const visibleCategories = useMemo(() => {
+  const { data: allCats } = useCustomCategories();
+  const visibleCategories = useMemo<DbCategory[]>(() => {
     const membershipKeys = new Set(["fitness", "yoga_pilates"]);
+    const list = allCats ?? [];
     return isMembershipMode
-      ? CATEGORIES.filter((c) => membershipKeys.has(c.key))
-      : CATEGORIES.filter((c) => !membershipKeys.has(c.key));
-  }, [isMembershipMode]);
+      ? list.filter((c) => membershipKeys.has(c.slug))
+      : list.filter((c) => !membershipKeys.has(c.slug));
+  }, [isMembershipMode, allCats]);
+  const currentCategory = useMemo(() => (allCats ?? []).find((c) => c.slug === category) ?? null, [allCats, category]);
+
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
