@@ -198,8 +198,9 @@ function Index() {
       </div>
 
 
-      {!isSearching && (
       {!isSearching && <CategoriesSection />}
+
+
 
 
       {(isSearching || featured.length > 0) && (
