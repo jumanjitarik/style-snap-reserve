@@ -384,7 +384,7 @@ function BookPage() {
         {step === 2 && (
           <>
             <button onClick={() => setStep(1)} className="text-xs text-primary">← Kategori</button>
-            <h2 className="font-display text-xl">Salon Seç {category && `· ${findUiCategory(category)?.label ?? ""}`}</h2>
+            <h2 className="font-display text-xl">Salon Seç {category && `· ${(allCats ?? []).find((c) => c.slug === category)?.name ?? ""}`}</h2>
             {coords && sortedShops.length > 0 && sortedShops[0]._km !== Infinity && (
               <p className="text-xs text-muted-foreground">En yakın: <span className="text-primary font-semibold">{sortedShops[0].name}</span> · {formatKm(sortedShops[0]._km)}</p>
             )}
