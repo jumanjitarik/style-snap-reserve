@@ -60,14 +60,20 @@ function ShopList() {
   const { data } = useQuery({
     queryKey: ["shops-list", cat ?? "all"],
     queryFn: async () => {
+      let ids: string[] | null = null;
+      if (cat) {
+        ids = await fetchShopIdsForCategorySlug(cat);
+        if (ids !== null && ids.length === 0) return [];
+      }
       let q = supabase.from("barbershops").select("id, name, category, address, city, cover_image_url, lat, lng");
-      const ui = cat ? findUiCategory(cat) : null;
-      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
+      if (ids && ids.length > 0) q = q.in("id", ids);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
+  const { data: cats } = useCustomCategories();
+
 
   const shopIds = useMemo(() => (data ?? []).map((s) => s.id), [data]);
   const { data: reviews } = useQuery({
