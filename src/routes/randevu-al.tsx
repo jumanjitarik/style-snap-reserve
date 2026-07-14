@@ -44,7 +44,7 @@ function BookPage() {
       ? list.filter((c) => membershipKeys.has(c.slug))
       : list.filter((c) => !membershipKeys.has(c.slug));
   }, [isMembershipMode, allCats]);
-  const currentCategory = useMemo(() => (allCats ?? []).find((c) => c.slug === category) ?? null, [allCats, category]);
+  
 
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
