@@ -88,12 +88,17 @@ function BookPage() {
     queryKey: ["book-shops", category],
     enabled: step >= 2 && !!userId,
     queryFn: async () => {
+      let ids: string[] | null = null;
+      if (category) {
+        ids = await fetchShopIdsForCategorySlug(category);
+        if (ids !== null && ids.length === 0) return [];
+      }
       let q = supabase.from("barbershops").select("id, name, category, address, lat, lng, allow_full_payment, allow_deposit_payment");
-      const ui = category ? findUiCategory(category) : null;
-      if (ui) q = q.in("category", ui.dbValues as ShopCategory[]);
+      if (ids && ids.length > 0) q = q.in("id", ids);
       const { data } = await q;
       return data ?? [];
     },
+
   });
 
   const sortedShops = useMemo((): Array<{ id: string; name: string; address: string | null; lat: number | null; lng: number | null; _km: number }> => {
