@@ -66,10 +66,12 @@ function AdminPanel() {
           <TabsTrigger value="password">🔑 Şifre</TabsTrigger>
           <TabsTrigger value="members">👥 Üyeler</TabsTrigger>
         </TabsList>
-        <TabsList className="grid grid-cols-2 w-full mt-2">
+        <TabsList className="grid grid-cols-3 w-full mt-2">
           <TabsTrigger value="seo">🔎 SEO</TabsTrigger>
           <TabsTrigger value="paytr">💳 PayTR</TabsTrigger>
+          <TabsTrigger value="cats">🏷️ Kategori</TabsTrigger>
         </TabsList>
+
 
         <TabsContent value="stats"><StatsTab /></TabsContent>
         <TabsContent value="shops"><ShopsTab /></TabsContent>
