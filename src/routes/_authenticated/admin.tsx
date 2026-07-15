@@ -2120,7 +2120,7 @@ type CatRow = { id: string; slug: string; name: string; icon_url: string | null;
 async function uploadCategoryLogo(file: File): Promise<string> {
   const { data: u } = await supabase.auth.getUser();
   const ext = (file.name.split(".").pop() || "png").toLowerCase();
-  const path = `category-logos/${u.user!.id}-${Date.now()}.${ext}`;
+  const path = `${u.user!.id}/category-logo-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("barbershop-photos").upload(path, file, { upsert: true });
   if (error) throw error;
   const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
