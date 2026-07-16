@@ -38,7 +38,6 @@ export function CategoryIcon({
       <span
         aria-label={alt || undefined}
         className={cn("inline-flex items-center justify-center leading-none", className, emojiClassName)}
-        style={{ fontSize: "1em" }}
       >
         {icon.slice(EMOJI_PREFIX.length)}
       </span>
