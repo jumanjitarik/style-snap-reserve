@@ -165,16 +165,17 @@ function BorsaPage() {
         >
           Tümü
         </button>
-        {CATEGORIES.map((c) => (
+        {(cats ?? []).map((c) => (
           <button
-            key={c.key}
-            onClick={() => setCat(c.key)}
+            key={c.id}
+            onClick={() => setCat(c.slug)}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
+              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95 flex items-center gap-1.5",
+              cat === c.slug ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
-            {c.label}
+            <CategoryIcon icon={c.icon_url} className="h-3.5 w-3.5 text-base" />
+            {c.name}
           </button>
         ))}
       </div>
