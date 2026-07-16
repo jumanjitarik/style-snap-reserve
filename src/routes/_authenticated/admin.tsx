@@ -20,6 +20,7 @@ import { adminSecurityOverview, adminRemoveBlock, adminAddIpBlock, adminBlockUse
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
+import { CategoryIcon, EMOJI_PRESETS, EMOJI_PREFIX, isEmojiIcon } from "@/components/CategoryIcon";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -2214,9 +2215,11 @@ function CategoriesTab() {
         <div>
           <Label>Logo / İkon</Label>
           <div className="flex gap-2 items-center">
-            {editing.icon_url && <SafeImg src={editing.icon_url} className="h-16 w-16 rounded object-contain bg-muted p-1" alt="" />}
+            <div className="h-16 w-16 rounded bg-muted p-1 flex items-center justify-center">
+              <CategoryIcon icon={editing.icon_url} className="h-14 w-14 text-4xl" />
+            </div>
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
-              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url ? "Değiştir" : "Logo yükle"}
+              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url && !isEmojiIcon(editing.icon_url) ? "Değiştir" : "Logo yükle"}
               <input
                 type="file"
                 accept="image/*"
@@ -2239,6 +2242,28 @@ function CategoriesTab() {
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
+          </div>
+          <div className="mt-2">
+            <p className="text-xs text-muted-foreground mb-1.5">veya bir emoji seç:</p>
+            <div className="grid grid-cols-10 gap-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+              {EMOJI_PRESETS.map((e) => {
+                const val = `${EMOJI_PREFIX}${e}`;
+                const selected = editing.icon_url === val;
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEditing({ ...editing, icon_url: val })}
+                    className={cn(
+                      "h-8 w-8 rounded flex items-center justify-center text-xl transition active:scale-90",
+                      selected ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-muted",
+                    )}
+                  >
+                    {e}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
         <div className="flex gap-2 pt-2">
