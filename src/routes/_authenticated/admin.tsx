@@ -21,6 +21,7 @@ import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
 import { CategoryIcon, EMOJI_PRESETS, EMOJI_PREFIX, isEmojiIcon } from "@/components/CategoryIcon";
+import { cn } from "@/lib/utils";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
