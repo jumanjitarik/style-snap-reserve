@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Scissors, MapPin, Navigation2, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { categoryLabel } from "@/lib/categories";
-import { useCustomCategories, CategoryFallbackIcon } from "@/lib/dynamic-categories";
+import { useCustomCategories } from "@/lib/dynamic-categories";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { AppShell } from "@/components/AppShell";
 import { LocationGate } from "@/components/LocationGate";
 import { Input } from "@/components/ui/input";
@@ -343,11 +344,8 @@ function CategoriesSection() {
             className="relative flex flex-col items-center gap-2 overflow-hidden rounded-xl border border-border/60 p-3 hover:border-primary/50 transition active:scale-95"
             style={{ backgroundImage: `url(${categoryMarble})`, backgroundSize: "cover", backgroundPosition: "center" }}
           >
-            {c.icon_url ? (
-              <SafeImg src={c.icon_url} alt={c.name} className="relative h-6 w-6 object-contain" />
-            ) : (
-              <CategoryFallbackIcon className="relative h-6 w-6 text-primary" />
-            )}
+            <CategoryIcon icon={c.icon_url} alt={c.name} className="relative h-6 w-6 text-2xl text-primary" />
+
             <span className="relative text-[11px] text-center leading-tight text-white">{c.name}</span>
           </Link>
         ))}

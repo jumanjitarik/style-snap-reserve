@@ -20,6 +20,8 @@ import { adminSecurityOverview, adminRemoveBlock, adminAddIpBlock, adminBlockUse
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
+import { CategoryIcon, EMOJI_PRESETS, EMOJI_PREFIX, isEmojiIcon } from "@/components/CategoryIcon";
+import { cn } from "@/lib/utils";
 
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -2214,9 +2216,11 @@ function CategoriesTab() {
         <div>
           <Label>Logo / İkon</Label>
           <div className="flex gap-2 items-center">
-            {editing.icon_url && <SafeImg src={editing.icon_url} className="h-16 w-16 rounded object-contain bg-muted p-1" alt="" />}
+            <div className="h-16 w-16 rounded bg-muted p-1 flex items-center justify-center">
+              <CategoryIcon icon={editing.icon_url} className="h-14 w-14 text-4xl" />
+            </div>
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
-              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url ? "Değiştir" : "Logo yükle"}
+              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url && !isEmojiIcon(editing.icon_url) ? "Değiştir" : "Logo yükle"}
               <input
                 type="file"
                 accept="image/*"
@@ -2240,6 +2244,28 @@ function CategoriesTab() {
               </Button>
             )}
           </div>
+          <div className="mt-2">
+            <p className="text-xs text-muted-foreground mb-1.5">veya bir emoji seç:</p>
+            <div className="grid grid-cols-10 gap-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+              {EMOJI_PRESETS.map((e) => {
+                const val = `${EMOJI_PREFIX}${e}`;
+                const selected = editing.icon_url === val;
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEditing({ ...editing, icon_url: val })}
+                    className={cn(
+                      "h-8 w-8 rounded flex items-center justify-center text-xl transition active:scale-90",
+                      selected ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-muted",
+                    )}
+                  >
+                    {e}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
         <div className="flex gap-2 pt-2">
           <Button variant="outline" onClick={() => setEditing(null)} className="flex-1">İptal</Button>
@@ -2260,13 +2286,13 @@ function CategoriesTab() {
       {(cats ?? []).map((c) => (
         <div key={c.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-3">
-            {c.icon_url ? (
-              <SafeImg src={c.icon_url} className="h-10 w-10 rounded object-contain bg-muted p-1" alt="" />
-            ) : (
-              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs">
-                {c.name.slice(0, 2)}
-              </div>
-            )}
+            <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+              {c.icon_url ? (
+                <CategoryIcon icon={c.icon_url} className="h-9 w-9 text-3xl" />
+              ) : (
+                <span className="text-muted-foreground text-xs">{c.name.slice(0, 2)}</span>
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">
                 {c.name} {!c.active && <span className="text-[10px] text-muted-foreground">(pasif)</span>}

@@ -10,7 +10,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { categoryLabel } from "@/lib/categories";
-import { useCustomCategories, fetchShopIdsForCategorySlug, CategoryFallbackIcon, type DbCategory } from "@/lib/dynamic-categories";
+import { useCustomCategories, fetchShopIdsForCategorySlug, type DbCategory } from "@/lib/dynamic-categories";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -368,11 +369,7 @@ function BookPage() {
               {visibleCategories.map((c) => (
                 <button key={c.id} onClick={() => { setCategory(c.slug); setStep(2); }}
                   className="rounded-xl border border-border bg-card p-4 flex flex-col items-center gap-2 active:scale-95 transition">
-                  {c.icon_url ? (
-                    <SafeImg src={c.icon_url} alt={c.name} className="h-7 w-7 object-contain" />
-                  ) : (
-                    <CategoryFallbackIcon className="h-7 w-7 text-primary" />
-                  )}
+                  <CategoryIcon icon={c.icon_url} alt={c.name} className="h-7 w-7 text-3xl text-primary" />
                   <span className="text-sm text-center">{c.name}</span>
                 </button>
               ))}

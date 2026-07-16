@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
 import { categoryLabel } from "@/lib/categories";
-import { useCustomCategories, fetchShopIdsForCategorySlug, CategoryFallbackIcon } from "@/lib/dynamic-categories";
+import { useCustomCategories, fetchShopIdsForCategorySlug } from "@/lib/dynamic-categories";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { MapPin, ArrowUpDown, Search, Store } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -213,11 +214,7 @@ function ShopList() {
               cat === c.slug ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
-            {c.icon_url ? (
-              <SafeImg src={c.icon_url} alt="" className="h-3.5 w-3.5 object-contain" />
-            ) : (
-              <CategoryFallbackIcon className="h-3.5 w-3.5" />
-            )}
+            <CategoryIcon icon={c.icon_url} className="h-3.5 w-3.5 text-base" />
             {c.name}
           </button>
         ))}

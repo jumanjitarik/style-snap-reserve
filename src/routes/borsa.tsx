@@ -8,7 +8,8 @@ import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { Link } from "@tanstack/react-router";
 import { LineChart, MapPin, ArrowUpDown, Store } from "lucide-react";
-import { CATEGORIES, type ShopCategory } from "@/lib/categories";
+import { useCustomCategories, fetchShopIdsForCategorySlug } from "@/lib/dynamic-categories";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +34,16 @@ function BorsaPage() {
   const [sortBy, setSortBy] = useState<SortKey>("price");
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState<string | null>(null);
+  const { data: cats } = useCustomCategories();
+
+  const { data: allowedIds } = useQuery({
+    queryKey: ["borsa-cat-shop-ids", cat],
+    enabled: !!cat,
+    queryFn: async () => {
+      const ids = await fetchShopIdsForCategorySlug(cat!);
+      return ids ?? [];
+    },
+  });
 
   const { data: shops } = useQuery({
     queryKey: ["borsa-shops"],
@@ -70,9 +81,8 @@ function BorsaPage() {
 
   const rows = useMemo(() => {
     if (!shops || !services) return [];
-    const ui = cat ? CATEGORIES.find((c) => c.key === cat) : null;
-    const allowed = ui ? new Set(ui.dbValues as ShopCategory[]) : null;
-    const shopMap = new Map(shops.filter((s) => !allowed || allowed.has(s.category as ShopCategory)).map((s) => [s.id, s]));
+    const allowed = cat ? new Set(allowedIds ?? []) : null;
+    const shopMap = new Map(shops.filter((s) => !allowed || allowed.has(s.id)).map((s) => [s.id, s]));
     const list = services.map((sv) => {
       const shop = shopMap.get(sv.shop_id);
       if (!shop) return null;
@@ -155,16 +165,17 @@ function BorsaPage() {
         >
           Tümü
         </button>
-        {CATEGORIES.map((c) => (
+        {(cats ?? []).map((c) => (
           <button
-            key={c.key}
-            onClick={() => setCat(c.key)}
+            key={c.id}
+            onClick={() => setCat(c.slug)}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95",
-              cat === c.key ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
+              "rounded-full border px-3 py-1.5 text-xs whitespace-nowrap transition active:scale-95 flex items-center gap-1.5",
+              cat === c.slug ? "bg-primary text-primary-foreground border-primary" : "border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40",
             )}
           >
-            {c.label}
+            <CategoryIcon icon={c.icon_url} className="h-3.5 w-3.5 text-base" />
+            {c.name}
           </button>
         ))}
       </div>
