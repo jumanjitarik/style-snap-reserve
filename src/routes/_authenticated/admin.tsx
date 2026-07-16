@@ -2286,13 +2286,13 @@ function CategoriesTab() {
       {(cats ?? []).map((c) => (
         <div key={c.id} className="rounded-xl border border-border bg-card p-3">
           <div className="flex items-center gap-3">
-            {c.icon_url ? (
-              <SafeImg src={c.icon_url} className="h-10 w-10 rounded object-contain bg-muted p-1" alt="" />
-            ) : (
-              <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs">
-                {c.name.slice(0, 2)}
-              </div>
-            )}
+            <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+              {c.icon_url ? (
+                <CategoryIcon icon={c.icon_url} className="h-9 w-9 text-3xl" />
+              ) : (
+                <span className="text-muted-foreground text-xs">{c.name.slice(0, 2)}</span>
+              )}
+            </div>
             <div className="min-w-0 flex-1">
               <p className="font-semibold truncate">
                 {c.name} {!c.active && <span className="text-[10px] text-muted-foreground">(pasif)</span>}
