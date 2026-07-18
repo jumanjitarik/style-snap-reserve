@@ -56,13 +56,14 @@ function AccountPage() {
     setFeedbackOpen(false);
   }
 
+  const { user: authUser, ready: authReady } = useAuthReady();
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-      setAuthChecked(true);
-      if (!data.user) navigate({ to: "/auth" });
-    });
-  }, [navigate]);
+    if (!authReady) return;
+    setUserId(authUser?.id ?? null);
+    setAuthChecked(true);
+    if (!authUser) navigate({ to: "/auth" });
+  }, [authReady, authUser, navigate]);
+
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
