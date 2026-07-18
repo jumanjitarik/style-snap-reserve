@@ -1,6 +1,27 @@
 import { SafeImg } from "@/components/SafeImg";
 import { CategoryFallbackIcon } from "@/lib/dynamic-categories";
 import { cn } from "@/lib/utils";
+import { icons as lucideIcons } from "lucide-react";
+
+export const LUCIDE_PREFIX = "lucide:";
+
+// Curated gold-line icons that suit salon / wellness / fitness categories.
+export const LUCIDE_PRESETS: string[] = [
+  "Scissors", "Sparkles", "Zap", "Hand", "Heart", "Dumbbell",
+  "Flower2", "Activity", "Leaf", "Star", "Crown", "Gem",
+  "Wand2", "Droplet", "Droplets", "Sun", "Flame", "Feather",
+  "Brush", "PaintBucket", "Palette", "Smile", "Baby", "User",
+  "Users", "UserCheck", "Bike", "Waves", "Wind", "Bath",
+  "Bed", "Coffee", "Salad", "Apple", "Cherry", "Cookie",
+  "Music", "Camera", "Gift", "ShoppingBag", "Store", "Home",
+  "MapPin", "Clock", "Calendar", "Award", "Trophy", "Medal",
+  "ThumbsUp", "ShieldCheck", "Stethoscope", "Pill", "Syringe", "HeartPulse",
+];
+
+export function isLucideIcon(v: string | null | undefined): v is string {
+  return !!v && v.startsWith(LUCIDE_PREFIX);
+}
+
 
 export const EMOJI_PRESETS: string[] = [
   // Smileys & emotion
