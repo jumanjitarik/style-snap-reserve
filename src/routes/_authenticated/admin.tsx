@@ -20,7 +20,7 @@ import { adminSecurityOverview, adminRemoveBlock, adminAddIpBlock, adminBlockUse
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
-import { CategoryIcon, EMOJI_PRESETS, EMOJI_PREFIX, isEmojiIcon } from "@/components/CategoryIcon";
+import { CategoryIcon, LUCIDE_PRESETS, LUCIDE_PREFIX, isLucideIcon } from "@/components/CategoryIcon";
 import { cn } from "@/lib/utils";
 
 
