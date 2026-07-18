@@ -20,7 +20,7 @@ import { adminSecurityOverview, adminRemoveBlock, adminAddIpBlock, adminBlockUse
 import { adminUpdateUser } from "@/lib/admin-users.functions";
 import { adminBroadcast } from "@/lib/admin-broadcast.functions";
 import { MiniMap } from "@/components/MiniMap";
-import { CategoryIcon, EMOJI_PRESETS, EMOJI_PREFIX, isEmojiIcon } from "@/components/CategoryIcon";
+import { CategoryIcon, LUCIDE_PRESETS, LUCIDE_PREFIX, isLucideIcon } from "@/components/CategoryIcon";
 import { cn } from "@/lib/utils";
 
 
@@ -2220,7 +2220,7 @@ function CategoriesTab() {
               <CategoryIcon icon={editing.icon_url} className="h-14 w-14 text-4xl" />
             </div>
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-3 text-center text-xs">
-              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url && !isEmojiIcon(editing.icon_url) ? "Değiştir" : "Logo yükle"}
+              <Upload className="mx-auto h-4 w-4 mb-1" /> {editing.icon_url && !isLucideIcon(editing.icon_url) ? "Değiştir" : "Logo yükle"}
               <input
                 type="file"
                 accept="image/*"
@@ -2245,27 +2245,29 @@ function CategoriesTab() {
             )}
           </div>
           <div className="mt-2">
-            <p className="text-xs text-muted-foreground mb-1.5">veya bir emoji seç:</p>
-            <div className="grid grid-cols-10 gap-1 max-h-48 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
-              {EMOJI_PRESETS.map((e) => {
-                const val = `${EMOJI_PREFIX}${e}`;
+            <p className="text-xs text-muted-foreground mb-1.5">veya gold bir ikon seç:</p>
+            <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+              {LUCIDE_PRESETS.map((name) => {
+                const val = `${LUCIDE_PREFIX}${name}`;
                 const selected = editing.icon_url === val;
                 return (
                   <button
-                    key={e}
+                    key={name}
                     type="button"
+                    title={name}
                     onClick={() => setEditing({ ...editing, icon_url: val })}
                     className={cn(
-                      "h-8 w-8 rounded flex items-center justify-center text-xl transition active:scale-90",
-                      selected ? "bg-primary/20 ring-2 ring-primary" : "hover:bg-muted",
+                      "h-10 w-10 rounded-lg flex items-center justify-center transition active:scale-90",
+                      selected ? "bg-primary/20 ring-2 ring-primary" : "bg-background/60 hover:bg-muted",
                     )}
                   >
-                    {e}
+                    <CategoryIcon icon={val} className="h-5 w-5" />
                   </button>
                 );
               })}
             </div>
           </div>
+
         </div>
         <div className="flex gap-2 pt-2">
           <Button variant="outline" onClick={() => setEditing(null)} className="flex-1">İptal</Button>

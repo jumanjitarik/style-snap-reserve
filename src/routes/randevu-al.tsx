@@ -5,6 +5,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { BackButton } from "@/components/BackButton";
+import { useAuthReady } from "@/hooks/useAuthReady";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,13 +52,14 @@ function BookPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
+  const { user: authUser, ready: authReady } = useAuthReady();
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-      setAuthChecked(true);
-      if (!data.user) navigate({ to: "/auth" });
-    });
-  }, [navigate]);
+    if (!authReady) return;
+    setUserId(authUser?.id ?? null);
+    setAuthChecked(true);
+    if (!authUser) navigate({ to: "/auth" });
+  }, [authReady, authUser, navigate]);
+
 
   const initialIds = initialServices ? initialServices.split(",").filter(Boolean) : (initialService ? [initialService] : []);
   const [step, setStep] = useState<1|2|3|4|5>(initialShop ? (initialIds.length > 0 ? 4 : 3) : 1);

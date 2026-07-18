@@ -1,6 +1,28 @@
 import { SafeImg } from "@/components/SafeImg";
 import { CategoryFallbackIcon } from "@/lib/dynamic-categories";
 import { cn } from "@/lib/utils";
+import { icons as lucideIcons } from "lucide-react";
+
+export const LUCIDE_PREFIX = "lucide:";
+
+// Curated gold-line icons that suit salon / wellness / fitness categories.
+export const LUCIDE_PRESETS: string[] = [
+  "Scissors", "Sparkles", "Zap", "Hand", "Heart", "Dumbbell",
+  "Flower2", "Activity", "Leaf", "Star", "Crown", "Gem",
+  "Wand2", "Droplet", "Droplets", "Sun", "Flame", "Feather",
+  "Brush", "PaintBucket", "Palette", "Smile", "Baby", "User",
+  "Users", "UserCheck", "Bike", "Waves", "Wind", "Bath",
+  "Bed", "Coffee", "Salad", "Apple", "Cherry", "Cookie",
+  "Music", "Camera", "Gift", "ShoppingBag", "Store", "Home",
+  "MapPin", "Clock", "Calendar", "Award", "Trophy", "Medal",
+  "ThumbsUp", "ShieldCheck", "Stethoscope", "Pill", "Syringe", "HeartPulse",
+];
+
+export function isLucideIcon(v: string | null | undefined): boolean {
+  return !!v && v.startsWith(LUCIDE_PREFIX);
+}
+
+
 
 export const EMOJI_PRESETS: string[] = [
   // Smileys & emotion
@@ -97,6 +119,21 @@ export function CategoryIcon({
   alt?: string;
   emojiClassName?: string;
 }) {
+  if (isLucideIcon(icon)) {
+    const name = (icon as string).slice(LUCIDE_PREFIX.length);
+    const LucideCmp = (lucideIcons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number; "aria-label"?: string }>>)[name];
+    if (LucideCmp) {
+
+      return (
+        <LucideCmp
+          aria-label={alt || undefined}
+          strokeWidth={1.75}
+          className={cn("text-primary", className)}
+        />
+      );
+    }
+    return <CategoryFallbackIcon className={cn("text-primary", className)} />;
+  }
   if (isEmojiIcon(icon)) {
     return (
       <span
@@ -110,5 +147,6 @@ export function CategoryIcon({
   if (icon) {
     return <SafeImg src={icon} alt={alt} className={cn("object-contain", className)} />;
   }
-  return <CategoryFallbackIcon className={className} />;
+  return <CategoryFallbackIcon className={cn("text-primary", className)} />;
 }
+

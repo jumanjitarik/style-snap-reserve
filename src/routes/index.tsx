@@ -335,21 +335,31 @@ function CategoriesSection() {
   return (
     <section className="px-4 pt-6">
       <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         {list.map((c) => (
           <Link
             key={c.id}
             to="/kuaforler"
             search={{ cat: c.slug } as never}
-            className="relative flex flex-col items-center gap-2 overflow-hidden rounded-xl border border-border/60 p-3 hover:border-primary/50 transition active:scale-95"
-            style={{ backgroundImage: `url(${categoryMarble})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            className="group relative flex aspect-[4/5] flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-white/5 bg-gradient-to-b from-neutral-900 to-black p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_30px_-15px_rgba(0,0,0,0.8)] transition hover:border-primary/40 active:scale-[0.97]"
           >
-            <CategoryIcon icon={c.icon_url} alt={c.name} className="relative h-6 w-6 text-2xl text-primary" />
-
-            <span className="relative text-[11px] text-center leading-tight text-white">{c.name}</span>
+            <span
+              className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
+              style={{ backgroundImage: `url(${categoryMarble})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            />
+            <span className="pointer-events-none absolute -top-10 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full bg-primary/10 blur-2xl" />
+            <CategoryIcon
+              icon={c.icon_url}
+              alt={c.name}
+              className="relative h-9 w-9 text-[34px] text-primary drop-shadow-[0_2px_6px_rgba(212,175,55,0.35)]"
+            />
+            <span className="relative text-center text-[12px] font-medium leading-tight text-neutral-100">
+              {c.name}
+            </span>
           </Link>
         ))}
       </div>
     </section>
   );
 }
+
