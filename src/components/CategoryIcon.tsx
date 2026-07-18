@@ -120,9 +120,10 @@ export function CategoryIcon({
   emojiClassName?: string;
 }) {
   if (isLucideIcon(icon)) {
-    const name = icon.slice(LUCIDE_PREFIX.length);
+    const name = (icon as string).slice(LUCIDE_PREFIX.length);
     const LucideCmp = (lucideIcons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number; "aria-label"?: string }>>)[name];
     if (LucideCmp) {
+
       return (
         <LucideCmp
           aria-label={alt || undefined}
