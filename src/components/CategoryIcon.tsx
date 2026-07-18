@@ -118,6 +118,20 @@ export function CategoryIcon({
   alt?: string;
   emojiClassName?: string;
 }) {
+  if (isLucideIcon(icon)) {
+    const name = icon.slice(LUCIDE_PREFIX.length);
+    const LucideCmp = (lucideIcons as unknown as Record<string, React.ComponentType<{ className?: string; strokeWidth?: number; "aria-label"?: string }>>)[name];
+    if (LucideCmp) {
+      return (
+        <LucideCmp
+          aria-label={alt || undefined}
+          strokeWidth={1.75}
+          className={cn("text-primary", className)}
+        />
+      );
+    }
+    return <CategoryFallbackIcon className={cn("text-primary", className)} />;
+  }
   if (isEmojiIcon(icon)) {
     return (
       <span
@@ -131,5 +145,6 @@ export function CategoryIcon({
   if (icon) {
     return <SafeImg src={icon} alt={alt} className={cn("object-contain", className)} />;
   }
-  return <CategoryFallbackIcon className={className} />;
+  return <CategoryFallbackIcon className={cn("text-primary", className)} />;
 }
+
