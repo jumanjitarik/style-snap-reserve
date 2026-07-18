@@ -18,9 +18,10 @@ export const LUCIDE_PRESETS: string[] = [
   "ThumbsUp", "ShieldCheck", "Stethoscope", "Pill", "Syringe", "HeartPulse",
 ];
 
-export function isLucideIcon(v: string | null | undefined): v is string {
+export function isLucideIcon(v: string | null | undefined): boolean {
   return !!v && v.startsWith(LUCIDE_PREFIX);
 }
+
 
 
 export const EMOJI_PRESETS: string[] = [
