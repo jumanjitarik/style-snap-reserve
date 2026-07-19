@@ -8,7 +8,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { AppShell } from "@/components/AppShell";
 import { LocationGate } from "@/components/LocationGate";
 import { Input } from "@/components/ui/input";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
 import { SafeImg } from "@/components/SafeImg";
