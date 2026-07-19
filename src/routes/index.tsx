@@ -180,8 +180,14 @@ function Index() {
 
   return (
     <LocationGate><AppShell>
-      <header className="relative overflow-hidden" style={{ minHeight: welcome?.heroUrl ? `${welcome?.heroHeight ?? 120}px` : undefined }}>
-        {welcome?.heroUrl ? (
+      <header className="relative overflow-hidden" style={{ minHeight: (welcome?.slides.length || welcome?.heroUrl) ? `${welcome?.heroHeight ?? 120}px` : undefined }}>
+        {welcome?.slides.length ? (
+          <HeroBanner
+            slides={welcome.slides}
+            intervalMs={welcome.slideIntervalMs}
+            heightPx={welcome.heroHeight}
+          />
+        ) : welcome?.heroUrl ? (
           <div className="absolute inset-0" style={{ height: `${welcome?.heroHeight ?? 120}px` }}>
             <SafeImg src={welcome.heroUrl} alt="" className="h-full w-full object-cover" />
           </div>
