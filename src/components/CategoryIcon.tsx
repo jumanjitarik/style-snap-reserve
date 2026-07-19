@@ -5,18 +5,24 @@ import { icons as lucideIcons } from "lucide-react";
 
 export const LUCIDE_PREFIX = "lucide:";
 
-// Curated gold-line icons that suit salon / wellness / fitness categories.
-export const LUCIDE_PRESETS: string[] = [
+// All available Lucide icons — sorted alphabetically. Salon/wellness picks bubble to top.
+const PRIORITY_ICONS: string[] = [
   "Scissors", "Sparkles", "Zap", "Hand", "Heart", "Dumbbell",
   "Flower2", "Activity", "Leaf", "Star", "Crown", "Gem",
   "Wand2", "Droplet", "Droplets", "Sun", "Flame", "Feather",
   "Brush", "PaintBucket", "Palette", "Smile", "Baby", "User",
   "Users", "UserCheck", "Bike", "Waves", "Wind", "Bath",
-  "Bed", "Coffee", "Salad", "Apple", "Cherry", "Cookie",
-  "Music", "Camera", "Gift", "ShoppingBag", "Store", "Home",
-  "MapPin", "Clock", "Calendar", "Award", "Trophy", "Medal",
-  "ThumbsUp", "ShieldCheck", "Stethoscope", "Pill", "Syringe", "HeartPulse",
+  "HeartPulse", "Stethoscope", "Pill", "Syringe", "ShieldCheck",
 ];
+const _allIconNames = Object.keys(lucideIcons)
+  .filter((n) => /^[A-Z][A-Za-z0-9]*$/.test(n) && !n.endsWith("Icon") && !n.startsWith("Lucide"))
+  .sort();
+const _prioritySet = new Set(PRIORITY_ICONS);
+export const LUCIDE_PRESETS: string[] = [
+  ...PRIORITY_ICONS.filter((n) => n in lucideIcons),
+  ..._allIconNames.filter((n) => !_prioritySet.has(n)),
+];
+
 
 export function isLucideIcon(v: string | null | undefined): boolean {
   return !!v && v.startsWith(LUCIDE_PREFIX);
