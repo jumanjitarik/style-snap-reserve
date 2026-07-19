@@ -99,10 +99,14 @@ function Index() {
         "welcome_line2_text", "welcome_line2_color",
         "welcome_line3_text", "welcome_line3_color",
         "hero_height_px", "gap_top_px", "gap_line12_px", "gap_line23_px", "gap_search_px",
+        "hero_slides", "hero_interval_ms",
+        "category_card_w_px", "category_card_h_px",
       ];
       const { data } = await supabase.from("app_settings").select("key, value").in("key", keys);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
       const num = (k: string, d: number) => { const n = Number(map[k]); return Number.isFinite(n) ? n : d; };
+      let slides: { url: string; link?: string }[] = [];
+      try { const p = JSON.parse(map.hero_slides || "[]"); if (Array.isArray(p)) slides = p.filter((s: { url?: string }) => s && typeof s.url === "string" && s.url); } catch { /* ignore */ }
       return {
         line1: { text: map.welcome_line1_text || map.welcome_subtitle || "HOŞ GELDİN", color: map.welcome_line1_color || "#FFD400" },
         line2: { text: map.welcome_line2_text || (map.welcome_title?.split(" ").slice(0, 2).join(" ")) || "BUGÜN GÜZEL", color: map.welcome_line2_color || "#FFFFFF" },
@@ -114,6 +118,10 @@ function Index() {
         gapLine12: num("gap_line12_px", 2),
         gapLine23: num("gap_line23_px", 0),
         gapSearch: num("gap_search_px", 8),
+        slides,
+        slideIntervalMs: Math.max(1000, num("hero_interval_ms", 5000)),
+        catW: num("category_card_w_px", 0),
+        catH: num("category_card_h_px", 0),
       };
     },
     staleTime: 60_000,
