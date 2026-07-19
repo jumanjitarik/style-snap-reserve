@@ -2247,9 +2247,20 @@ function CategoriesTab() {
             )}
           </div>
           <div className="mt-2">
-            <p className="text-xs text-muted-foreground mb-1.5">veya gold bir ikon seç:</p>
-            <div className="grid grid-cols-8 gap-1.5 max-h-56 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
-              {LUCIDE_PRESETS.map((name) => {
+            <div className="flex items-center justify-between mb-1.5 gap-2">
+              <p className="text-xs text-muted-foreground">veya gold bir ikon seç ({LUCIDE_PRESETS.length}):</p>
+              <Input
+                value={iconSearch}
+                onChange={(e) => setIconSearch(e.target.value)}
+                placeholder="Ara..."
+                className="h-7 w-32 text-xs"
+              />
+            </div>
+            <div className="grid grid-cols-8 gap-1.5 max-h-72 overflow-y-auto rounded-md border border-border bg-muted/30 p-2">
+              {LUCIDE_PRESETS
+                .filter((name) => !iconSearch || name.toLowerCase().includes(iconSearch.toLowerCase()))
+                .slice(0, 400)
+                .map((name) => {
                 const val = `${LUCIDE_PREFIX}${name}`;
                 const selected = editing.icon_url === val;
                 return (
@@ -2269,6 +2280,7 @@ function CategoriesTab() {
               })}
             </div>
           </div>
+
 
         </div>
         <div className="flex gap-2 pt-2">
