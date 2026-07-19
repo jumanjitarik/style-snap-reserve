@@ -1016,7 +1016,7 @@ function SettingsTab() {
           </div>
         ))}
         <div>
-          <Label>Anasayfa Kapak Fotoğrafı</Label>
+          <Label>Anasayfa Kapak Fotoğrafı (tek — banner boşsa kullanılır)</Label>
           <div className="flex items-center gap-2">
             {form.hero_url && <SafeImg src={form.hero_url} alt="hero" className="h-14 w-24 rounded object-cover" />}
             <label className="flex-1 cursor-pointer rounded-md border border-dashed border-border p-2 text-center text-xs">
@@ -1034,6 +1034,51 @@ function SettingsTab() {
           <div><Label className="text-xs">1. ↔ 2. satır (px)</Label><Input type="number" min="0" max="60" value={form.gap_line12_px} onChange={(e) => setForm({ ...form, gap_line12_px: e.target.value })} /></div>
           <div><Label className="text-xs">2. ↔ 3. satır (px)</Label><Input type="number" min="0" max="60" value={form.gap_line23_px} onChange={(e) => setForm({ ...form, gap_line23_px: e.target.value })} /></div>
           <div><Label className="text-xs">Yazılar ↔ Arama (px)</Label><Input type="number" min="0" max="80" value={form.gap_search_px} onChange={(e) => setForm({ ...form, gap_search_px: e.target.value })} /></div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Anasayfa Banner Slaytları</p>
+        <p className="text-[11px] text-muted-foreground">Birden fazla fotoğraf ekle. Kullanıcı elle kaydırabilir, otomatik olarak da değişir. İstersen her slayta bir link ekleyebilirsin.</p>
+        <div>
+          <Label>Otomatik Geçiş Süresi (ms)</Label>
+          <Input type="number" min="1000" step="500" value={form.hero_interval_ms} onChange={(e) => setForm({ ...form, hero_interval_ms: e.target.value })} placeholder="5000" />
+        </div>
+        <div className="space-y-2">
+          {slides.map((s, i) => (
+            <div key={i} className="flex items-start gap-2 rounded-md border border-border p-2">
+              <SafeImg src={s.url} alt={`slayt ${i + 1}`} className="h-14 w-24 rounded object-cover shrink-0" />
+              <div className="flex-1 space-y-1">
+                <Input
+                  placeholder="Link (opsiyonel) — örn: https://..."
+                  value={s.link ?? ""}
+                  onChange={(e) => {
+                    const next = [...slides];
+                    next[i] = { ...next[i], link: e.target.value };
+                    setSlides(next);
+                  }}
+                />
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" disabled={i === 0} onClick={() => { const n = [...slides]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; setSlides(n); }}>↑</Button>
+                  <Button size="sm" variant="outline" disabled={i === slides.length - 1} onClick={() => { const n = [...slides]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; setSlides(n); }}>↓</Button>
+                </div>
+              </div>
+              <Button size="icon" variant="destructive" onClick={() => setSlides(slides.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          ))}
+        </div>
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border p-3 text-xs">
+          <Upload className="h-4 w-4" /> Slayt fotoğrafı ekle
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadSlide(f); }} />
+        </label>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+        <p className="text-xs uppercase tracking-wider text-primary">Kategori Düğmesi Boyutu</p>
+        <p className="text-[11px] text-muted-foreground">0 = otomatik (kare, 4 sütun). Değer girersen tüm kartlar bu ölçüde olur.</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label className="text-xs">Genişlik (px)</Label><Input type="number" min="0" max="400" value={form.category_card_w_px} onChange={(e) => setForm({ ...form, category_card_w_px: e.target.value })} /></div>
+          <div><Label className="text-xs">Yükseklik (px)</Label><Input type="number" min="0" max="400" value={form.category_card_h_px} onChange={(e) => setForm({ ...form, category_card_h_px: e.target.value })} /></div>
         </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
