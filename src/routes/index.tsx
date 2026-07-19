@@ -342,20 +342,30 @@ function Index() {
   );
 }
 
-function CategoriesSection() {
+function CategoriesSection({ widthPx = 0, heightPx = 0 }: { widthPx?: number; heightPx?: number }) {
   const { data: cats } = useCustomCategories();
   const list = cats ?? [];
   if (list.length === 0) return null;
+  const custom = widthPx > 0 || heightPx > 0;
+  const containerCls = custom
+    ? "flex flex-wrap gap-2"
+    : "grid grid-cols-4 gap-2";
+  const cardBase = "group relative flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-white/5 bg-gradient-to-b from-neutral-900 to-black p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_6px_16px_-10px_rgba(0,0,0,0.8)] transition hover:border-primary/40 active:scale-[0.97]";
+  const cardCls = custom ? cardBase : `${cardBase} aspect-square`;
+  const cardStyle: React.CSSProperties = custom
+    ? { width: widthPx > 0 ? `${widthPx}px` : undefined, height: heightPx > 0 ? `${heightPx}px` : undefined }
+    : {};
   return (
     <section className="px-4 pt-6">
       <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
-      <div className="grid grid-cols-4 gap-2">
+      <div className={containerCls}>
         {list.map((c) => (
           <Link
             key={c.id}
             to="/kuaforler"
             search={{ cat: c.slug } as never}
-            className="group relative flex aspect-square flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-white/5 bg-gradient-to-b from-neutral-900 to-black p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_6px_16px_-10px_rgba(0,0,0,0.8)] transition hover:border-primary/40 active:scale-[0.97]"
+            style={cardStyle}
+            className={cardCls}
           >
             <span
               className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
@@ -377,4 +387,58 @@ function CategoriesSection() {
     </section>
   );
 }
+
+function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; link?: string }[]; intervalMs: number; heightPx: number }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [idx, setIdx] = useState(0);
+  const count = slides.length;
+
+  useEffect(() => {
+    if (count < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % count), intervalMs);
+    return () => clearInterval(t);
+  }, [count, intervalMs]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
+  }, [idx]);
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const next = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+    if (next !== idx) setIdx(next);
+  };
+
+  return (
+    <div className="absolute inset-0" style={{ height: `${heightPx}px` }}>
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {slides.map((s, i) => {
+          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover" />;
+          return (
+            <div key={i} className="relative h-full w-full shrink-0 snap-start" style={{ minWidth: "100%" }}>
+              {s.link ? (
+                <a href={s.link} target="_blank" rel="noopener noreferrer" className="block h-full w-full">{inner}</a>
+              ) : inner}
+            </div>
+          );
+        })}
+      </div>
+      {count > 1 && (
+        <div className="pointer-events-none absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-1">
+          {slides.map((_, i) => (
+            <span key={i} className={`h-1.5 w-1.5 rounded-full transition ${i === idx ? "bg-primary" : "bg-white/40"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
