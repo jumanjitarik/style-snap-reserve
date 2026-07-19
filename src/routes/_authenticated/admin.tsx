@@ -847,7 +847,10 @@ function SettingsTab() {
     gap_line12_px: "2",
     gap_line23_px: "0",
     gap_search_px: "8",
-
+    hero_slides: "[]",
+    hero_interval_ms: "5000",
+    category_card_w_px: "0",
+    category_card_h_px: "0",
   });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
@@ -876,8 +879,31 @@ function SettingsTab() {
       gap_line12_px: settings.gap_line12_px ?? "2",
       gap_line23_px: settings.gap_line23_px ?? "0",
       gap_search_px: settings.gap_search_px ?? "8",
+      hero_slides: settings.hero_slides ?? "[]",
+      hero_interval_ms: settings.hero_interval_ms ?? "5000",
+      category_card_w_px: settings.category_card_w_px ?? "0",
+      category_card_h_px: settings.category_card_h_px ?? "0",
     });
     initialized[1](true);
+  }
+
+  type Slide = { url: string; link?: string };
+  const slides: Slide[] = useMemo(() => {
+    try { const p = JSON.parse(form.hero_slides || "[]"); return Array.isArray(p) ? p : []; } catch { return []; }
+  }, [form.hero_slides]);
+  const setSlides = (next: Slide[]) => setForm((f) => ({ ...f, hero_slides: JSON.stringify(next) }));
+
+  async function uploadSlide(file: File) {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      const ext = file.name.split(".").pop() ?? "png";
+      const path = `${u.user!.id}/hero-slide-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("barbershop-photos").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = supabase.storage.from("barbershop-photos").getPublicUrl(path);
+      setSlides([...slides, { url: data.publicUrl, link: "" }]);
+      toast.success("Slayt eklendi, kaydet'e bas");
+    } catch (e) { toast.error((e as Error).message); }
   }
 
 
