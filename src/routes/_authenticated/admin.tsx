@@ -2133,6 +2133,8 @@ function CategoriesTab() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<CatRow | null>(null);
   const [assigning, setAssigning] = useState<CatRow | null>(null);
+  const [iconSearch, setIconSearch] = useState("");
+
 
   const { data: cats } = useQuery({
     queryKey: ["admin-custom-cats"],
