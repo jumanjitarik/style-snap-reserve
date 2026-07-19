@@ -213,7 +213,7 @@ function Index() {
       </div>
 
 
-      {!isSearching && <CategoriesSection />}
+      {!isSearching && <CategoriesSection widthPx={welcome?.catW ?? 0} heightPx={welcome?.catH ?? 0} />}
 
 
 
