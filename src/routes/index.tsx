@@ -393,8 +393,9 @@ function CategoriesSection({ widthPx = 0, heightPx = 0, cols = 4 }: { widthPx?: 
 }
 
 function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; link?: string }[]; intervalMs: number; heightPx: number }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [idx, setIdx] = useState(0);
+  const [drag, setDrag] = useState(0);
+  const startX = useRef<number | null>(null);
   const count = slides.length;
 
   useEffect(() => {
@@ -403,30 +404,42 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
     return () => clearInterval(t);
   }, [count, intervalMs]);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
-  }, [idx]);
-
-  const onScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const next = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
-    if (next !== idx) setIdx(next);
+  const onDown = (x: number) => { startX.current = x; setDrag(0); };
+  const onMove = (x: number) => { if (startX.current != null) setDrag(x - startX.current); };
+  const onUp = () => {
+    if (startX.current == null) return;
+    const threshold = 40;
+    if (drag > threshold) setIdx((i) => (i - 1 + count) % count);
+    else if (drag < -threshold) setIdx((i) => (i + 1) % count);
+    startX.current = null;
+    setDrag(0);
   };
 
+  if (count === 0) return null;
+
   return (
-    <div className="absolute inset-0" style={{ height: `${heightPx}px` }}>
+    <div
+      className="absolute inset-0 overflow-hidden touch-pan-y select-none"
+      style={{ height: `${heightPx}px` }}
+      onTouchStart={(e) => onDown(e.touches[0].clientX)}
+      onTouchMove={(e) => onMove(e.touches[0].clientX)}
+      onTouchEnd={onUp}
+      onMouseDown={(e) => onDown(e.clientX)}
+      onMouseMove={(e) => startX.current != null && onMove(e.clientX)}
+      onMouseUp={onUp}
+      onMouseLeave={onUp}
+    >
       <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-full w-full"
+        style={{
+          transform: `translateX(calc(${-idx * 100}% + ${drag}px))`,
+          transition: startX.current == null ? "transform 500ms ease" : "none",
+        }}
       >
         {slides.map((s, i) => {
-          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover" />;
+          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" draggable={false} />;
           return (
-            <div key={i} className="relative h-full w-full shrink-0 snap-start" style={{ minWidth: "100%" }}>
+            <div key={i} className="relative h-full w-full shrink-0" style={{ minWidth: "100%" }}>
               {s.link ? (
                 <a href={s.link} target="_blank" rel="noopener noreferrer" className="block h-full w-full">{inner}</a>
               ) : inner}
@@ -444,5 +457,6 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
     </div>
   );
 }
+
 
 
