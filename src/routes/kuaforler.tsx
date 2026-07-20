@@ -49,6 +49,7 @@ function ShopList() {
   const [myCity, setMyCity] = useState<string | null>(null);
   const [onlyMyCity, setOnlyMyCity] = useState(false);
   const [search, setSearch] = useState("");
+  const [visible, setVisible] = useState(21);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
