@@ -251,7 +251,7 @@ function ShopList() {
 
 
       <div className="space-y-3 px-4 pb-4">
-        {sorted.map((s) => (
+        {sorted.slice(0, visible).map((s) => (
           <Link
             key={s.id}
             to="/kuafor/$id"
