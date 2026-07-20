@@ -851,6 +851,7 @@ function SettingsTab() {
     hero_interval_ms: "5000",
     category_card_w_px: "0",
     category_card_h_px: "0",
+    category_cols: "4",
   });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
