@@ -155,6 +155,23 @@ function ShopList() {
     return arr;
   }, [filtered, sort]);
 
+  // Reset visible count when filters/sort change
+  useEffect(() => { setVisible(21); }, [cat, sort, search, onlyMyCity]);
+
+  // Infinite scroll: append 10 when near bottom
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      const vh = window.innerHeight;
+      const doc = document.documentElement.scrollHeight;
+      if (doc - (scrollY + vh) < 400) {
+        setVisible((v) => (v < sorted.length ? Math.min(sorted.length, v + 10) : v));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [sorted.length]);
+
   return (
     <AppShell>
       <BackButton to="/" />
