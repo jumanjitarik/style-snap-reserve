@@ -1078,8 +1078,9 @@ function SettingsTab() {
 
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Kategori Düğmesi Boyutu</p>
-        <p className="text-[11px] text-muted-foreground">0 = otomatik (kare, 4 sütun). Değer girersen tüm kartlar bu ölçüde olur.</p>
-        <div className="grid grid-cols-2 gap-2">
+        <p className="text-[11px] text-muted-foreground">0 = otomatik (kare). "Sütun sayısı" ile bir satırda kaç düğme olacağını belirle.</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div><Label className="text-xs">Sütun (satırda kaç adet)</Label><Input type="number" min="2" max="6" value={form.category_cols} onChange={(e) => setForm({ ...form, category_cols: e.target.value })} /></div>
           <div><Label className="text-xs">Genişlik (px)</Label><Input type="number" min="0" max="400" value={form.category_card_w_px} onChange={(e) => setForm({ ...form, category_card_w_px: e.target.value })} /></div>
           <div><Label className="text-xs">Yükseklik (px)</Label><Input type="number" min="0" max="400" value={form.category_card_h_px} onChange={(e) => setForm({ ...form, category_card_h_px: e.target.value })} /></div>
         </div>
