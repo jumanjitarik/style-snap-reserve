@@ -207,16 +207,16 @@ function BorsaPage() {
 
         <Input placeholder="Hizmet, salon veya şehir ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
 
-        <p className="text-xs text-muted-foreground">{coords ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
+        <p className="text-xs text-muted-foreground">{coords ? (kmApplied ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Yakında hizmet yok — tüm salonlardan en ucuzları") : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
 
 
         <div className="space-y-2">
           {rows.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-6">
-              {coords ? `${MAX_KM} km içinde uygun hizmet bulunamadı.` : "Hizmet bulunamadı."}
+              Hizmet bulunamadı.
             </p>
           )}
-          {rows.map((r) => (
+          {rows.slice(0, visible).map((r) => (
             <Link
               key={`${r.shopId}-${r.serviceId}`}
               to="/kuafor/$id"
