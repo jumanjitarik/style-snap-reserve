@@ -343,23 +343,26 @@ function Index() {
   );
 }
 
-function CategoriesSection({ widthPx = 0, heightPx = 0 }: { widthPx?: number; heightPx?: number }) {
+function CategoriesSection({ widthPx = 0, heightPx = 0, cols = 4 }: { widthPx?: number; heightPx?: number; cols?: number }) {
   const { data: cats } = useCustomCategories();
   const list = cats ?? [];
   if (list.length === 0) return null;
   const custom = widthPx > 0 || heightPx > 0;
   const containerCls = custom
-    ? "flex flex-wrap gap-2"
-    : "grid grid-cols-4 gap-2";
+    ? "flex flex-wrap justify-center gap-2"
+    : "grid gap-2 justify-items-center mx-auto";
+  const containerStyle: React.CSSProperties = custom
+    ? {}
+    : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
   const cardBase = "group relative flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-white/5 bg-gradient-to-b from-neutral-900 to-black p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_6px_16px_-10px_rgba(0,0,0,0.8)] transition hover:border-primary/40 active:scale-[0.97]";
-  const cardCls = custom ? cardBase : `${cardBase} aspect-square`;
+  const cardCls = custom ? cardBase : `${cardBase} aspect-square w-full`;
   const cardStyle: React.CSSProperties = custom
     ? { width: widthPx > 0 ? `${widthPx}px` : undefined, height: heightPx > 0 ? `${heightPx}px` : undefined }
     : {};
   return (
     <section className="px-4 pt-6">
       <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
-      <div className={containerCls}>
+      <div className={containerCls} style={containerStyle}>
         {list.map((c) => (
           <Link
             key={c.id}
