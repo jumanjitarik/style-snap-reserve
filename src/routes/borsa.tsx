@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
@@ -79,8 +79,8 @@ function BorsaPage() {
     },
   });
 
-  const rows = useMemo(() => {
-    if (!shops || !services) return [];
+  const rowsData = useMemo(() => {
+    if (!shops || !services) return { list: [] as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; shopImage: string | null; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>, kmApplied: false };
     const allowed = cat ? new Set(allowedIds ?? []) : null;
     const shopMap = new Map(shops.filter((s) => !allowed || allowed.has(s.id)).map((s) => [s.id, s]));
     const list = services.map((sv) => {
@@ -106,10 +106,9 @@ function BorsaPage() {
       };
     }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; shopImage: string | null; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
 
-    const filtered = list.filter((r) => {
-      if (coords) return r.km != null && r.km <= MAX_KM;
-      return true;
-    });
+    // Only enforce 25km if there are results within 25km; otherwise show all
+    const withinKm = coords ? list.filter((r) => r.km != null && r.km <= MAX_KM) : list;
+    const filtered = withinKm.length > 0 ? withinKm : list;
 
     const q = search.trim().toLocaleLowerCase("tr");
     const searched = q
@@ -127,8 +126,24 @@ function BorsaPage() {
       if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
       return a.shopName.localeCompare(b.shopName, "tr");
     });
-    return searched.slice(0, 300);
+    return { list: searched, kmApplied: withinKm.length > 0 && coords != null };
   }, [shops, services, coords, sortBy, search, cat, reviewMap]);
+
+  const rows = rowsData.list;
+  const kmApplied = rowsData.kmApplied;
+
+  const [visible, setVisible] = useState(21);
+  useEffect(() => { setVisible(21); }, [cat, sortBy, search, coords]);
+  useEffect(() => {
+    const onScroll = () => {
+      const doc = document.documentElement.scrollHeight;
+      if (doc - (window.scrollY + window.innerHeight) < 400) {
+        setVisible((v) => (v < rows.length ? Math.min(rows.length, v + 10) : v));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [rows.length]);
 
   return (
     <AppShell>
@@ -192,16 +207,16 @@ function BorsaPage() {
 
         <Input placeholder="Hizmet, salon veya şehir ara…" value={search} onChange={(e) => setSearch(e.target.value)} />
 
-        <p className="text-xs text-muted-foreground">{coords ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
+        <p className="text-xs text-muted-foreground">{coords ? (kmApplied ? `${MAX_KM} km içindeki en ucuz hizmetler` : "Yakında hizmet yok — tüm salonlardan en ucuzları") : "Konum izni vererek yakındaki en ucuz fiyatları gör"}</p>
 
 
         <div className="space-y-2">
           {rows.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-6">
-              {coords ? `${MAX_KM} km içinde uygun hizmet bulunamadı.` : "Hizmet bulunamadı."}
+              Hizmet bulunamadı.
             </p>
           )}
-          {rows.map((r) => (
+          {rows.slice(0, visible).map((r) => (
             <Link
               key={`${r.shopId}-${r.serviceId}`}
               to="/kuafor/$id"

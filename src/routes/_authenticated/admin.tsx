@@ -851,6 +851,7 @@ function SettingsTab() {
     hero_interval_ms: "5000",
     category_card_w_px: "0",
     category_card_h_px: "0",
+    category_cols: "4",
   });
   const initialized = useState(false);
   if (settings && !initialized[0]) {
@@ -883,6 +884,7 @@ function SettingsTab() {
       hero_interval_ms: settings.hero_interval_ms ?? "5000",
       category_card_w_px: settings.category_card_w_px ?? "0",
       category_card_h_px: settings.category_card_h_px ?? "0",
+      category_cols: settings.category_cols ?? "4",
     });
     initialized[1](true);
   }
@@ -952,6 +954,7 @@ function SettingsTab() {
         { key: "hero_interval_ms", value: String(Math.max(1000, Number(form.hero_interval_ms) || 5000)) },
         { key: "category_card_w_px", value: String(Math.max(0, Number(form.category_card_w_px) || 0)) },
         { key: "category_card_h_px", value: String(Math.max(0, Number(form.category_card_h_px) || 0)) },
+        { key: "category_cols", value: String(Math.max(2, Math.min(6, Number(form.category_cols) || 4))) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
@@ -1075,8 +1078,9 @@ function SettingsTab() {
 
       <div className="rounded-xl border border-border bg-card p-3 space-y-2">
         <p className="text-xs uppercase tracking-wider text-primary">Kategori Düğmesi Boyutu</p>
-        <p className="text-[11px] text-muted-foreground">0 = otomatik (kare, 4 sütun). Değer girersen tüm kartlar bu ölçüde olur.</p>
-        <div className="grid grid-cols-2 gap-2">
+        <p className="text-[11px] text-muted-foreground">0 = otomatik (kare). "Sütun sayısı" ile bir satırda kaç düğme olacağını belirle.</p>
+        <div className="grid grid-cols-3 gap-2">
+          <div><Label className="text-xs">Sütun (satırda kaç adet)</Label><Input type="number" min="2" max="6" value={form.category_cols} onChange={(e) => setForm({ ...form, category_cols: e.target.value })} /></div>
           <div><Label className="text-xs">Genişlik (px)</Label><Input type="number" min="0" max="400" value={form.category_card_w_px} onChange={(e) => setForm({ ...form, category_card_w_px: e.target.value })} /></div>
           <div><Label className="text-xs">Yükseklik (px)</Label><Input type="number" min="0" max="400" value={form.category_card_h_px} onChange={(e) => setForm({ ...form, category_card_h_px: e.target.value })} /></div>
         </div>

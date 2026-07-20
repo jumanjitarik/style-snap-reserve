@@ -49,6 +49,7 @@ function ShopList() {
   const [myCity, setMyCity] = useState<string | null>(null);
   const [onlyMyCity, setOnlyMyCity] = useState(false);
   const [search, setSearch] = useState("");
+  const [visible, setVisible] = useState(21);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -154,6 +155,23 @@ function ShopList() {
     return arr;
   }, [filtered, sort]);
 
+  // Reset visible count when filters/sort change
+  useEffect(() => { setVisible(21); }, [cat, sort, search, onlyMyCity]);
+
+  // Infinite scroll: append 10 when near bottom
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      const vh = window.innerHeight;
+      const doc = document.documentElement.scrollHeight;
+      if (doc - (scrollY + vh) < 400) {
+        setVisible((v) => (v < sorted.length ? Math.min(sorted.length, v + 10) : v));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [sorted.length]);
+
   return (
     <AppShell>
       <BackButton to="/" />
@@ -233,7 +251,7 @@ function ShopList() {
 
 
       <div className="space-y-3 px-4 pb-4">
-        {sorted.map((s) => (
+        {sorted.slice(0, visible).map((s) => (
           <Link
             key={s.id}
             to="/kuafor/$id"

@@ -100,7 +100,7 @@ function Index() {
         "welcome_line3_text", "welcome_line3_color",
         "hero_height_px", "gap_top_px", "gap_line12_px", "gap_line23_px", "gap_search_px",
         "hero_slides", "hero_interval_ms",
-        "category_card_w_px", "category_card_h_px",
+        "category_card_w_px", "category_card_h_px", "category_cols",
       ];
       const { data } = await supabase.from("app_settings").select("key, value").in("key", keys);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
@@ -122,6 +122,7 @@ function Index() {
         slideIntervalMs: Math.max(1000, num("hero_interval_ms", 5000)),
         catW: num("category_card_w_px", 0),
         catH: num("category_card_h_px", 0),
+        catCols: Math.max(2, Math.min(6, num("category_cols", 4))),
       };
     },
     staleTime: 60_000,
@@ -213,7 +214,7 @@ function Index() {
       </div>
 
 
-      {!isSearching && <CategoriesSection widthPx={welcome?.catW ?? 0} heightPx={welcome?.catH ?? 0} />}
+      {!isSearching && <CategoriesSection widthPx={welcome?.catW ?? 0} heightPx={welcome?.catH ?? 0} cols={welcome?.catCols ?? 4} />}
 
 
 
@@ -342,23 +343,26 @@ function Index() {
   );
 }
 
-function CategoriesSection({ widthPx = 0, heightPx = 0 }: { widthPx?: number; heightPx?: number }) {
+function CategoriesSection({ widthPx = 0, heightPx = 0, cols = 4 }: { widthPx?: number; heightPx?: number; cols?: number }) {
   const { data: cats } = useCustomCategories();
   const list = cats ?? [];
   if (list.length === 0) return null;
   const custom = widthPx > 0 || heightPx > 0;
   const containerCls = custom
-    ? "flex flex-wrap gap-2"
-    : "grid grid-cols-4 gap-2";
+    ? "flex flex-wrap justify-center gap-2"
+    : "grid gap-2 justify-items-center mx-auto";
+  const containerStyle: React.CSSProperties = custom
+    ? {}
+    : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
   const cardBase = "group relative flex flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-white/5 bg-gradient-to-b from-neutral-900 to-black p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_6px_16px_-10px_rgba(0,0,0,0.8)] transition hover:border-primary/40 active:scale-[0.97]";
-  const cardCls = custom ? cardBase : `${cardBase} aspect-square`;
+  const cardCls = custom ? cardBase : `${cardBase} aspect-square w-full`;
   const cardStyle: React.CSSProperties = custom
     ? { width: widthPx > 0 ? `${widthPx}px` : undefined, height: heightPx > 0 ? `${heightPx}px` : undefined }
     : {};
   return (
     <section className="px-4 pt-6">
       <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
-      <div className={containerCls}>
+      <div className={containerCls} style={containerStyle}>
         {list.map((c) => (
           <Link
             key={c.id}
@@ -389,8 +393,9 @@ function CategoriesSection({ widthPx = 0, heightPx = 0 }: { widthPx?: number; he
 }
 
 function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; link?: string }[]; intervalMs: number; heightPx: number }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [idx, setIdx] = useState(0);
+  const [drag, setDrag] = useState(0);
+  const startX = useRef<number | null>(null);
   const count = slides.length;
 
   useEffect(() => {
@@ -399,30 +404,42 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
     return () => clearInterval(t);
   }, [count, intervalMs]);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ left: idx * el.clientWidth, behavior: "smooth" });
-  }, [idx]);
-
-  const onScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const next = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
-    if (next !== idx) setIdx(next);
+  const onDown = (x: number) => { startX.current = x; setDrag(0); };
+  const onMove = (x: number) => { if (startX.current != null) setDrag(x - startX.current); };
+  const onUp = () => {
+    if (startX.current == null) return;
+    const threshold = 40;
+    if (drag > threshold) setIdx((i) => (i - 1 + count) % count);
+    else if (drag < -threshold) setIdx((i) => (i + 1) % count);
+    startX.current = null;
+    setDrag(0);
   };
 
+  if (count === 0) return null;
+
   return (
-    <div className="absolute inset-0" style={{ height: `${heightPx}px` }}>
+    <div
+      className="absolute inset-0 overflow-hidden touch-pan-y select-none"
+      style={{ height: `${heightPx}px` }}
+      onTouchStart={(e) => onDown(e.touches[0].clientX)}
+      onTouchMove={(e) => onMove(e.touches[0].clientX)}
+      onTouchEnd={onUp}
+      onMouseDown={(e) => onDown(e.clientX)}
+      onMouseMove={(e) => startX.current != null && onMove(e.clientX)}
+      onMouseUp={onUp}
+      onMouseLeave={onUp}
+    >
       <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-full w-full"
+        style={{
+          transform: `translateX(calc(${-idx * 100}% + ${drag}px))`,
+          transition: startX.current == null ? "transform 500ms ease" : "none",
+        }}
       >
         {slides.map((s, i) => {
-          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover" />;
+          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" />;
           return (
-            <div key={i} className="relative h-full w-full shrink-0 snap-start" style={{ minWidth: "100%" }}>
+            <div key={i} className="relative h-full w-full shrink-0" style={{ minWidth: "100%" }}>
               {s.link ? (
                 <a href={s.link} target="_blank" rel="noopener noreferrer" className="block h-full w-full">{inner}</a>
               ) : inner}
@@ -440,5 +457,6 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
     </div>
   );
 }
+
 
 
