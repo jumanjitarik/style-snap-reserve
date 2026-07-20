@@ -214,7 +214,7 @@ function Index() {
       </div>
 
 
-      {!isSearching && <CategoriesSection widthPx={welcome?.catW ?? 0} heightPx={welcome?.catH ?? 0} />}
+      {!isSearching && <CategoriesSection widthPx={welcome?.catW ?? 0} heightPx={welcome?.catH ?? 0} cols={welcome?.catCols ?? 4} />}
 
 
 
