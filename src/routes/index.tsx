@@ -100,7 +100,7 @@ function Index() {
         "welcome_line3_text", "welcome_line3_color",
         "hero_height_px", "gap_top_px", "gap_line12_px", "gap_line23_px", "gap_search_px",
         "hero_slides", "hero_interval_ms",
-        "category_card_w_px", "category_card_h_px",
+        "category_card_w_px", "category_card_h_px", "category_cols",
       ];
       const { data } = await supabase.from("app_settings").select("key, value").in("key", keys);
       const map = Object.fromEntries((data ?? []).map((r) => [r.key, r.value]));
@@ -122,6 +122,7 @@ function Index() {
         slideIntervalMs: Math.max(1000, num("hero_interval_ms", 5000)),
         catW: num("category_card_w_px", 0),
         catH: num("category_card_h_px", 0),
+        catCols: Math.max(2, Math.min(6, num("category_cols", 4))),
       };
     },
     staleTime: 60_000,
