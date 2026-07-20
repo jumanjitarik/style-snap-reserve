@@ -954,6 +954,7 @@ function SettingsTab() {
         { key: "hero_interval_ms", value: String(Math.max(1000, Number(form.hero_interval_ms) || 5000)) },
         { key: "category_card_w_px", value: String(Math.max(0, Number(form.category_card_w_px) || 0)) },
         { key: "category_card_h_px", value: String(Math.max(0, Number(form.category_card_h_px) || 0)) },
+        { key: "category_cols", value: String(Math.max(2, Math.min(6, Number(form.category_cols) || 4))) },
       ];
       const { error } = await supabase.from("app_settings").upsert(rows, { onConflict: "key" });
       if (error) throw error;
