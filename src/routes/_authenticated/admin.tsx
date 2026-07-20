@@ -884,6 +884,7 @@ function SettingsTab() {
       hero_interval_ms: settings.hero_interval_ms ?? "5000",
       category_card_w_px: settings.category_card_w_px ?? "0",
       category_card_h_px: settings.category_card_h_px ?? "0",
+      category_cols: settings.category_cols ?? "4",
     });
     initialized[1](true);
   }
