@@ -79,8 +79,8 @@ function BorsaPage() {
     },
   });
 
-  const rows = useMemo(() => {
-    if (!shops || !services) return [];
+  const rowsData = useMemo(() => {
+    if (!shops || !services) return { list: [] as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; shopImage: string | null; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>, kmApplied: false };
     const allowed = cat ? new Set(allowedIds ?? []) : null;
     const shopMap = new Map(shops.filter((s) => !allowed || allowed.has(s.id)).map((s) => [s.id, s]));
     const list = services.map((sv) => {
