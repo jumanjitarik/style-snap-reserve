@@ -106,10 +106,9 @@ function BorsaPage() {
       };
     }).filter(Boolean) as Array<{ serviceId: string; serviceName: string; price: number; duration: number | null; shopId: string; shopName: string; shopImage: string | null; city: string | null; address: string | null; km: number | null; rating: number; reviewsCount: number }>;
 
-    const filtered = list.filter((r) => {
-      if (coords) return r.km != null && r.km <= MAX_KM;
-      return true;
-    });
+    // Only enforce 25km if there are results within 25km; otherwise show all
+    const withinKm = coords ? list.filter((r) => r.km != null && r.km <= MAX_KM) : list;
+    const filtered = withinKm.length > 0 ? withinKm : list;
 
     const q = search.trim().toLocaleLowerCase("tr");
     const searched = q
@@ -127,8 +126,24 @@ function BorsaPage() {
       if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
       return a.shopName.localeCompare(b.shopName, "tr");
     });
-    return searched.slice(0, 300);
+    return { list: searched, kmApplied: withinKm.length > 0 && coords != null };
   }, [shops, services, coords, sortBy, search, cat, reviewMap]);
+
+  const rows = rowsData.list;
+  const kmApplied = rowsData.kmApplied;
+
+  const [visible, setVisible] = useState(21);
+  useEffect(() => { setVisible(21); }, [cat, sortBy, search, coords]);
+  useEffect(() => {
+    const onScroll = () => {
+      const doc = document.documentElement.scrollHeight;
+      if (doc - (window.scrollY + window.innerHeight) < 400) {
+        setVisible((v) => (v < rows.length ? Math.min(rows.length, v + 10) : v));
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [rows.length]);
 
   return (
     <AppShell>
