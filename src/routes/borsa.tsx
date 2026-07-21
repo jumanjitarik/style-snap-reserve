@@ -127,7 +127,7 @@ function BorsaPage() {
       return a.shopName.localeCompare(b.shopName, "tr");
     });
     return { list: searched, kmApplied: withinKm.length > 0 && coords != null };
-  }, [shops, services, coords, sortBy, search, cat, reviewMap]);
+  }, [shops, services, coords, sortBy, search, cat, reviewMap, allowedIds]);
 
   const rows = rowsData.list;
   const kmApplied = rowsData.kmApplied;

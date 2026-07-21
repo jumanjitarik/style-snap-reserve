@@ -40,10 +40,12 @@ function SafeImgInner({
   src,
   alt = "",
   className,
+  eager = false,
 }: {
   src?: string | null;
   alt?: string;
   className?: string;
+  eager?: boolean;
 }) {
   const [resolved, setResolved] = useState<string | null>(() => {
     if (!src) return null;
@@ -77,10 +79,11 @@ function SafeImgInner({
 
   if (!src) return null;
   if (!resolved) return <div className={className} />;
-  return <img src={resolved} alt={alt} className={className} loading="lazy" />;
+  return <img src={resolved} alt={alt} className={className} loading={eager ? "eager" : "lazy"} {...(eager ? { fetchpriority: "high" } as any : {})} />;
 }
 
 export const SafeImg = memo(SafeImgInner, (prev, next) =>
-  prev.src === next.src && prev.alt === next.alt && prev.className === next.className,
+  prev.src === next.src && prev.alt === next.alt && prev.className === next.className && prev.eager === next.eager,
 );
+
 

@@ -219,6 +219,7 @@ function Index() {
 
 
 
+
       {(isSearching || featured.length > 0) && (
         <section className="px-4 pt-8">
           <div className="mb-3 flex items-center justify-between">
@@ -360,8 +361,8 @@ function CategoriesSection({ widthPx = 0, heightPx = 0, cols = 4 }: { widthPx?: 
     ? { width: widthPx > 0 ? `${widthPx}px` : undefined, height: heightPx > 0 ? `${heightPx}px` : undefined }
     : {};
   return (
-    <section className="px-4 pt-6">
-      <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
+    <section className="px-4 pt-2">
+      <h2 className="mb-2 text-lg font-display tracking-wider">Kategoriler</h2>
       <div className={containerCls} style={containerStyle}>
         {list.map((c) => (
           <Link
@@ -437,7 +438,7 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
         }}
       >
         {slides.map((s, i) => {
-          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" />;
+          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" eager={i === 0} />;
           return (
             <div key={i} className="relative h-full w-full shrink-0" style={{ minWidth: "100%" }}>
               {s.link ? (
