@@ -181,26 +181,17 @@ function Index() {
 
   return (
     <LocationGate><AppShell>
-      <header className="relative overflow-hidden" style={{ minHeight: (welcome?.slides.length || welcome?.heroUrl) ? `${welcome?.heroHeight ?? 120}px` : undefined }}>
-        {welcome?.slides.length ? (
+      {welcome?.slides.length ? (
+        <header className="relative overflow-hidden" style={{ minHeight: `${welcome?.heroHeight ?? 120}px` }}>
           <HeroBanner
             slides={welcome.slides}
             intervalMs={welcome.slideIntervalMs}
             heightPx={welcome.heroHeight}
           />
-        ) : welcome?.heroUrl ? (
-          <div className="absolute inset-0" style={{ height: `${welcome?.heroHeight ?? 120}px` }}>
-            <SafeImg src={welcome.heroUrl} alt="" className="h-full w-full object-cover" />
-          </div>
-        ) : null}
-        <div className="relative px-4 pb-3" style={{ paddingTop: `${welcome?.gapTop ?? 8}px` }}>
-          <p className="text-xs normal-case tracking-widest font-semibold" style={{ color: welcome?.line1.color }}>{welcome?.line1.text}</p>
-          <h1 className="text-3xl font-sans font-black leading-[0.95] normal-case" style={{ color: welcome?.line2.color, marginTop: `${welcome?.gapLine12 ?? 2}px` }}>{welcome?.line2.text}</h1>
-          <h1 className="text-3xl font-sans font-black leading-[0.95] normal-case" style={{ color: welcome?.line3.color, marginTop: `${welcome?.gapLine23 ?? 0}px` }}>{welcome?.line3.text}</h1>
-        </div>
-      </header>
+        </header>
+      ) : null}
 
-      <div className="px-4" style={{ paddingTop: `${welcome?.gapSearch ?? 8}px` }}>
+      <div className="px-4 pt-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -214,7 +205,9 @@ function Index() {
       </div>
 
 
+
       {!isSearching && <CategoriesSection widthPx={welcome?.catW ?? 0} heightPx={welcome?.catH ?? 0} cols={welcome?.catCols ?? 4} />}
+
 
 
 
@@ -360,8 +353,8 @@ function CategoriesSection({ widthPx = 0, heightPx = 0, cols = 4 }: { widthPx?: 
     ? { width: widthPx > 0 ? `${widthPx}px` : undefined, height: heightPx > 0 ? `${heightPx}px` : undefined }
     : {};
   return (
-    <section className="px-4 pt-6">
-      <h2 className="mb-3 text-lg font-display tracking-wider">Kategoriler</h2>
+    <section className="px-4 pt-2">
+      <h2 className="mb-2 text-lg font-display tracking-wider">Kategoriler</h2>
       <div className={containerCls} style={containerStyle}>
         {list.map((c) => (
           <Link
@@ -437,7 +430,7 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
         }}
       >
         {slides.map((s, i) => {
-          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" />;
+          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" eager={i === 0} />;
           return (
             <div key={i} className="relative h-full w-full shrink-0" style={{ minWidth: "100%" }}>
               {s.link ? (

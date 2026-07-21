@@ -34,6 +34,18 @@ function PuanlarimPage() {
     },
   });
 
+  const { data: welcomeBonus } = useQuery({
+    queryKey: ["my-points-welcome"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("app_settings").select("value").eq("key", "welcome_points").maybeSingle();
+      const n = Number((data?.value ?? "0") as string);
+      const amount = Number.isFinite(n) && n > 0 ? n : 0;
+      return { amount, at: u.user.created_at ?? null };
+    },
+  });
+
   const { data: appts } = useQuery({
     queryKey: ["my-points-appts"],
     queryFn: async () => {
@@ -64,8 +76,10 @@ function PuanlarimPage() {
       earned += Number(a.points_earned ?? 0);
       used += Number(a.points_used ?? 0);
     });
+    if (welcomeBonus?.amount) earned += welcomeBonus.amount;
     return { earned, used };
-  }, [appts]);
+  }, [appts, welcomeBonus]);
+
 
   return (
     <AppShell>
@@ -94,7 +108,7 @@ function PuanlarimPage() {
 
         <h2 className="font-display text-lg pt-2">İşlem Geçmişi</h2>
         <div className="space-y-2">
-          {(appts ?? []).length === 0 && (
+          {(appts ?? []).length === 0 && !welcomeBonus?.amount && (
             <p className="text-sm text-muted-foreground text-center py-6">Henüz puan hareketi yok.</p>
           )}
           {(appts ?? []).map((a: any) => {
@@ -128,6 +142,21 @@ function PuanlarimPage() {
               </div>
             );
           })}
+          {welcomeBonus?.amount ? (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs space-y-1">
+              <div className="flex justify-between gap-2">
+                <p className="font-semibold text-sm">🎁 Hoş Geldin Bonusu</p>
+                <p className="text-muted-foreground">
+                  {welcomeBonus.at ? new Date(welcomeBonus.at).toLocaleDateString("tr-TR") : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">
+                  +{welcomeBonus.amount} puan kazanıldı
+                </span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </AppShell>
