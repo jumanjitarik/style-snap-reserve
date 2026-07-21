@@ -1194,6 +1194,9 @@ export type Database = {
         | "yoga_pilates"
         | "slimming"
         | "fitness"
+        | "estetik"
+        | "dis_bakimi"
+        | "diyet"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1340,6 +1343,9 @@ export const Constants = {
         "yoga_pilates",
         "slimming",
         "fitness",
+        "estetik",
+        "dis_bakimi",
+        "diyet",
       ],
     },
   },
