@@ -332,7 +332,7 @@ function ShopsTab() {
                 {s.is_featured ? "★ Öne Çıkan" : "Öne Çıkar"}
               </button>
               <Button size="sm" variant="ghost" onClick={() => setEditing({
-                id: s.id, name: s.name, category: s.category, description: s.description ?? "",
+                id: s.id, name: s.name, category: s.category as any, description: s.description ?? "",
                 address: s.address, city: s.city ?? "", phone: s.phone ?? "",
                 lat: s.lat != null ? String(s.lat) : "", lng: s.lng != null ? String(s.lng) : "",
                 cover_image_url: s.cover_image_url ?? "", is_featured: s.is_featured ?? false,
