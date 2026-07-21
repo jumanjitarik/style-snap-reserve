@@ -142,6 +142,21 @@ function PuanlarimPage() {
               </div>
             );
           })}
+          {welcomeBonus?.amount ? (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs space-y-1">
+              <div className="flex justify-between gap-2">
+                <p className="font-semibold text-sm">🎁 Hoş Geldin Bonusu</p>
+                <p className="text-muted-foreground">
+                  {welcomeBonus.at ? new Date(welcomeBonus.at).toLocaleDateString("tr-TR") : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <span className="rounded-full bg-emerald-500/15 text-emerald-500 px-2 py-0.5 text-[10px] font-bold">
+                  +{welcomeBonus.amount} puan kazanıldı
+                </span>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </AppShell>
