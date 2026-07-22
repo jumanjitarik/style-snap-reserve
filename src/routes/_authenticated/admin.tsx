@@ -914,18 +914,20 @@ function SettingsTab() {
     const canvas = document.createElement("canvas");
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext("2d")!;
-    // cover crop
+    // fit-inside (contain) — photo tam gözüksün, kenarlarda siyah letterbox
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
     const srcRatio = bitmap.width / bitmap.height;
     const dstRatio = w / h;
-    let sx = 0, sy = 0, sw = bitmap.width, sh = bitmap.height;
+    let dw = w, dh = h, dx = 0, dy = 0;
     if (srcRatio > dstRatio) {
-      sw = bitmap.height * dstRatio;
-      sx = (bitmap.width - sw) / 2;
+      dh = w / srcRatio;
+      dy = (h - dh) / 2;
     } else {
-      sh = bitmap.width / dstRatio;
-      sy = (bitmap.height - sh) / 2;
+      dw = h * srcRatio;
+      dx = (w - dw) / 2;
     }
-    ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, dx, dy, dw, dh);
     return await new Promise<Blob>((res, rej) =>
       canvas.toBlob((b) => b ? res(b) : rej(new Error("resize failed")), "image/jpeg", 0.88),
     );
