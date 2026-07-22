@@ -411,6 +411,17 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
             <p className="text-[12px] whitespace-pre-wrap">{a.notes}</p>
           </div>
         )}
+        {a.status !== "cancelled" && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full text-destructive border-destructive/40 hover:bg-destructive/10"
+            onClick={() => { if (confirm("Bu randevuyu iptal etmek istediğine emin misin?")) cancelAppt.mutate(a.id); }}
+            disabled={cancelAppt.isPending}
+          >
+            Randevuyu İptal Et
+          </Button>
+        )}
       </div>
     );
   };
