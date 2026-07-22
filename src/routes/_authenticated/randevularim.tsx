@@ -595,8 +595,9 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
         const card = Number(m.payment_amount ?? 0);
         const cash = Number(m.remaining_amount ?? 0);
         const pts = Number(m.points_used ?? 0);
+        const cancelled = (m as unknown as { status?: string }).status === "cancelled";
         return (
-          <div key={m.id} className="rounded-xl border border-border bg-card p-3">
+          <div key={m.id} className={cn("rounded-xl border border-border bg-card p-3", cancelled && "opacity-60")}>
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <p className="font-semibold truncate">{name}</p>
@@ -609,7 +610,10 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                   {format(new Date(m.created_at), "d MMM yyyy · HH:mm", { locale: tr })}
                 </p>
               </div>
-              <span className="shrink-0 font-display text-lg text-primary">{Number(m.amount).toFixed(0)}₺</span>
+              <div className="shrink-0 flex flex-col items-end gap-1">
+                <span className="font-display text-lg text-primary">{Number(m.amount).toFixed(0)}₺</span>
+                {cancelled && <span className="rounded-full bg-destructive/20 text-destructive text-[10px] px-2 py-0.5 font-bold">İPTAL</span>}
+              </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
               {card > 0 && <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 font-semibold">Kart: {card.toFixed(0)}₺</span>}
@@ -626,6 +630,17 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 <p className="text-[10px] uppercase tracking-wider text-primary mb-0.5">Müşteri Notu</p>
                 <p className="text-[12px] whitespace-pre-wrap">{m.notes}</p>
               </div>
+            )}
+            {!cancelled && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full text-destructive border-destructive/40 hover:bg-destructive/10"
+                onClick={() => { if (confirm("Bu üyeliği iptal etmek istediğine emin misin?")) cancelMem.mutate(m.id); }}
+                disabled={cancelMem.isPending}
+              >
+                Üyeliği İptal Et
+              </Button>
             )}
           </div>
         );
