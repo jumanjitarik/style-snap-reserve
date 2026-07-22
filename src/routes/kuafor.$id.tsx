@@ -205,7 +205,7 @@ function ShopDetail() {
 
           <ReviewSection shopId={id} userId={userId} reviews={reviews ?? []} />
 
-          <WaitlistWidget shopId={id} userId={userId} />
+
 
 
           {shop.lat != null && shop.lng != null && (
