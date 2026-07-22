@@ -430,7 +430,7 @@ function HeroBanner({ slides, intervalMs, heightPx }: { slides: { url: string; l
         }}
       >
         {slides.map((s, i) => {
-          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-cover pointer-events-none" eager={i === 0} />;
+          const inner = <SafeImg src={s.url} alt="" className="h-full w-full object-contain bg-black pointer-events-none" eager={i === 0} />;
           return (
             <div key={i} className="relative h-full w-full shrink-0" style={{ minWidth: "100%" }}>
               {s.link ? (
