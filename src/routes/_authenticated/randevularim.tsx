@@ -509,6 +509,15 @@ function MyMembershipsList() {
 
 
 function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
+  const qc = useQueryClient();
+  const cancelMem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("memberships").update({ status: "cancelled" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Üyelik iptal edildi"); qc.invalidateQueries({ queryKey: ["shop-memberships"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const { data: shopIds } = useQuery({
     queryKey: ["my-shop-ids-mem", userId, isAdmin],
     queryFn: async () => {
