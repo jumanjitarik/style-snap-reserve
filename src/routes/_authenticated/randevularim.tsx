@@ -286,6 +286,15 @@ function MyOwnList() {
 }
 
 function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: boolean }) {
+  const qc = useQueryClient();
+  const cancelAppt = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("appointments").update({ status: "cancelled" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { toast.success("Randevu iptal edildi"); qc.invalidateQueries({ queryKey: ["staff-appts"] }); },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const { data: shopIds } = useQuery({
     queryKey: ["my-shop-ids", userId, isAdmin],
     queryFn: async () => {
