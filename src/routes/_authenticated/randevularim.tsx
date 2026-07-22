@@ -538,7 +538,7 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
     queryFn: async () => {
       let q = supabase
         .from("memberships")
-        .select("id, amount, payment_amount, remaining_amount, deposit_amount, payment_method, points_used, points_earned, discount_amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes")
+        .select("id, amount, payment_amount, remaining_amount, deposit_amount, payment_method, points_used, points_earned, discount_amount, created_at, user_id, guest_name, guest_phone, shop_id, service_id, notes, status")
         .order("created_at", { ascending: false });
       if (!isAdmin) q = q.in("shop_id", shopIds!);
       const { data } = await q;
