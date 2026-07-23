@@ -67,7 +67,7 @@ function BookPage() {
   const [shopId, setShopId] = useState<string | null>(initialShop ?? null);
   const [serviceIds, setServiceIds] = useState<string[]>(initialIds);
   const [staffId, setStaffId] = useState<string | null>(null);
-  const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
+  const [date, setDate] = useState<Date | undefined>(startOfDay(new Date()));
   const [time, setTime] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"full" | "deposit">("full");
   const [discountCode, setDiscountCode] = useState("");
