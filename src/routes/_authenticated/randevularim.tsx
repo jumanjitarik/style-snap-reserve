@@ -211,7 +211,7 @@ function MyOwnList() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success("İptal edildi"); qc.invalidateQueries({ queryKey: ["my-appts"] }); },
-    onError: () => toast.error("24 saat kala iptal sağlanmamaktadır"),
+    onError: () => toast.error("Randevuya 2 saatten az kaldığı için iptal edilemez"),
   });
 
   const sorted = useMemo(() => {
