@@ -135,7 +135,7 @@ function MyAppts() {
           <CalIcon className="h-8 w-8 text-primary" />
           Alınan
         </h1>
-        <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
+        <p className="text-xs text-muted-foreground">İptal en geç randevudan 2 saat önce yapılabilir.</p>
       </header>
 
       <div className="px-4 pb-3 space-y-2">
@@ -211,7 +211,7 @@ function MyOwnList() {
       if (error) throw error;
     },
     onSuccess: () => { toast.success("İptal edildi"); qc.invalidateQueries({ queryKey: ["my-appts"] }); },
-    onError: () => toast.error("24 saat kala iptal sağlanmamaktadır"),
+    onError: () => toast.error("Randevuya 2 saatten az kaldığı için iptal edilemez"),
   });
 
   const sorted = useMemo(() => {
@@ -230,7 +230,7 @@ function MyOwnList() {
         const startsAt = new Date(a.starts_at);
         const hoursLeft = (startsAt.getTime() - Date.now()) / 3_600_000;
         const lbl = labelFor(a.starts_at, a.status);
-        const canCancel = hoursLeft > 24 && a.status === "confirmed";
+        const canCancel = hoursLeft > 2 && a.status === "confirmed";
         const total = Number(a.payment_amount ?? 0) + Number(a.remaining_amount ?? 0);
         const svcIds = ((a as unknown as { service_ids: string[] | null }).service_ids ?? []).filter(Boolean);
         const svcNames = svcIds.length > 0
@@ -275,7 +275,7 @@ function MyOwnList() {
                   İptal Et
                 </Button>
               ) : (
-                <p className="mt-3 text-[11px] text-center text-muted-foreground">İptal süresi doldu (24 saatten az kaldı).</p>
+                <p className="mt-3 text-[11px] text-center text-muted-foreground">İptal süresi doldu (2 saatten az kaldı).</p>
               )
             )}
           </div>
@@ -411,7 +411,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
             <p className="text-[12px] whitespace-pre-wrap">{a.notes}</p>
           </div>
         )}
-        {a.status !== "cancelled" && (
+        {isAdmin && a.status !== "cancelled" && (
           <Button
             variant="outline"
             size="sm"
@@ -419,7 +419,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
             onClick={() => { if (confirm("Bu randevuyu iptal etmek istediğine emin misin?")) cancelAppt.mutate(a.id); }}
             disabled={cancelAppt.isPending}
           >
-            Randevuyu İptal Et
+            Randevuyu İptal Et (Admin)
           </Button>
         )}
       </div>
@@ -631,7 +631,7 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 <p className="text-[12px] whitespace-pre-wrap">{m.notes}</p>
               </div>
             )}
-            {!cancelled && (
+            {isAdmin && !cancelled && (
               <Button
                 variant="outline"
                 size="sm"
@@ -639,7 +639,7 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 onClick={() => { if (confirm("Bu üyeliği iptal etmek istediğine emin misin?")) cancelMem.mutate(m.id); }}
                 disabled={cancelMem.isPending}
               >
-                Üyeliği İptal Et
+                Üyeliği İptal Et (Admin)
               </Button>
             )}
           </div>

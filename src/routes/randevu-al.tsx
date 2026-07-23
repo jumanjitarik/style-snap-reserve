@@ -17,7 +17,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { addDays, format, startOfDay } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
@@ -67,7 +67,7 @@ function BookPage() {
   const [shopId, setShopId] = useState<string | null>(initialShop ?? null);
   const [serviceIds, setServiceIds] = useState<string[]>(initialIds);
   const [staffId, setStaffId] = useState<string | null>(null);
-  const [date, setDate] = useState<Date | undefined>(addDays(startOfDay(new Date()), 1));
+  const [date, setDate] = useState<Date | undefined>(startOfDay(new Date()));
   const [time, setTime] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"full" | "deposit">("full");
   const [discountCode, setDiscountCode] = useState("");
@@ -182,7 +182,8 @@ function BookPage() {
   }, [workingHours]);
   const selectedDayHours = date ? hoursByDay.get(date.getDay()) : null;
   const isDateDisabled = (d: Date) => {
-    if (d < addDays(startOfDay(new Date()), 1)) return true;
+    // Bugünden önceki tarihler kapalı; bugün açık (saat filtresi 2 saat kuralını uygular)
+    if (d < startOfDay(new Date())) return true;
     const h = hoursByDay.get(d.getDay());
     if (h) return !h.is_open;
     return d.getDay() === 0;
@@ -238,8 +239,15 @@ function BookPage() {
     const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
     const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
     if (!open || !close) return [];
+    // Bugün için: şu andan +2 saat sonrasından itibaren slotlar açık
+    const isToday = format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+    const minTime = isToday ? (() => {
+      const t = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+    })() : "00:00";
     return SLOTS
       .filter((s) => s >= open && s < close)
+      .filter((s) => s >= minTime)
       .filter((s) => overrideMap.get(s) !== false)
       .filter((s) => (slotUsage.get(s) ?? 0) < slotCapacity);
   }, [date, selectedDayHours, overrideMap, slotUsage, slotCapacity]);
@@ -458,7 +466,7 @@ function BookPage() {
           <>
             <button onClick={() => setStep(3)} className="text-xs text-primary">← Hizmet</button>
             <h2 className="font-display text-xl">Tarih & Saat</h2>
-            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır. Dolan saatler pasif gözükür.</p>
+            <p className="text-xs text-muted-foreground">Aynı gün için randevuya en az 2 saat kalmalı. Gün ve saatler salon çalışma düzenine göre açılır. Dolan saatler pasif gözükür.</p>
             <div className="rounded-xl border border-border bg-card p-2">
               <Calendar mode="single" selected={date} onSelect={setDate} locale={tr}
                 disabled={isDateDisabled}
