@@ -275,7 +275,7 @@ function MyOwnList() {
                   İptal Et
                 </Button>
               ) : (
-                <p className="mt-3 text-[11px] text-center text-muted-foreground">İptal süresi doldu (24 saatten az kaldı).</p>
+                <p className="mt-3 text-[11px] text-center text-muted-foreground">İptal süresi doldu (2 saatten az kaldı).</p>
               )
             )}
           </div>
