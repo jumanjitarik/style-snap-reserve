@@ -230,7 +230,7 @@ function MyOwnList() {
         const startsAt = new Date(a.starts_at);
         const hoursLeft = (startsAt.getTime() - Date.now()) / 3_600_000;
         const lbl = labelFor(a.starts_at, a.status);
-        const canCancel = hoursLeft > 24 && a.status === "confirmed";
+        const canCancel = hoursLeft > 2 && a.status === "confirmed";
         const total = Number(a.payment_amount ?? 0) + Number(a.remaining_amount ?? 0);
         const svcIds = ((a as unknown as { service_ids: string[] | null }).service_ids ?? []).filter(Boolean);
         const svcNames = svcIds.length > 0
