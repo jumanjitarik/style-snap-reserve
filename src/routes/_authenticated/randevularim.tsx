@@ -631,7 +631,7 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 <p className="text-[12px] whitespace-pre-wrap">{m.notes}</p>
               </div>
             )}
-            {!cancelled && (
+            {isAdmin && !cancelled && (
               <Button
                 variant="outline"
                 size="sm"
@@ -639,7 +639,7 @@ function CustomerMembershipsList({ userId, isAdmin = false }: { userId: string; 
                 onClick={() => { if (confirm("Bu üyeliği iptal etmek istediğine emin misin?")) cancelMem.mutate(m.id); }}
                 disabled={cancelMem.isPending}
               >
-                Üyeliği İptal Et
+                Üyeliği İptal Et (Admin)
               </Button>
             )}
           </div>
