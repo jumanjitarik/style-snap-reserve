@@ -182,7 +182,8 @@ function BookPage() {
   }, [workingHours]);
   const selectedDayHours = date ? hoursByDay.get(date.getDay()) : null;
   const isDateDisabled = (d: Date) => {
-    if (d < addDays(startOfDay(new Date()), 1)) return true;
+    // Bugünden önceki tarihler kapalı; bugün açık (saat filtresi 2 saat kuralını uygular)
+    if (d < startOfDay(new Date())) return true;
     const h = hoursByDay.get(d.getDay());
     if (h) return !h.is_open;
     return d.getDay() === 0;
