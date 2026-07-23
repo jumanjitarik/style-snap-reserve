@@ -239,8 +239,15 @@ function BookPage() {
     const open = (h?.open_time ?? (date.getDay() === 0 ? "" : "09:00")).slice(0, 5);
     const close = (h?.close_time ?? (date.getDay() === 0 ? "" : "19:00")).slice(0, 5);
     if (!open || !close) return [];
+    // Bugün için: şu andan +2 saat sonrasından itibaren slotlar açık
+    const isToday = format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+    const minTime = isToday ? (() => {
+      const t = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+    })() : "00:00";
     return SLOTS
       .filter((s) => s >= open && s < close)
+      .filter((s) => s >= minTime)
       .filter((s) => overrideMap.get(s) !== false)
       .filter((s) => (slotUsage.get(s) ?? 0) < slotCapacity);
   }, [date, selectedDayHours, overrideMap, slotUsage, slotCapacity]);
