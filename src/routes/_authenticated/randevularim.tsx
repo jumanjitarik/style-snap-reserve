@@ -135,7 +135,7 @@ function MyAppts() {
           <CalIcon className="h-8 w-8 text-primary" />
           Alınan
         </h1>
-        <p className="text-xs text-muted-foreground">İptal en geç randevudan 24 saat önce yapılabilir.</p>
+        <p className="text-xs text-muted-foreground">İptal en geç randevudan 2 saat önce yapılabilir.</p>
       </header>
 
       <div className="px-4 pb-3 space-y-2">
