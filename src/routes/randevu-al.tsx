@@ -17,7 +17,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { SafeImg } from "@/components/SafeImg";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { addDays, format, startOfDay } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { tr } from "date-fns/locale";
 import { useGeolocation } from "@/lib/geo";
 import { distanceKm, formatKm } from "@/lib/distance";
