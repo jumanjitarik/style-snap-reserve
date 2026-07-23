@@ -458,7 +458,7 @@ function BookPage() {
           <>
             <button onClick={() => setStep(3)} className="text-xs text-primary">← Hizmet</button>
             <h2 className="font-display text-xl">Tarih & Saat</h2>
-            <p className="text-xs text-muted-foreground">En erken yarın için randevu alabilirsin. Gün ve saatler salon çalışma düzenine göre açılır. Dolan saatler pasif gözükür.</p>
+            <p className="text-xs text-muted-foreground">Aynı gün için randevuya en az 2 saat kalmalı. Gün ve saatler salon çalışma düzenine göre açılır. Dolan saatler pasif gözükür.</p>
             <div className="rounded-xl border border-border bg-card p-2">
               <Calendar mode="single" selected={date} onSelect={setDate} locale={tr}
                 disabled={isDateDisabled}
