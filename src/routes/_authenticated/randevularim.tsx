@@ -411,7 +411,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
             <p className="text-[12px] whitespace-pre-wrap">{a.notes}</p>
           </div>
         )}
-        {a.status !== "cancelled" && (
+        {isAdmin && a.status !== "cancelled" && (
           <Button
             variant="outline"
             size="sm"
@@ -419,7 +419,7 @@ function CustomerList({ userId, isAdmin = false }: { userId: string; isAdmin?: b
             onClick={() => { if (confirm("Bu randevuyu iptal etmek istediğine emin misin?")) cancelAppt.mutate(a.id); }}
             disabled={cancelAppt.isPending}
           >
-            Randevuyu İptal Et
+            Randevuyu İptal Et (Admin)
           </Button>
         )}
       </div>
