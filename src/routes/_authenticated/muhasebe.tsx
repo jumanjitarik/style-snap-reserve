@@ -90,6 +90,91 @@ function MuhasebePage() {
     },
   });
 
+  // ---- Mutabakat (Settlements) ----
+  const { data: settlementRows } = useQuery({
+    queryKey: ["muhasebe-settlements", shopFilter, ownedIds.join(",")],
+    enabled: ownedIds.length > 0,
+    queryFn: async () => {
+      let q = (supabase as any).from("settlements").select("id, shop_id, amount, settled_at, iban, note, barbershops:shop_id(name)").order("settled_at", { ascending: false });
+      if (shopFilter === "ALL") q = q.in("shop_id", ownedIds);
+      else q = q.eq("shop_id", shopFilter);
+      const { data } = await q;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: membershipCard } = useQuery({
+    queryKey: ["muhasebe-memberships-card", shopFilter, ownedIds.join(",")],
+    enabled: ownedIds.length > 0,
+    queryFn: async () => {
+      let q = (supabase as any).from("memberships").select("shop_id, payment_amount, status");
+      if (shopFilter === "ALL") q = q.in("shop_id", ownedIds);
+      else q = q.eq("shop_id", shopFilter);
+      const { data } = await q;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const settlementSummary = useMemo(() => {
+    const totalCardAppts = (rows ?? []).reduce((s, r: any) => {
+      if (r.status === "cancelled") return s;
+      return s + Number(r.payment_amount ?? 0);
+    }, 0);
+    const totalCardMemberships = (membershipCard ?? []).reduce((s, m: any) => {
+      if (m.status === "cancelled") return s;
+      return s + Number(m.payment_amount ?? 0);
+    }, 0);
+    const totalCard = totalCardAppts + totalCardMemberships;
+    const settled = (settlementRows ?? []).reduce((s, r: any) => s + Number(r.amount ?? 0), 0);
+    const outstanding = Math.max(0, totalCard - settled);
+    return { totalCard, settled, outstanding };
+  }, [rows, membershipCard, settlementRows]);
+
+  const [mtAmount, setMtAmount] = useState("");
+  const [mtIban, setMtIban] = useState("");
+  const [mtNote, setMtNote] = useState("");
+  const [mtDate, setMtDate] = useState(() => new Date().toISOString().slice(0, 16));
+  const [mtShop, setMtShop] = useState("");
+
+  const addSettlement = useMutation({
+    mutationFn: async () => {
+      const shop_id = shopFilter !== "ALL" ? shopFilter : mtShop;
+      if (!shop_id) throw new Error("Salon seçin");
+      const amt = Number(mtAmount);
+      if (!Number.isFinite(amt) || amt <= 0) throw new Error("Geçerli tutar girin");
+      const { data: u } = await supabase.auth.getUser();
+      const payload = {
+        shop_id,
+        amount: amt,
+        iban: mtIban || null,
+        note: mtNote || null,
+        settled_at: new Date(mtDate).toISOString(),
+        created_by: u.user?.id ?? null,
+      };
+      const { error } = await (supabase as any).from("settlements").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Mutabakat kaydedildi");
+      setMtAmount(""); setMtIban(""); setMtNote("");
+      qc.invalidateQueries({ queryKey: ["muhasebe-settlements"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Hata"),
+  });
+
+  const deleteSettlement = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("settlements").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Silindi");
+      qc.invalidateQueries({ queryKey: ["muhasebe-settlements"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Hata"),
+  });
+
+
   const filtered = useMemo(() => {
     let list = [...(rows ?? [])];
     if (from) list = list.filter((r) => new Date(r.starts_at) >= new Date(from));
