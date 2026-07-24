@@ -861,6 +861,50 @@ export type Database = {
           },
         ]
       }
+      settlements: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          iban: string | null
+          id: string
+          note: string | null
+          settled_at: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          iban?: string | null
+          id?: string
+          note?: string | null
+          settled_at?: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          iban?: string | null
+          id?: string
+          note?: string | null
+          settled_at?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlements_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "barbershops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_working_hours: {
         Row: {
           close_time: string

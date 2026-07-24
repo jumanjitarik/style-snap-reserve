@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, Download, Store, Receipt } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowUpDown, Download, Store, Receipt, Handshake, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
 
 
 export const Route = createFileRoute("/_authenticated/muhasebe")({
@@ -26,6 +29,17 @@ export const Route = createFileRoute("/_authenticated/muhasebe")({
 type SortKey = "date" | "service" | "amount";
 
 function MuhasebePage() {
+  const qc = useQueryClient();
+  const { data: isAdmin } = useQuery({
+    queryKey: ["muhasebe-is-admin"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return false;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      return !!data?.some((r) => r.role === "admin");
+    },
+  });
+
   const { data: shops } = useQuery({
     queryKey: ["muhasebe-shops"],
     queryFn: async () => {
@@ -75,6 +89,91 @@ function MuhasebePage() {
       return data ?? [];
     },
   });
+
+  // ---- Mutabakat (Settlements) ----
+  const { data: settlementRows } = useQuery({
+    queryKey: ["muhasebe-settlements", shopFilter, ownedIds.join(",")],
+    enabled: ownedIds.length > 0,
+    queryFn: async () => {
+      let q = (supabase as any).from("settlements").select("id, shop_id, amount, settled_at, iban, note, barbershops:shop_id(name)").order("settled_at", { ascending: false });
+      if (shopFilter === "ALL") q = q.in("shop_id", ownedIds);
+      else q = q.eq("shop_id", shopFilter);
+      const { data } = await q;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: membershipCard } = useQuery({
+    queryKey: ["muhasebe-memberships-card", shopFilter, ownedIds.join(",")],
+    enabled: ownedIds.length > 0,
+    queryFn: async () => {
+      let q = (supabase as any).from("memberships").select("shop_id, payment_amount, status");
+      if (shopFilter === "ALL") q = q.in("shop_id", ownedIds);
+      else q = q.eq("shop_id", shopFilter);
+      const { data } = await q;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const settlementSummary = useMemo(() => {
+    const totalCardAppts = (rows ?? []).reduce((s, r: any) => {
+      if (r.status === "cancelled") return s;
+      return s + Number(r.payment_amount ?? 0);
+    }, 0);
+    const totalCardMemberships = (membershipCard ?? []).reduce((s, m: any) => {
+      if (m.status === "cancelled") return s;
+      return s + Number(m.payment_amount ?? 0);
+    }, 0);
+    const totalCard = totalCardAppts + totalCardMemberships;
+    const settled = (settlementRows ?? []).reduce((s, r: any) => s + Number(r.amount ?? 0), 0);
+    const outstanding = Math.max(0, totalCard - settled);
+    return { totalCard, settled, outstanding };
+  }, [rows, membershipCard, settlementRows]);
+
+  const [mtAmount, setMtAmount] = useState("");
+  const [mtIban, setMtIban] = useState("");
+  const [mtNote, setMtNote] = useState("");
+  const [mtDate, setMtDate] = useState(() => new Date().toISOString().slice(0, 16));
+  const [mtShop, setMtShop] = useState("");
+
+  const addSettlement = useMutation({
+    mutationFn: async () => {
+      const shop_id = shopFilter !== "ALL" ? shopFilter : mtShop;
+      if (!shop_id) throw new Error("Salon seçin");
+      const amt = Number(mtAmount);
+      if (!Number.isFinite(amt) || amt <= 0) throw new Error("Geçerli tutar girin");
+      const { data: u } = await supabase.auth.getUser();
+      const payload = {
+        shop_id,
+        amount: amt,
+        iban: mtIban || null,
+        note: mtNote || null,
+        settled_at: new Date(mtDate).toISOString(),
+        created_by: u.user?.id ?? null,
+      };
+      const { error } = await (supabase as any).from("settlements").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Mutabakat kaydedildi");
+      setMtAmount(""); setMtIban(""); setMtNote("");
+      qc.invalidateQueries({ queryKey: ["muhasebe-settlements"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Hata"),
+  });
+
+  const deleteSettlement = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from("settlements").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Silindi");
+      qc.invalidateQueries({ queryKey: ["muhasebe-settlements"] });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Hata"),
+  });
+
 
   const filtered = useMemo(() => {
     let list = [...(rows ?? [])];
@@ -201,6 +300,82 @@ function MuhasebePage() {
             <Download className="h-4 w-4 mr-1" /> Excel'e Aktar
           </Button>
         </div>
+
+        {/* Mutabakat */}
+        <div className="rounded-xl border border-primary/40 bg-card p-3 space-y-3">
+          <div className="flex items-center gap-2">
+            <Handshake className="h-5 w-5 text-primary" />
+            <h2 className="font-display text-lg">Mutabakat</h2>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-lg bg-muted p-2">
+              <p className="text-[10px] uppercase text-muted-foreground">Kart Toplamı</p>
+              <p className="font-display text-lg">{settlementSummary.totalCard.toFixed(0)}₺</p>
+            </div>
+            <div className="rounded-lg bg-muted p-2">
+              <p className="text-[10px] uppercase text-muted-foreground">Mutabakat</p>
+              <p className="font-display text-lg text-emerald-500">{settlementSummary.settled.toFixed(0)}₺</p>
+            </div>
+            <div className="rounded-lg bg-primary/15 p-2 border border-primary/30">
+              <p className="text-[10px] uppercase text-primary">Alacak</p>
+              <p className="font-display text-lg text-primary">{settlementSummary.outstanding.toFixed(0)}₺</p>
+            </div>
+          </div>
+
+          {isAdmin && (
+            <div className="space-y-2 rounded-lg border border-border p-2">
+              <p className="text-xs font-semibold flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> Mutabakat Ekle</p>
+              {shopFilter === "ALL" && (
+                <div>
+                  <Label className="text-xs">Salon</Label>
+                  <Select value={mtShop} onValueChange={setMtShop}>
+                    <SelectTrigger><SelectValue placeholder="Salon seçin" /></SelectTrigger>
+                    <SelectContent>
+                      {(shops ?? []).map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Tutar (₺)</Label><Input inputMode="decimal" value={mtAmount} onChange={(e) => setMtAmount(e.target.value)} placeholder="0" /></div>
+                <div><Label className="text-xs">Tarih / Saat</Label><Input type="datetime-local" value={mtDate} onChange={(e) => setMtDate(e.target.value)} /></div>
+              </div>
+              <div><Label className="text-xs">IBAN</Label><Input value={mtIban} onChange={(e) => setMtIban(e.target.value)} placeholder="TR.." /></div>
+              <div><Label className="text-xs">Not</Label><Textarea rows={2} value={mtNote} onChange={(e) => setMtNote(e.target.value)} /></div>
+              <Button className="w-full" disabled={addSettlement.isPending} onClick={() => addSettlement.mutate()}>
+                <Handshake className="h-4 w-4 mr-1" /> Mutabakat Sağlandı Olarak Kaydet
+              </Button>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            {(settlementRows ?? []).length === 0 && <p className="text-xs text-muted-foreground text-center py-2">Mutabakat kaydı yok.</p>}
+            {(settlementRows ?? []).map((r: any) => (
+              <div key={r.id} className="flex items-start justify-between gap-2 rounded-lg border border-border bg-background/50 p-2 text-xs">
+                <div className="min-w-0 flex-1">
+                  <div className="flex justify-between gap-2">
+                    <p className="font-semibold text-emerald-500">{Number(r.amount).toFixed(0)}₺</p>
+                    <p className="text-muted-foreground">{new Date(r.settled_at).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}</p>
+                  </div>
+                  <p className="text-muted-foreground truncate">{r.barbershops?.name ?? "—"}</p>
+                  {r.iban && <p className="text-muted-foreground truncate">IBAN: {r.iban}</p>}
+                  {r.note && <p className="text-muted-foreground truncate">{r.note}</p>}
+                </div>
+                {isAdmin && (
+                  <button
+                    aria-label="Sil"
+                    onClick={() => { if (confirm("Mutabakat silinsin mi?")) deleteSettlement.mutate(r.id); }}
+                    className="p-1.5 rounded-md hover:bg-destructive/15 text-destructive shrink-0"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+
 
         <div className="space-y-2">
           {filtered.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Kayıt yok.</p>}
