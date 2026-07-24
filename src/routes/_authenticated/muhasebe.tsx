@@ -29,6 +29,17 @@ export const Route = createFileRoute("/_authenticated/muhasebe")({
 type SortKey = "date" | "service" | "amount";
 
 function MuhasebePage() {
+  const qc = useQueryClient();
+  const { data: isAdmin } = useQuery({
+    queryKey: ["muhasebe-is-admin"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return false;
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", u.user.id);
+      return !!data?.some((r) => r.role === "admin");
+    },
+  });
+
   const { data: shops } = useQuery({
     queryKey: ["muhasebe-shops"],
     queryFn: async () => {
